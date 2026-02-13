@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+output/
+output_multifile/
+test_output/
+*.json
+!package.json
+*.png
+.env
+*.valhalla.json
