@@ -1,0 +1,1687 @@
+11:20] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (D6tQFA1p)
+🎯 Target: 20260125_C5JXfmK
+🏁 Starting SOL balance: 10.18 SOL ($821.83 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 2 | Target Tx 1 | Target Tx 2
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 11.67 SOL ($942.12 USD) on your wallet
+💎 Total SOL balance: 27.34 SOL ($2208.15 USD) (6 Active Positions)
+Obraz
+[11:22] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (4bscoQZP)
+🆕 BidAsk 1-Sided Position | soluna-SOL
+🎯 Target: 20260125_C5JXfmK
+💰 MC: $1,488,432.422 | Age: 11h ago
+🪐 Jup Score: 88
+💎 Target Pos: soluna: 0.0000 | SOL: 1.5000
+💎 Your Pos: soluna: 0.0000 | SOL: 3.0000
+🔗 🔍 View Tx - Your Solscan | Target Tx
+[11:31] 
+APL.
+ Valhalla Bot: Swapped 16 Unknown (2qT8JVotQ2C1gKbqpuqNatkpSBWxiKHbXkCyTqH9pump). https://solscan.io/tx/2wE8fQ9tWYArCbnJkHCvnLDJomP1kSbXRjxj7UDKs7afo99vTd5n1DsM6wiU6oEh3Vv8vYQPP3csUdYBuiJc5HTx
+[11:31] 
+APL.
+ Valhalla Bot: 🔄 Failsafe Activated (DLMM) (4bscoQZP)
+We detected that the target position you were copying has closed, but your position remained open. We've automatically closed your position to protect your funds.
+🔍 Your Solscan
+[11:34] 
+APL.
+ Valhalla Bot: Swapped 30 WAR (8opvqaWysX1oYbXuTL8PHaoaTiXD69VFYAX4smPebonk). https://solscan.io/tx/2VcjmDoWU9M6RaQovz6oQWoGWXmj6YaSmWyThZhG3Sdtbf7bUqarZe6WgL9wem4xGqaeewVk75VUeSGnfc8yHYCE
+[11:35] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (HwxfUTSj)
+🎯 Target: 20260127_3WrPRi
+🏁 Starting SOL balance: 11.67 SOL ($941.07 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 2 | Target Tx 1 | Target Tx 2
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 14.82 SOL ($1196.86 USD) on your wallet
+💎 Total SOL balance: 27.34 SOL ($2204.65 USD) (5 Active Positions)
+Obraz
+[11:44] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (DoFo265T)
+🆕 BidAsk 1-Sided Position | WAR-SOL
+🎯 Target: 20260127_3WrPRi
+💰 MC: $40,566,983.834 | Age: 3w ago
+🪐 Jup Score: 88
+💎 Target Pos: WAR: 0.0000 | SOL: 6.7443
+💎 Your Pos: WAR: 0.0000 | SOL: 3.0349
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 3 | Target Tx 1 | Target Tx 3
+[13:44] 
+APL.
+ Valhalla Bot: Swapped 85 WAR (8opvqaWysX1oYbXuTL8PHaoaTiXD69VFYAX4smPebonk). https://solscan.io/tx/4nf6J5YipcygCk7JuygvKYoi6fpdFceFEgAX6wkQVyQPUZsbzWmfywY48dsLstMHDRSRWP8LBFddQDWhqtAronPU
+[13:45] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (DoFo265T)
+🎯 Target: 20260127_3WrPRi
+🏁 Starting SOL balance: 11.69 SOL ($949.23 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 2 | Target Tx 1 | Target Tx 2
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 14.83 SOL ($1204.20 USD) on your wallet
+💎 Total SOL balance: 27.35 SOL ($2220.61 USD) (5 Active Positions)
+Obraz
+[13:47] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (Bxgm6btW)
+🆕 Spot 1-Sided Position | BFS-SOL
+🎯 Target: 20260125_C5JXfmK
+💰 MC: $4,792,327.869 | Age: 3w ago
+🪐 Jup Score: 89
+💎 Target Pos: BFS: 0.0000 | SOL: 2.0000
+💎 Your Pos: BFS: 0.0000 | SOL: 4.0000
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 7 | Target Tx 1 | Target Tx 7
+[13:50] 
+APL.
+ Valhalla Bot: Swapped 8 BFS (2k8yZaJjf61unHriuqdmvbxe7CUhEYML5kVJDbcotKjU). https://solscan.io/tx/4NLGz27HgrMkFQEdo1baSJQfMLcY292hCpfABp95Si2zbc7P4Lti8eB9yJCakNxBwRiQ54KejWtJiwwqBahSgxdz
+[13:50] 
+APL.
+ Valhalla Bot: ❌ Skipping position due to SOL-only deposit restriction
+🎯 Target: 20260125_C5JXfmK
+⚠️ This position requires both tokens (2k8yZaJjf61unHriuqdmvbxe7CUhEYML5kVJDbcotKjU and So11111111111111111111111111111111111111112), but you have SOL-only deposits enabled.
+
+This setting ensures you only enter positions that require pure SOL deposits (single-sided).
+
+💡 To adjust this: type /settings_dlmm → More Copy Trade Settings → Toggle SOL-Only Mode
+Target Tx: Target Tx 1 | Target Tx 7
+[13:51] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (Bxgm6btW)
+🎯 Target: 20260125_C5JXfmK
+🏁 Starting SOL balance: 10.53 SOL ($854.83 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 6 | Target Tx 1 | Target Tx 6
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 14.83 SOL ($1203.90 USD) on your wallet
+💎 Total SOL balance: 27.36 SOL ($2220.75 USD) (5 Active Positions)
+Obraz
+[14:22] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (Biqo6rVt)
+🆕 BidAsk 1-Sided Position | WAR-SOL
+🎯 Target: 20260127_3WrPRi
+💰 MC: $39,528,442.587 | Age: 3w ago
+🪐 Jup Score: 88
+💎 Target Pos: WAR: 0.0000 | SOL: 6.7463
+💎 Your Pos: WAR: 0.0000 | SOL: 3.0358
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 3 | Target Tx 1 | Target Tx 3
+[14:39] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (445qCvYz)
+🆕 Spot 1-Sided Position | BFS-SOL
+🎯 Target: 20260125_C5JXfmK
+💰 MC: $5,277,838.271 | Age: 3w ago
+🪐 Jup Score: 89
+💎 Target Pos: BFS: 0.0000 | SOL: 1.6967
+💎 Your Pos: BFS: 0.0000 | SOL: 3.3935
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 5 | Target Tx 1 | Target Tx 5
+[14:39] 
+APL.
+ Valhalla Bot:
+💰 Added DLMM Liquidity (445qCvYz)
+🎯 Target: 20260125_C5JXfmK
+💰 Amount: 0.8484 SOL
+Copied First Add Liquidity. This means they are adding more funds to a position they ALREADY have. Currently, you only copy the first ADDITIONAL liquidity transaction to prevent positions from becoming much larger than originally intended.
+
+💡 To enable adding infinite liquidity, type /settings_dlmm → More Copy Trade Settings → Infinite Add Liquidity - Turn ON
+🔍 View Tx - Your Solscan 1 | Your Solscan 4 | Target Tx
+ℹ️ Note: This add liquidity operation has increased your position size by 25%
+[14:41] 
+APL.
+ Valhalla Bot: ❌ Skipping position due to SOL-only deposit restriction
+🎯 Target: 20260125_C5JXfmK
+⚠️ This position requires both tokens (2k8yZaJjf61unHriuqdmvbxe7CUhEYML5kVJDbcotKjU and So11111111111111111111111111111111111111112), but you have SOL-only deposits enabled.
+
+This setting ensures you only enter positions that require pure SOL deposits (single-sided).
+
+💡 To adjust this: type /settings_dlmm → More Copy Trade Settings → Toggle SOL-Only Mode
+Target Tx: Target Tx 1 | Target Tx 7
+[14:42] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (3u2d4G6T)
+🆕 BidAsk 1-Sided Position | WAR-SOL
+🎯 Target: 20260127_3WrPRi
+💰 MC: $40,174,998.857 | Age: 3w ago
+🪐 Jup Score: 89
+💎 Target Pos: WAR: 0.0000 | SOL: 6.7462
+💎 Your Pos: WAR: 0.0000 | SOL: 3.0358
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 3 | Target Tx 1 | Target Tx 3
+[14:42] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (Biqo6rVt)
+🎯 Target: 20260127_3WrPRi
+🏁 Starting SOL balance: 7.23 SOL ($587.73 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 2 | Target Tx 1 | Target Tx 2
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 10.36 SOL ($842.16 USD) on your wallet
+💎 Total SOL balance: 27.35 SOL ($2223.65 USD) (6 Active Positions)
+Obraz
+[14:42] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (445qCvYz)
+🎯 Target: 20260125_C5JXfmK
+🏁 Starting SOL balance: 10.36 SOL ($842.37 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 4 | Target Tx 1 | Target Tx 5
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 14.83 SOL ($1205.83 USD) on your wallet
+💎 Total SOL balance: 27.36 SOL ($2224.76 USD) (5 Active Positions)
+Obraz
+[15:04] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (2w71eDAE)
+🆕 BidAsk 1-Sided Position | soluna-SOL
+🎯 Target: 20260125_2eWqo
+💰 MC: $1,370,102.39 | Age: 15h ago
+🪐 Jup Score: 90
+💎 Target Pos: soluna: 0.0000 | SOL: 20.0000
+💎 Your Pos: soluna: 0.0000 | SOL: 3.0200
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 3 | Target Tx 1 | Target Tx 3
+[15:05] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (DwXpq2FC)
+🆕 BidAsk 1-Sided Position | BIG-SOL
+🎯 Target: 20260125_2eWqo
+💰 MC: $626,312.032 | Age: 9h ago
+🪐 Jup Score: 83
+💎 Target Pos: Something Big Is Happening: 0.0000 | SOL: 20.0000
+💎 Your Pos: Something Big Is Happening: 0.0000 | SOL: 3.0200
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 3 | Target Tx 1 | Target Tx 3
+[15:08] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (Dep1vXdk)
+🆕 BidAsk 1-Sided Position | COPPERINU-SOL
+🎯 Target: 20260125_2eWqo
+💰 MC: $11,616,312.91 | Age: 2w ago
+🪐 Jup Score: 90
+💎 Target Pos: copper inu: 0.0000 | SOL: 18.0000
+💎 Your Pos: copper inu: 0.0000 | SOL: 3.0200
+🔗 🔍 View Tx - Your Solscan | Target Tx
+[15:09] 
+APL.
+ Valhalla Bot: ❌ Insufficient Effective Balance for Copy Trading ❌
+       Trade copied from: 20260125_2eWqo
+        Your SOL balance: 2.38 SOL
+        Total effective balance: 2.38 SOL
+        Required amount for this trade: 3.15 SOL (Trade Amount: 3.0200 SOL + Fees)
+
+        Your max copy trade amount setting: 3.02 SOL
+
+        You cannot open new positions until you add more SOL to your wallet.
+        If this required amount seems too high based on your settings, please check the target wallet's transaction size.
+        You may also lower your max trade amount in the settings.
+        Tx : Target Tx 1 | Target Tx 3
+[15:13] 
+APL.
+ Valhalla Bot: Swapped all copper inu (61Wj56QgGyyB966T7YsMzEAKRLcMvJpDbPzjkrCZc4Bi). https://solscan.io/tx/57E4bw6YMG37SdVVJnCWuRU5AHbKJ13RKEjhL8HtZsiQ6tn5wsAREf9Yh4wwisCbHHHmxs5y7WXpkh1NkPhiGBb4
+[15:13] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (H2U5wZSZ)
+🆕 BidAsk 1-Sided Position | COPPERINU-SOL
+🎯 Target: 20260125_2eWqo
+💰 MC: $11,963,830.65 | Age: 2w ago
+🪐 Jup Score: 90
+💎 Target Pos: copper inu: 0.0000 | SOL: 18.0000
+💎 Your Pos: copper inu: 0.0000 | SOL: 3.0200
+🔗 🔍 View Tx - Your Solscan | Target Tx
+[15:14] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (Dep1vXdk)
+🎯 Target: 20260125_2eWqo
+🏁 Starting SOL balance: 2.38 SOL ($197.06 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan | Target Tx
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 5.46 SOL ($452.09 USD) on your wallet
+💎 Total SOL balance: 27.37 SOL ($2265.96 USD) (8 Active Positions)
+Obraz
+[15:15] 
+APL.
+ Valhalla Bot: ❌ Insufficient Effective Balance for Copy Trading ❌
+       Trade copied from: 20260127_3WrPRi
+        Your SOL balance: 2.38 SOL
+        Total effective balance: 2.38 SOL
+        Required amount for this trade: 2.59 SOL (Trade Amount: 2.4201 SOL + Fees)
+
+        Your max copy trade amount setting: 3.40 SOL
+
+        You cannot open new positions until you add more SOL to your wallet.
+        If this required amount seems too high based on your settings, please check the target wallet's transaction size.
+        You may also lower your max trade amount in the settings.
+        Tx : Target Tx 1 | Target Tx 4
+[15:19] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (EyPAqBc9)
+🆕 BidAsk 1-Sided Position | soluna-SOL
+🎯 Target: 20260125_2eWqo
+💰 MC: $1,704,174.435 | Age: 15h ago
+🪐 Jup Score: 90
+💎 Target Pos: soluna: 0.0000 | SOL: 20.0000
+💎 Your Pos: soluna: 0.0000 | SOL: 3.0200
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 3 | Target Tx 1 | Target Tx 3
+[15:19] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (2w71eDAE)
+🎯 Target: 20260125_2eWqo
+🏁 Starting SOL balance: 2.38 SOL ($197.04 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 2 | Target Tx 1 | Target Tx 2
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 5.50 SOL ($455.35 USD) on your wallet
+💎 Total SOL balance: 27.37 SOL ($2265.66 USD) (8 Active Positions)
+Obraz
+[15:21] 
+APL.
+ Valhalla Bot: ❌ Skipping position due to SOL-only deposit restriction
+🎯 Target: 20260125_C5JXfmK
+⚠️ This position requires both tokens (2k8yZaJjf61unHriuqdmvbxe7CUhEYML5kVJDbcotKjU and So11111111111111111111111111111111111111112), but you have SOL-only deposits enabled.
+
+This setting ensures you only enter positions that require pure SOL deposits (single-sided).
+
+💡 To adjust this: type /settings_dlmm → More Copy Trade Settings → Toggle SOL-Only Mode
+Target Tx: Target Tx 1 | Target Tx 7
+[15:22] 
+APL.
+ Valhalla Bot: ❌ Insufficient Effective Balance for Copy Trading ❌
+       Trade copied from: 20260125_C5JXfmK
+        Your SOL balance: 2.37 SOL
+        Total effective balance: 2.37 SOL
+        Required amount for this trade: 4.95 SOL (Trade Amount: 4.5930 SOL + Fees)
+
+        Your max copy trade amount setting: 5.51 SOL
+
+        You cannot open new positions until you add more SOL to your wallet.
+        If this required amount seems too high based on your settings, please check the target wallet's transaction size.
+        You may also lower your max trade amount in the settings.
+        Tx : Target Tx 1 | Target Tx 7
+[15:22] 
+APL.
+ Valhalla Bot: ❌ Skipping position due to SOL-only deposit restriction
+🎯 Target: 20260125_C5JXfmK
+⚠️ This position requires both tokens (2k8yZaJjf61unHriuqdmvbxe7CUhEYML5kVJDbcotKjU and So11111111111111111111111111111111111111112), but you have SOL-only deposits enabled.
+
+This setting ensures you only enter positions that require pure SOL deposits (single-sided).
+
+💡 To adjust this: type /settings_dlmm → More Copy Trade Settings → Toggle SOL-Only Mode
+Target Tx: Target Tx 1 | Target Tx 7
+[15:25] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (oAHPLNxu)
+🆕 BidAsk 1-Sided Position | COPPERINU-SOL
+🎯 Target: 20260125_2eWqo
+💰 MC: $12,168,446.079 | Age: 2w ago
+🪐 Jup Score: 89
+💎 Target Pos: copper inu: 0.0000 | SOL: 18.0000
+💎 Your Pos: copper inu: 0.0000 | SOL: 3.0200
+🔗 🔍 View Tx - Your Solscan | Target Tx
+[15:25] 
+APL.
+ Valhalla Bot: ❌ Skipping position due to token age restriction
+🎯 Target: 20260125_C5JXfmK
+⚠️ Token DpHmTPDqvD5KCsDydZxbRHFd1Qmv2siaXNkftx2tJLch is less than your required age of 4h
+Token POPE: DpHmTPDqvD5KCsDydZxbRHFd1Qmv2siaXNkftx2tJLch (Age: 1h ago)
+Token SOL: So11111111111111111111111111111111111111112 (Age: Stable Token)
+
+💡 To adjust this: type /settings_dlmm → More Copy Trade Settings → Set Minimum Token Age
+Target Tx: Target Tx 1 | Target Tx 4
+[15:26] 
+APL.
+ Valhalla Bot: ❌ Skipping position due to token age restriction
+🎯 Target: 20260125_C5JXfmK
+⚠️ Token DpHmTPDqvD5KCsDydZxbRHFd1Qmv2siaXNkftx2tJLch is less than your required age of 4h
+Token POPE: DpHmTPDqvD5KCsDydZxbRHFd1Qmv2siaXNkftx2tJLch (Age: 1h ago)
+Token SOL: So11111111111111111111111111111111111111112 (Age: Stable Token)
+
+💡 To adjust this: type /settings_dlmm → More Copy Trade Settings → Set Minimum Token Age
+Target Tx: Target Tx 1 | Target Tx 4
+[15:26] 
+APL.
+ Valhalla Bot: ❌ Insufficient Effective Balance for Copy Trading ❌
+       Trade copied from: 20260125_C5JXfmK
+        Your SOL balance: 2.37 SOL
+        Total effective balance: 2.37 SOL
+        Required amount for this trade: 4.21 SOL (Trade Amount: 4.0000 SOL + Fees)
+
+        Your max copy trade amount setting: 5.51 SOL
+
+        You cannot open new positions until you add more SOL to your wallet.
+        If this required amount seems too high based on your settings, please check the target wallet's transaction size.
+        You may also lower your max trade amount in the settings.
+        Tx : Target Tx 1 | Target Tx 4
+[15:26] 
+APL.
+ Valhalla Bot: ❌ Skipping position due to token age restriction
+🎯 Target: 20260125_C5JXfmK
+⚠️ Token DpHmTPDqvD5KCsDydZxbRHFd1Qmv2siaXNkftx2tJLch is less than your required age of 4h
+Token POPE: DpHmTPDqvD5KCsDydZxbRHFd1Qmv2siaXNkftx2tJLch (Age: 1h ago)
+Token SOL: So11111111111111111111111111111111111111112 (Age: Stable Token)
+
+💡 To adjust this: type /settings_dlmm → More Copy Trade Settings → Set Minimum Token Age
+Target Tx: Target Tx 1 | Target Tx 4
+[15:26] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (H2U5wZSZ)
+🎯 Target: 20260125_2eWqo
+🏁 Starting SOL balance: 2.37 SOL ($194.13 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan | Target Tx
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 5.45 SOL ($446.41 USD) on your wallet
+💎 Total SOL balance: 27.37 SOL ($2241.80 USD) (8 Active Positions)
+Obraz
+[15:27] 
+APL.
+ Valhalla Bot: ❌ Insufficient Effective Balance for Copy Trading ❌
+       Trade copied from: 20260125_C5JXfmK
+        Your SOL balance: 2.37 SOL
+        Total effective balance: 2.37 SOL
+        Required amount for this trade: 4.21 SOL (Trade Amount: 4.0000 SOL + Fees)
+
+        Your max copy trade amount setting: 5.51 SOL
+
+        You cannot open new positions until you add more SOL to your wallet.
+        If this required amount seems too high based on your settings, please check the target wallet's transaction size.
+        You may also lower your max trade amount in the settings.
+        Tx : Target Tx 1 | Target Tx 4
+[15:27] 
+APL.
+ Valhalla Bot: ❌ Skipping position due to token age restriction
+🎯 Target: 20260125_C5JXfmK
+⚠️ Token DpHmTPDqvD5KCsDydZxbRHFd1Qmv2siaXNkftx2tJLch is less than your required age of 4h
+Token POPE: DpHmTPDqvD5KCsDydZxbRHFd1Qmv2siaXNkftx2tJLch (Age: 1h ago)
+Token SOL: So11111111111111111111111111111111111111112 (Age: Stable Token)
+
+💡 To adjust this: type /settings_dlmm → More Copy Trade Settings → Set Minimum Token Age
+Target Tx: Target Tx 1 | Target Tx 4
+[15:32] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (S7qoDRwk)
+🆕 BidAsk 1-Sided Position | soluna-SOL
+🎯 Target: 20260125_2eWqo
+💰 MC: $1,957,134.187 | Age: 15h ago
+🪐 Jup Score: 90
+💎 Target Pos: soluna: 0.0000 | SOL: 20.0000
+💎 Your Pos: soluna: 0.0000 | SOL: 3.0200
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 3 | Target Tx 1 | Target Tx 3
+[15:33] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (EyPAqBc9)
+🎯 Target: 20260125_2eWqo
+🏁 Starting SOL balance: 2.37 SOL ($194.36 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 2 | Target Tx 1 | Target Tx 2
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 5.50 SOL ($451.06 USD) on your wallet
+💎 Total SOL balance: 27.37 SOL ($2244.57 USD) (8 Active Positions)
+Obraz
+[15:36] 
+APL.
+ Valhalla Bot: Swapped 94 copper inu (61Wj56QgGyyB966T7YsMzEAKRLcMvJpDbPzjkrCZc4Bi). https://solscan.io/tx/3TnsicUxrhAgmQB2WoyjzRbRksaVWRkyzMn9aDNqAyVACxg5uiD9k6JZLk3rwThDdBZCHepWNqMkG5wv7S5wG9Be
+[15:37] 
+APL.
+ Valhalla Bot: Swapped 13 Buttcoin (Cm6fNnMk7NfzStP9CZpsQA2v3jjzbcYGAxdJySmHpump). https://solscan.io/tx/BLzi5jWwbkpbseKp9bHw3E8uy4iLp2LPRa2rnQG3Wj3JX9Ntn2Son3cHJCMNfcWS3odw8yQQukqVK3ZRhrwbDca
+[15:38] 
+APL.
+ Valhalla Bot: Swapped 45 copper inu (61Wj56QgGyyB966T7YsMzEAKRLcMvJpDbPzjkrCZc4Bi). https://solscan.io/tx/66hutvPRDhBFcYuQnjnAHYRxizsJnq4pM1ajwTqhqSgyYeYBM2bnckSV5uQMmKNqA7r7TshteY3imgZPRv1NPAyP
+[15:38] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (91NgMEof)
+🎯 Target: 20251126_9iGhFppB
+🏁 Starting SOL balance: 2.39 SOL ($194.93 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 2 | Target Tx 1 | Target Tx 2
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 5.47 SOL ($445.31 USD) on your wallet
+💎 Total SOL balance: 27.37 SOL ($2231.91 USD) (8 Active Positions)
+Obraz
+[15:39] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (6Ck4jCMY)
+🎯 Target: 20251126_9iGhFppB
+🏁 Starting SOL balance: 5.47 SOL ($444.60 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 2 | Target Tx 1 | Target Tx 2
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 8.57 SOL ($696.57 USD) on your wallet
+💎 Total SOL balance: 27.37 SOL ($2224.72 USD) (7 Active Positions)
+Obraz
+[15:51] 
+APL.
+ Valhalla Bot: Swapped 37011 Something Big Is Happening (Gz7VJWyQW6Uqt1Py5S2ZvtYNEFbP4Thmi31n5mx1pump). https://solscan.io/tx/hRCfn1pwsrRGv1s6z3HMBzyyy31XmD7JDej7E61cjx9fLgdCcN4mdKzZqpzKYvj8QpyGU5JXFgZmaenHPqd6Voc
+[15:52] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (65oUVfQe)
+🆕 Spot 1-Sided Position | soluna-SOL
+🎯 Target: 20260125_C5JXfmK
+💰 MC: $2,467,840.378 | Age: 16h ago
+🪐 Jup Score: 90
+💎 Target Pos: soluna: 0.0000 | SOL: 2.0000
+💎 Your Pos: soluna: 0.0000 | SOL: 4.0000
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 6 | Target Tx 1 | Target Tx 6
+[15:53] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (DwXpq2FC)
+🎯 Target: 20260125_2eWqo
+🏁 Starting SOL balance: 8.57 SOL ($691.60 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 2 | Target Tx 1 | Target Tx 2
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 11.69 SOL ($943.38 USD) on your wallet
+💎 Total SOL balance: 27.35 SOL ($2207.40 USD) (6 Active Positions)
+Obraz
+[15:53] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (D1L5oyf4)
+🆕 Spot 1-Sided Position | soluna-SOL
+🎯 Target: 20260125_C5JXfmK
+💰 MC: $2,434,975.847 | Age: 16h ago
+🪐 Jup Score: 90
+💎 Target Pos: soluna: 0.0000 | SOL: 1.0000
+💎 Your Pos: soluna: 0.0000 | SOL: 2.0000
+🔗 🔍 View Tx - Your Solscan | Target Tx
+[15:54] 
+APL.
+ Valhalla Bot: Swapped all soluna (2qT8JVotQ2C1gKbqpuqNatkpSBWxiKHbXkCyTqH9pump). https://solscan.io/tx/3Y5b1zrGoyrHhnBbZyKji31Eq8FVbZ7vGSc3aAD1TN9J8yBcMntMXCVokXCQ52pcwyTKGpvTLkHsAFPminbPMQ6m
+[15:55] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (D1L5oyf4)
+🎯 Target: 20260125_C5JXfmK
+🏁 Starting SOL balance: 5.40 SOL ($436.48 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan | Target Tx
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 7.46 SOL ($602.99 USD) on your wallet
+💎 Total SOL balance: 27.35 SOL ($2210.90 USD) (7 Active Positions)
+Obraz
+[15:56] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (FFnvxxEZ)
+🆕 BidAsk 1-Sided Position | soluna-SOL
+🎯 Target: 20260121_7tB8WHYK
+💰 MC: $2,434,654.6 | Age: 16h ago
+🪐 Jup Score: 90
+💎 Target Pos: soluna: 0.0000 | SOL: 55.0000
+💎 Your Pos: soluna: 0.0000 | SOL: 3.2000
+🔗 🔍 View Tx - Your Solscan | Target Tx
+[15:57] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (65oUVfQe)
+🎯 Target: 20260125_C5JXfmK
+🏁 Starting SOL balance: 7.46 SOL ($601.50 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 5 | Target Tx 1 | Target Tx 5
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 11.69 SOL ($942.56 USD) on your wallet
+💎 Total SOL balance: 27.35 SOL ($2205.45 USD) (6 Active Positions)
+Obraz
+[15:58] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (B67psXUZ)
+🆕 BidAsk 1-Sided Position | soluna-SOL
+🎯 Target: 20251126_9iGhFppB
+💰 MC: $2,400,113.778 | Age: 16h ago
+🪐 Jup Score: 90
+💎 Target Pos: soluna: 0.0000 | SOL: 40.0000
+💎 Your Pos: soluna: 0.0000 | SOL: 3.0000
+🔗 🔍 View Tx - Your Solscan | Target Tx
+[16:09] 
+APL.
+ Valhalla Bot: Swapped 30 soluna (2qT8JVotQ2C1gKbqpuqNatkpSBWxiKHbXkCyTqH9pump). https://solscan.io/tx/HGm1gWz6DHr1MLC9Najv81qfzzF6qqzPohjR4pxMDrG2uNT5ety4w4DzRQrFuZeCAHEafHB9UJ7qFFpYrkKmmvy
+[16:10] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (B3WTgMX7)
+🆕 BidAsk 1-Sided Position | soluna-SOL
+🎯 Target: 20260125_2eWqo
+💰 MC: $2,104,460.008 | Age: 16h ago
+🪐 Jup Score: 90
+💎 Target Pos: soluna: 0.0000 | SOL: 20.0000
+💎 Your Pos: soluna: 0.0000 | SOL: 3.0200
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 4 | Target Tx 1 | Target Tx 4
+[16:10] 
+APL.
+ Valhalla Bot: Swapped 5684 soluna (2qT8JVotQ2C1gKbqpuqNatkpSBWxiKHbXkCyTqH9pump). https://solscan.io/tx/XJ6By6XbZNoa8ZbKekNoj4xGtiEoM8wVjhByrp71H1zdcEpmbxBHCP76DRFTws1SB1V8vzZf71anyq93JF3xs6a
+[16:10] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (Bf742mcy)
+🆕 BidAsk 1-Sided Position | soluna-SOL
+🎯 Target: 20251126_9iGhFppB
+💰 MC: $2,079,785.976 | Age: 16h ago
+🪐 Jup Score: 90
+💎 Target Pos: soluna: 0.0000 | SOL: 40.0000
+💎 Your Pos: soluna: 0.0000 | SOL: 3.0000
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 4 | Target Tx 1 | Target Tx 4
+[16:10] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (S7qoDRwk)
+🎯 Target: 20260125_2eWqo
+🏁 Starting SOL balance: 5.37 SOL ($423.85 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 2 | Target Tx 1 | Target Tx 2
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 8.50 SOL ($670.91 USD) on your wallet
+💎 Total SOL balance: 27.38 SOL ($2161.04 USD) (7 Active Positions)
+Obraz
+[16:11] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (B67psXUZ)
+🎯 Target: 20251126_9iGhFppB
+🏁 Starting SOL balance: 5.37 SOL ($425.73 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan | Target Tx
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 8.43 SOL ($668.33 USD) on your wallet
+💎 Total SOL balance: 27.37 SOL ($2170.07 USD) (7 Active Positions)
+Obraz
+[16:15] 
+APL.
+ Valhalla Bot: Swapped 909 testicle (4TyZGqRLG3VcHTGMcLBoPUmqYitMVojXinAmkL8xpump). https://solscan.io/tx/2zE9BBWpZRkemhqPtxs434GnXSpfasyhZXVUsiXzMKkmmrpKZBZwuhjYTNRDKWjyMkQmzNqMrcP5HsKpwFBZcFkY
+[16:15] 
+APL.
+ Valhalla Bot: Swapped 221 Wojak  (8J69rbLTzWWgUJziFY8jeu5tDwEPBwUz4pKBMr5rpump). https://solscan.io/tx/64tY97FMcX6NhXMGAhLLyU8Ac6w2g66MWAc9RYDngXu8gp4BgeevZBkdowUTEgr9Q7krbbVUKfvwx15QohirPujM
+[16:16] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (6ZRx5CYU)
+🎯 Target: 20251126_9iGhFppB
+🏁 Starting SOL balance: 5.31 SOL ($420.82 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 2 | Target Tx 1 | Target Tx 2
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 7.39 SOL ($585.66 USD) on your wallet
+💎 Total SOL balance: 27.36 SOL ($2168.29 USD) (7 Active Positions)
+Obraz
+[16:16] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (8994VBAS)
+🎯 Target: 20251126_9iGhFppB
+🏁 Starting SOL balance: 7.39 SOL ($584.46 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 2 | Target Tx 1 | Target Tx 2
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 9.49 SOL ($752.08 USD) on your wallet
+💎 Total SOL balance: 27.36 SOL ($2164.23 USD) (6 Active Positions)
+Obraz
+[16:39] 
+APL.
+ Valhalla Bot: Swapped 1463 soluna (2qT8JVotQ2C1gKbqpuqNatkpSBWxiKHbXkCyTqH9pump). https://solscan.io/tx/4Nax4yfJ3VVccjU72Aftg4zhUp9VFurW1xLH2oh4PBy635yVQXLCRZxg5bY1FprDQ7YvW5eTBgSTYAgXmNYRKk1G
+[16:42] 
+APL.
+ Valhalla Bot: Swapped 164 WAR (8opvqaWysX1oYbXuTL8PHaoaTiXD69VFYAX4smPebonk). https://solscan.io/tx/zZxhJUoPVtDYTjL4tDnD37ahyhtM5diZVb24tmLpW74NjuN47dyxevnarTjbfLPbqLTiRHWvZnG4v5zQ82XADFC
+[16:43] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (3u2d4G6T)
+🎯 Target: 20260127_3WrPRi
+🏁 Starting SOL balance: 9.56 SOL ($765.74 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 2 | Target Tx 1 | Target Tx 2
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 12.70 SOL ($1017.24 USD) on your wallet
+💎 Total SOL balance: 27.46 SOL ($2199.17 USD) (5 Active Positions)
+Obraz
+[16:48] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (FMioKxW4)
+🆕 BidAsk 1-Sided Position | WAR-SOL
+🎯 Target: 20260127_3WrPRi
+💰 MC: $37,238,982.979 | Age: 3w ago
+🪐 Jup Score: 89
+💎 Target Pos: WAR: 0.0000 | SOL: 5.6505
+💎 Your Pos: WAR: 0.0000 | SOL: 2.5427
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 3 | Target Tx 1 | Target Tx 3
+[16:54] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (EASURK4W)
+🆕 BidAsk 1-Sided Position | BIG-SOL
+🎯 Target: 20260125_2eWqo
+💰 MC: $508,532.533 | Age: 11h ago
+🪐 Jup Score: 84
+💎 Target Pos: Something Big Is Happening: 0.0000 | SOL: 20.0000
+💎 Your Pos: Something Big Is Happening: 0.0000 | SOL: 3.0200
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 3 | Target Tx 1 | Target Tx 3
+[16:56] 
+APL.
+ Valhalla Bot: Swapped 85 soluna (2qT8JVotQ2C1gKbqpuqNatkpSBWxiKHbXkCyTqH9pump). https://solscan.io/tx/5FkmMmswzRwPnp6CGxCx58TbdHgi7jMMMfDhywq1Sv69LYd7roDsNn1RBA76stntF4ruNWe1XPBpVsy7zcmnqccR
+[16:57] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (BUeWH73d)
+🆕 BidAsk 1-Sided Position | soluna-SOL
+🎯 Target: 20260125_2eWqo
+💰 MC: $2,493,601.713 | Age: 17h ago
+🪐 Jup Score: 90
+💎 Target Pos: soluna: 0.0000 | SOL: 25.0000
+💎 Your Pos: soluna: 0.0000 | SOL: 3.0200
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 4 | Target Tx 1 | Target Tx 4
+[16:57] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (B3WTgMX7)
+🎯 Target: 20260125_2eWqo
+🏁 Starting SOL balance: 6.95 SOL ($555.93 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 3 | Target Tx 1 | Target Tx 3
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 10.08 SOL ($806.10 USD) on your wallet
+💎 Total SOL balance: 30.55 SOL ($2442.89 USD) (7 Active Positions)
+Obraz
+[17:01] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (HsfHviAN)
+🆕 BidAsk 1-Sided Position | soluna-SOL
+🎯 Target: 20260125_2eWqo
+💰 MC: $2,497,938.485 | Age: 17h ago
+🪐 Jup Score: 91
+💎 Target Pos: soluna: 0.0000 | SOL: 25.0000
+💎 Your Pos: soluna: 0.0000 | SOL: 3.0200
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 4 | Target Tx 1 | Target Tx 4
+[17:02] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (BUeWH73d)
+🎯 Target: 20260125_2eWqo
+🏁 Starting SOL balance: 6.94 SOL ($552.98 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 3 | Target Tx 1 | Target Tx 3
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 10.08 SOL ($803.17 USD) on your wallet
+💎 Total SOL balance: 27.46 SOL ($2188.20 USD) (6 Active Positions)
+Obraz
+[17:04] 
+APL.
+ Valhalla Bot: Swapped 79 soluna (2qT8JVotQ2C1gKbqpuqNatkpSBWxiKHbXkCyTqH9pump). https://solscan.io/tx/28Ca8eKnkudp4rtwZzEWM2aqrhcWtXPq4G5PfWhrrjeC8DEip6p2vtDE9JkMP57hufRP3Uy4yZQMLvZyjhF4EiKw
+[17:04] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (75LwNAgj)
+🆕 BidAsk 1-Sided Position | soluna-SOL
+🎯 Target: 20251126_9iGhFppB
+💰 MC: $2,402,242.13 | Age: 17h ago
+🪐 Jup Score: 91
+💎 Target Pos: soluna: 0.0000 | SOL: 60.0000
+💎 Your Pos: soluna: 0.0000 | SOL: 3.0000
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 4 | Target Tx 1 | Target Tx 4
+[17:05] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (FMioKxW4)
+🎯 Target: 20260127_3WrPRi
+🏁 Starting SOL balance: 6.94 SOL ($553.26 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 2 | Target Tx 1 | Target Tx 2
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 9.58 SOL ($764.96 USD) on your wallet
+💎 Total SOL balance: 27.48 SOL ($2190.40 USD) (6 Active Positions)
+Obraz
+[17:05] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (Bf742mcy)
+🎯 Target: 20251126_9iGhFppB
+🏁 Starting SOL balance: 9.58 SOL ($764.96 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 3 | Target Tx 1 | Target Tx 3
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 12.71 SOL ($1014.89 USD) on your wallet
+💎 Total SOL balance: 27.48 SOL ($2194.19 USD) (5 Active Positions)
+Obraz
+[17:05] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (D34AJpfB)
+🆕 BidAsk 1-Sided Position | WAR-SOL
+🎯 Target: 20260127_3WrPRi
+💰 MC: $39,119,145.283 | Age: 3w ago
+🪐 Jup Score: 89
+💎 Target Pos: WAR: 0.0000 | SOL: 5.6504
+💎 Your Pos: WAR: 0.0000 | SOL: 2.5427
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 3 | Target Tx 1 | Target Tx 3
+[17:19] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (DKxey2XT)
+🆕 BidAsk 1-Sided Position | USELESS-SOL
+🎯 Target: 20260127_3WrPRi
+💰 MC: $31,001,138.674 | Age: 9mo ago
+🪐 Jup Score: 85
+💎 Target Pos: USELESS COIN: 0.0000 | SOL: 5.6002
+💎 Your Pos: USELESS COIN: 0.0000 | SOL: 2.5201
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 4 | Target Tx 1 | Target Tx 4
+[17:27] 
+APL.
+ Valhalla Bot: Swapped 3605 Goyim (9S8edqWxoWz5LYLnxWUmWBJnePg35WfdYQp7HQkUpump). https://solscan.io/tx/KwARcma2NKdXBLwF9gSt5okXHiyT1XMe1AuFoRpY2cEVQiKDqPW3C36tgnB46SDsP4Fmbu4jTC9yUDf9eUgy6m9
+[17:28] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (7muU31oW)
+🎯 Target: 20251126_9iGhFppB
+🏁 Starting SOL balance: 4.30 SOL ($344.77 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 3 | Target Tx 1 | Target Tx 3
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 6.46 SOL ($517.96 USD) on your wallet
+💎 Total SOL balance: 27.50 SOL ($2205.00 USD) (7 Active Positions)
+Obraz
+[17:34] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (DKxey2XT)
+🎯 Target: 20260127_3WrPRi
+🏁 Starting SOL balance: 6.46 SOL ($515.64 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 3 | Target Tx 1 | Target Tx 3
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 9.09 SOL ($726.20 USD) on your wallet
+💎 Total SOL balance: 27.51 SOL ($2197.39 USD) (6 Active Positions)
+Obraz
+[17:46] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (HzAsRWyV)
+🆕 BidAsk 1-Sided Position | USELESS-SOL
+🎯 Target: 20260127_3WrPRi
+💰 MC: $30,755,489.252 | Age: 9mo ago
+🪐 Jup Score: 86
+💎 Target Pos: USELESS COIN: 0.0000 | SOL: 5.6002
+💎 Your Pos: USELESS COIN: 0.0000 | SOL: 2.5201
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 4 | Target Tx 1 | Target Tx 4
+[17:51] 
+APL.
+ Valhalla Bot: Swapped 2330 Something Big Is Happening (Gz7VJWyQW6Uqt1Py5S2ZvtYNEFbP4Thmi31n5mx1pump). https://solscan.io/tx/3ZrD8ueU8EAP9RZUbUre2xcWEpKTzEcuAZJx8NF5HbsmajVCznpvsNYFzZoZh3aSDuMpKRvkV7XFccM1N4gb83gG
+[17:56] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (D34AJpfB)
+🎯 Target: 20260127_3WrPRi
+🏁 Starting SOL balance: 6.49 SOL ($512.58 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 2 | Target Tx 1 | Target Tx 2
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 9.12 SOL ($720.30 USD) on your wallet
+💎 Total SOL balance: 27.52 SOL ($2173.59 USD) (6 Active Positions)
+Obraz
+[17:56] 
+APL.
+ Valhalla Bot: Swapped 1 UNKNOWN (8opvqaWysX1oYbXuTL8PHaoaTiXD69VFYAX4smPebonk). https://solscan.io/tx/ZwHfZChRSNsoXtJLeboVThQd3CuivsGs5cPHee3CkoyUnj7gYTM5FHBwFJjdUa33ipmmWbqD5hqA5K2JiMRPzfz
+[18:01] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (22sfk5Tw)
+🆕 BidAsk 1-Sided Position | WAR-SOL
+🎯 Target: 20260127_3WrPRi
+💰 MC: $39,472,912.151 | Age: 3w ago
+🪐 Jup Score: 89
+💎 Target Pos: WAR: 0.0000 | SOL: 5.6060
+💎 Your Pos: WAR: 0.0000 | SOL: 2.5227
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 3 | Target Tx 1 | Target Tx 3
+[18:04] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (HzAsRWyV)
+🎯 Target: 20260127_3WrPRi
+🏁 Starting SOL balance: 6.51 SOL ($509.41 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 3 | Target Tx 1 | Target Tx 3
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 9.14 SOL ($715.21 USD) on your wallet
+💎 Total SOL balance: 27.48 SOL ($2150.44 USD) (6 Active Positions)
+Obraz
+[18:04] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (6TnzdVHy)
+🆕 BidAsk 1-Sided Position | USELESS-SOL
+🎯 Target: 20260127_3WrPRi
+💰 MC: $30,569,900.435 | Age: 9mo ago
+🪐 Jup Score: 85
+💎 Target Pos: USELESS COIN: 0.0000 | SOL: 5.6091
+💎 Your Pos: USELESS COIN: 0.0000 | SOL: 2.5241
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 4 | Target Tx 1 | Target Tx 4
+[18:10] 
+APL.
+ Valhalla Bot: Swapped 207 Something Big Is Happening (Gz7VJWyQW6Uqt1Py5S2ZvtYNEFbP4Thmi31n5mx1pump). https://solscan.io/tx/3VRuRTm4wzFcjfaZMHuMQHPfKpxAoCsGrSNiagyMCsbC9j6YFStVY4UTXrdYpqe3U7dk7nmwFq1L2PB9Fb4FP2Ap
+[18:12] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (EASURK4W)
+🎯 Target: 20260125_2eWqo
+🏁 Starting SOL balance: 6.50 SOL ($511.88 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 2 | Target Tx 1 | Target Tx 2
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 9.62 SOL ($757.57 USD) on your wallet
+💎 Total SOL balance: 27.50 SOL ($2165.73 USD) (6 Active Positions)
+Obraz
+[18:17] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (JCLKfKxw)
+🆕 BidAsk 1-Sided Position | BIG-SOL
+🎯 Target: 20260125_2eWqo
+💰 MC: $642,132.71 | Age: 13h ago
+🪐 Jup Score: 85
+💎 Target Pos: Something Big Is Happening: 0.0000 | SOL: 20.0000
+💎 Your Pos: Something Big Is Happening: 0.0000 | SOL: 3.0200
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 3 | Target Tx 1 | Target Tx 3
+[18:23] 
+APL.
+ Valhalla Bot: Swapped 16814 soluna (2qT8JVotQ2C1gKbqpuqNatkpSBWxiKHbXkCyTqH9pump). https://solscan.io/tx/5DhQe7NSZCwaZafWCvu3JzW4C5Re4QCuAWFdkXsKbSPVzyJeaJLbCJVS4EPUZjwEpAp5LD4azJWWpjifzowAyvoK
+[18:24] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (BpQWsiNc)
+🆕 BidAsk 1-Sided Position | soluna-SOL
+🎯 Target: 20260121_7tB8WHYK
+💰 MC: $2,002,966.674 | Age: 18h ago
+🪐 Jup Score: 91
+💎 Target Pos: soluna: 0.0000 | SOL: 55.0000
+💎 Your Pos: soluna: 0.0000 | SOL: 3.2000
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 3 | Target Tx 1 | Target Tx 3
+[18:24] 
+APL.
+ Valhalla Bot: Swapped 4325 soluna (2qT8JVotQ2C1gKbqpuqNatkpSBWxiKHbXkCyTqH9pump). https://solscan.io/tx/41zGoXN9ftdk9GzikLH3XavuMw7UF7DAz4Cmz7pwJopPaTakTazGSqoRJebvxtzGCoKVF5ErpKBt1P7Js2WmJTes
+[18:24] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (FFnvxxEZ)
+🎯 Target: 20260121_7tB8WHYK
+🏁 Starting SOL balance: 6.50 SOL ($516.95 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan | Target Tx
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 9.81 SOL ($780.19 USD) on your wallet
+💎 Total SOL balance: 27.57 SOL ($2190.00 USD) (6 Active Positions)
+Obraz
+[18:25] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (HsfHviAN)
+🎯 Target: 20260125_2eWqo
+🏁 Starting SOL balance: 6.54 SOL ($519.08 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 3 | Target Tx 1 | Target Tx 3
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 9.69 SOL ($769.10 USD) on your wallet
+💎 Total SOL balance: 30.66 SOL ($2433.13 USD) (7 Active Positions)
+Obraz
+[18:31] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (GjHoBJR5)
+🆕 BidAsk 1-Sided Position | soluna-SOL
+🎯 Target: 20260125_2eWqo
+💰 MC: $1,884,369.995 | Age: 18h ago
+🪐 Jup Score: 91
+💎 Target Pos: soluna: 0.0000 | SOL: 20.0000
+💎 Your Pos: soluna: 0.0000 | SOL: 3.0200
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 3 | Target Tx 1 | Target Tx 3
+[18:36] 
+APL.
+ Valhalla Bot: Swapped 40 copper inu (61Wj56QgGyyB966T7YsMzEAKRLcMvJpDbPzjkrCZc4Bi). https://solscan.io/tx/3ypo5TczXBApUgs5QoEHbBK1e75NbXwqrAoPvtk4Z9q19rW2CLtF4kAGntAsSupuFznsYPgSGT5MkV9wPt3fp6aT
+[18:37] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (oAHPLNxu)
+🎯 Target: 20260125_2eWqo
+🏁 Starting SOL balance: 6.58 SOL ($524.89 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan | Target Tx
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 9.66 SOL ($770.58 USD) on your wallet
+💎 Total SOL balance: 27.57 SOL ($2198.37 USD) (6 Active Positions)
+Obraz
+[18:44] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (9BG2iECH)
+🆕 Spot 1-Sided Position | BIG-SOL
+🎯 Target: 20260125_C5JXfmK
+💰 MC: $756,155.418 | Age: 13h ago
+🪐 Jup Score: 85
+💎 Target Pos: Something Big Is Happening: 0.0000 | SOL: 2.0000
+💎 Your Pos: Something Big Is Happening: 0.0000 | SOL: 4.0000
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 5 | Target Tx 1 | Target Tx 5
+[18:44] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (DB53GNRi)
+🆕 Spot 1-Sided Position | BIG-SOL
+🎯 Target: 20260125_C5JXfmK
+💰 MC: $805,405.358 | Age: 13h ago
+🪐 Jup Score: 85
+💎 Target Pos: Something Big Is Happening: 0.0000 | SOL: 1.0000
+💎 Your Pos: Something Big Is Happening: 0.0000 | SOL: 2.0000
+🔗 🔍 View Tx - Your Solscan | Target Tx
+[18:45] 
+APL.
+ Valhalla Bot: Swapped 360 Something Big Is Happening (Gz7VJWyQW6Uqt1Py5S2ZvtYNEFbP4Thmi31n5mx1pump). https://solscan.io/tx/2sDTFvCMAm9nL7GrLRcCkeAvPqTAnvJaKHccoTxw6woB2pN8CMEbYiaCTHmLZjWjHcJjQS55vAEvjHshCNFE9TNH
+[18:45] 
+APL.
+ Valhalla Bot: Swapped 27287 Something Big Is Happening (Gz7VJWyQW6Uqt1Py5S2ZvtYNEFbP4Thmi31n5mx1pump). https://solscan.io/tx/5ZKHjesWrGTqeiBBHB5VgEbR3c9sST9ysHSn3ggYqWAC7thsGtebvq31hTdfKQT8eGypHaM6xauenKAopVKrfo93
+[18:46] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (4GMymUHQ)
+🆕 Spot 1-Sided Position | BIG-SOL
+🎯 Target: 20260125_C5JXfmK
+💰 MC: $794,526.89 | Age: 13h ago
+🪐 Jup Score: 85
+💎 Target Pos: Something Big Is Happening: 0.0000 | SOL: 2.0000
+💎 Your Pos: Something Big Is Happening: 0.0000 | SOL: 4.0000
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 5 | Target Tx 1 | Target Tx 5
+[18:46] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (9BG2iECH)
+🎯 Target: 20260125_C5JXfmK
+🏁 Starting SOL balance: 3.42 SOL ($270.83 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 4 | Target Tx 1 | Target Tx 4
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 7.61 SOL ($602.64 USD) on your wallet
+💎 Total SOL balance: 27.68 SOL ($2192.23 USD) (7 Active Positions)
+Obraz
+[18:47] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (DB53GNRi)
+🎯 Target: 20260125_C5JXfmK
+🏁 Starting SOL balance: 7.61 SOL ($602.64 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan | Target Tx
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 9.77 SOL ($773.69 USD) on your wallet
+💎 Total SOL balance: 27.68 SOL ($2192.15 USD) (6 Active Positions)
+Obraz
+[18:47] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (HXZLogs4)
+🆕 Spot 1-Sided Position | BIG-SOL
+🎯 Target: 20260125_C5JXfmK
+💰 MC: $828,608.604 | Age: 13h ago
+🪐 Jup Score: 85
+💎 Target Pos: Something Big Is Happening: 0.0000 | SOL: 1.0000
+💎 Your Pos: Something Big Is Happening: 0.0000 | SOL: 2.0000
+🔗 🔍 View Tx - Your Solscan | Target Tx
+[18:48] 
+APL.
+ Valhalla Bot: Swapped 1739 Something Big Is Happening (Gz7VJWyQW6Uqt1Py5S2ZvtYNEFbP4Thmi31n5mx1pump). https://solscan.io/tx/AHs8GKsKBBkprYN14DcnnNELyPTcvGcjrrxG1Vmr6FbRui9XRLBt8WX3V1gsu3oZrwgWw7xHdpEuMmAF1MMWuG7
+[18:49] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (7Eb8NuJf)
+🆕 Spot 1-Sided Position | BIG-SOL
+🎯 Target: 20260125_C5JXfmK
+💰 MC: $873,948.442 | Age: 13h ago
+🪐 Jup Score: 85
+💎 Target Pos: Something Big Is Happening: 0.0000 | SOL: 1.0000
+💎 Your Pos: Something Big Is Happening: 0.0000 | SOL: 2.0000
+🔗 🔍 View Tx - Your Solscan | Target Tx
+[18:49] 
+APL.
+ Valhalla Bot: Swapped 121 Something Big Is Happening (Gz7VJWyQW6Uqt1Py5S2ZvtYNEFbP4Thmi31n5mx1pump). https://solscan.io/tx/HDUWXwFjoAe5i2YTcM2DT8qPgX3ov5NX1PaEs1cZn3qRsDxTWSB47KEJFKsSUWKxGk8FD1heTY4FfSYmkKBxdSP
+[18:49] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (5YdEuxz1)
+🆕 Spot 1-Sided Position | BIG-SOL
+🎯 Target: 20260125_C5JXfmK
+💰 MC: $853,232.283 | Age: 13h ago
+🪐 Jup Score: 85
+💎 Target Pos: Something Big Is Happening: 0.0000 | SOL: 2.0000
+💎 Your Pos: Something Big Is Happening: 0.0000 | SOL: 4.0000
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 5 | Target Tx 1 | Target Tx 5
+[18:50] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (HXZLogs4)
+🎯 Target: 20260125_C5JXfmK
+🏁 Starting SOL balance: 3.52 SOL ($279.28 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan | Target Tx
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 5.62 SOL ($445.38 USD) on your wallet
+💎 Total SOL balance: 27.72 SOL ($2196.77 USD) (7 Active Positions)
+Obraz
+[18:50] 
+APL.
+ Valhalla Bot: Swapped 810 Something Big Is Happening (Gz7VJWyQW6Uqt1Py5S2ZvtYNEFbP4Thmi31n5mx1pump). https://solscan.io/tx/66uofzkxTxy3A28GDYRsTrNCwZ1oZbW7Fvp4GgrsAm39YsZC3UM2qr2j1xLSXoXNG5QAvNP8q2A9jn1Anp1QW2fB
+[18:50] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (4GMymUHQ)
+🎯 Target: 20260125_C5JXfmK
+🏁 Starting SOL balance: 3.56 SOL ($282.63 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 4 | Target Tx 1 | Target Tx 4
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 7.75 SOL ($614.19 USD) on your wallet
+💎 Total SOL balance: 27.84 SOL ($2210.51 USD) (7 Active Positions)
+Obraz
+[18:51] 
+APL.
+ Valhalla Bot: Swapped 78907 Something Big Is Happening (Gz7VJWyQW6Uqt1Py5S2ZvtYNEFbP4Thmi31n5mx1pump). https://solscan.io/tx/5LmaDTzPZfnHeVU6hJjQA2fhNvYdrypkEeL6P3FQh6p6j7zp6jPzK1et4cfEoNRhc1MaSTBcHfsaRbj41VzAwd2Z
+[18:52] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (JCLKfKxw)
+🎯 Target: 20260125_2eWqo
+🏁 Starting SOL balance: 3.56 SOL ($282.41 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 2 | Target Tx 1 | Target Tx 2
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 6.69 SOL ($530.45 USD) on your wallet
+💎 Total SOL balance: 27.76 SOL ($2200.76 USD) (7 Active Positions)
+Obraz
+[18:52] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (7Eb8NuJf)
+🎯 Target: 20260125_C5JXfmK
+🏁 Starting SOL balance: 6.69 SOL ($531.05 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan | Target Tx
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 8.76 SOL ($695.37 USD) on your wallet
+💎 Total SOL balance: 27.72 SOL ($2199.37 USD) (6 Active Positions)
+Obraz
+[18:53] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (6TnzdVHy)
+🎯 Target: 20260127_3WrPRi
+🏁 Starting SOL balance: 8.76 SOL ($695.37 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 3 | Target Tx 1 | Target Tx 3
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 11.40 SOL ($904.93 USD) on your wallet
+💎 Total SOL balance: 27.73 SOL ($2200.93 USD) (5 Active Positions)
+Obraz
+[18:53] 
+APL.
+ Valhalla Bot: Swapped 4609 Something Big Is Happening (Gz7VJWyQW6Uqt1Py5S2ZvtYNEFbP4Thmi31n5mx1pump). https://solscan.io/tx/4hUohX21XhCUScVMmYhJ9fG5quvsHnmn9w6dVxJ754atSsHSETsCYqwvxup4BpGzPhNjH4QzqXrwWC22ir6mu5Mp
+[18:54] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (5YdEuxz1)
+🎯 Target: 20260125_C5JXfmK
+🏁 Starting SOL balance: 11.40 SOL ($904.93 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 4 | Target Tx 1 | Target Tx 4
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 15.59 SOL ($1237.53 USD) on your wallet
+💎 Total SOL balance: 27.73 SOL ($2202.63 USD) (4 Active Positions)
+Obraz
+[18:55] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (9feojFYX)
+🆕 Spot 1-Sided Position | WhiteWhale-SOL
+🎯 Target: 20260125_C5JXfmK
+💰 MC: $81,027,323.753 | Age: 4mo ago
+🪐 Jup Score: 89
+💎 Target Pos: The White Whale: 0.0000 | SOL: 1.0000
+💎 Your Pos: The White Whale: 0.0000 | SOL: 2.0000
+🔗 🔍 View Tx - Your Solscan | Target Tx
+[18:56] 
+APL.
+ Valhalla Bot: Swapped 2 WAR (8opvqaWysX1oYbXuTL8PHaoaTiXD69VFYAX4smPebonk). https://solscan.io/tx/3mg9k7teRuAggNpai5EynUFbRty36EjQAL4FTFnYxLAxaSmxF824gQpHa7fKCgAKbj192mxy5sPJ6jJ3X83znpfz
+[18:56] 
+APL.
+ Valhalla Bot: Swapped 296 The White Whale (a3W4qutoEJA4232T2gwZUfgYJTetr96pU4SJMwppump). https://solscan.io/tx/iLL8jtKnWhg56Psjgyn64rC5TWnDj4cwcrnJ6mC48ovcMwGryt5MdyD4iP8PNAKjguXPRvaC8X3Q8z6UMuKMF96
+[18:57] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (22sfk5Tw)
+🎯 Target: 20260127_3WrPRi
+🏁 Starting SOL balance: 13.53 SOL ($1071.44 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 2 | Target Tx 1 | Target Tx 2
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 16.15 SOL ($1278.92 USD) on your wallet
+💎 Total SOL balance: 27.69 SOL ($2193.13 USD) (4 Active Positions)
+Obraz
+[18:58] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (9feojFYX)
+🎯 Target: 20260125_C5JXfmK
+🏁 Starting SOL balance: 16.15 SOL ($1278.92 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan | Target Tx
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 18.21 SOL ($1442.05 USD) on your wallet
+💎 Total SOL balance: 27.70 SOL ($2193.41 USD) (3 Active Positions)
+Obraz
+[18:58] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (6SwkHMkg)
+🆕 BidAsk 1-Sided Position | BIG-SOL
+🎯 Target: 20260125_2eWqo
+💰 MC: $811,324.494 | Age: 13h ago
+🪐 Jup Score: 85
+💎 Target Pos: Something Big Is Happening: 0.0000 | SOL: 20.0000
+💎 Your Pos: Something Big Is Happening: 0.0000 | SOL: 3.0200
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 3 | Target Tx 1 | Target Tx 3
+[18:58] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (EAusfdFQ)
+🆕 BidAsk 1-Sided Position | USELESS-SOL
+🎯 Target: 20260127_3WrPRi
+💰 MC: $32,010,836.974 | Age: 9mo ago
+🪐 Jup Score: 85
+💎 Target Pos: USELESS COIN: 0.0000 | SOL: 6.7500
+💎 Your Pos: USELESS COIN: 0.0000 | SOL: 3.0375
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 4 | Target Tx 1 | Target Tx 4
+[19:06] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (GZT5kYQi)
+🆕 BidAsk 1-Sided Position | TROLL-SOL
+🎯 Target: 20260127_3WrPRi
+💰 MC: $14,657,929.225 | Age: 9mo ago
+🪐 Jup Score: 80
+💎 Target Pos: TROLL: 0.0000 | SOL: 5.3768
+💎 Your Pos: TROLL: 0.0000 | SOL: 2.4196
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 4 | Target Tx 1 | Target Tx 4
+[19:16] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (A3rcfrJf)
+🆕 BidAsk 1-Sided Position | WAR-SOL
+🎯 Target: 20260127_3WrPRi
+💰 MC: $39,241,545.123 | Age: 3w ago
+🪐 Jup Score: 89
+💎 Target Pos: WAR: 0.0000 | SOL: 4.2783
+💎 Your Pos: WAR: 0.0000 | SOL: 1.9252
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 3 | Target Tx 1 | Target Tx 3
+[19:18] 
+APL.
+ Valhalla Bot: Swapped all TROLL (5UUH9RTDiSpq6HKS6bp4NdU9PNJpXRXuiw6ShBTBhgH2). https://solscan.io/tx/5rAyBouhG5YCq4oUyeMrAJwU1U9eXGxPYs6BvFfPX5UbmYdX8du1tm4DC9tD2FLsJLZ4vZX3HE21uMDL6MWemuys
+[19:19] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (GZT5kYQi)
+🎯 Target: 20260127_3WrPRi
+🏁 Starting SOL balance: 7.41 SOL ($588.43 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 3 | Target Tx 1 | Target Tx 3
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 9.94 SOL ($789.34 USD) on your wallet
+💎 Total SOL balance: 27.74 SOL ($2201.82 USD) (6 Active Positions)
+Obraz
+[19:19] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (CaJZahzR)
+🆕 BidAsk 1-Sided Position | TROLL-SOL
+🎯 Target: 20260127_3WrPRi
+💰 MC: $14,890,664.386 | Age: 9mo ago
+🪐 Jup Score: 80
+💎 Target Pos: TROLL: 0.0000 | SOL: 4.5022
+💎 Your Pos: TROLL: 0.0000 | SOL: 2.0260
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 4 | Target Tx 1 | Target Tx 4
+[19:20] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (jh1R8Uku)
+🆕 BidAsk 1-Sided Position | BIG-SOL
+🎯 Target: 20260121_7tB8WHYK
+💰 MC: $1,008,847.561 | Age: 14h ago
+🪐 Jup Score: 86
+💎 Target Pos: Something Big Is Happening: 0.0000 | SOL: 40.0000
+💎 Your Pos: Something Big Is Happening: 0.0000 | SOL: 3.2000
+🔗 🔍 View Tx - Your Solscan | Target Tx
+[19:29] 
+APL.
+ Valhalla Bot: Swapped 713 soluna (2qT8JVotQ2C1gKbqpuqNatkpSBWxiKHbXkCyTqH9pump). https://solscan.io/tx/4xav6D5BuaZKDsbtFH9QfRVTzumnpYfWgmuq217DKYrDrbu3VnXcd46fVJzXzeEJhEd49rpCmJiFpqfB7oWo5W9C
+[19:36] 
+APL.
+ Valhalla Bot: Swapped 72 Something Big Is Happening (Gz7VJWyQW6Uqt1Py5S2ZvtYNEFbP4Thmi31n5mx1pump). https://solscan.io/tx/4XhHa1TYdHmkkf2L7MD79iiYeyKSxHvUKJhGqtGRzGj3HtqFRYEnttiPK191Bm6bYZbepMwfksaWGNd4TG3z79nr
+[19:37] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (6SwkHMkg)
+🎯 Target: 20260125_2eWqo
+🏁 Starting SOL balance: 4.57 SOL ($363.13 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 2 | Target Tx 1 | Target Tx 2
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 7.67 SOL ($609.46 USD) on your wallet
+💎 Total SOL balance: 27.79 SOL ($2207.28 USD) (7 Active Positions)
+Obraz
+[19:39] 
+APL.
+ Valhalla Bot: Swapped 2511 soluna (2qT8JVotQ2C1gKbqpuqNatkpSBWxiKHbXkCyTqH9pump). https://solscan.io/tx/3BJfXYPcuScvaqTXDhQKUcJXmaR6GAHDQ4VTzjgv5f8TJARv9GqaAvMomyGfSmbYtWp72Ecz4mXKcJB83HS2ibAP
+[19:39] 
+APL.
+ Valhalla Bot:
+🫗 Partially Removed DLMM Liquidity (75LwNAgj)
+🎯 Target: 20251126_9iGhFppB
+📊 Amount: 100% of bin range
+🔗 🔍 View Tx - Your Solscan | Target Tx
+[19:41] 
+APL.
+ Valhalla Bot: Swapped 2603 Something Big Is Happening (Gz7VJWyQW6Uqt1Py5S2ZvtYNEFbP4Thmi31n5mx1pump). https://solscan.io/tx/5LTibdQ4fZkEMEjbNeh53FksKQrazGMfiVfNeKCox5iK5PW9BdWUCaErdwXtoqZELn4wkmQJ1JYwgB7qg5Tswyyd
+[19:41] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (59pmsFtu)
+🆕 BidAsk 1-Sided Position | BIG-SOL
+🎯 Target: 20260121_7tB8WHYK
+💰 MC: $1,169,118.956 | Age: 14h ago
+🪐 Jup Score: 86
+💎 Target Pos: Something Big Is Happening: 0.0000 | SOL: 40.0000
+💎 Your Pos: Something Big Is Happening: 0.0000 | SOL: 3.2000
+🔗 🔍 View Tx - Your Solscan | Target Tx
+[19:42] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (jh1R8Uku)
+🎯 Target: 20260121_7tB8WHYK
+🏁 Starting SOL balance: 7.73 SOL ($616.24 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan | Target Tx
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 11.05 SOL ($880.91 USD) on your wallet
+💎 Total SOL balance: 27.84 SOL ($2219.20 USD) (6 Active Positions)
+Obraz
+[19:45] 
+APL.
+ Valhalla Bot: Swapped 262 soluna (2qT8JVotQ2C1gKbqpuqNatkpSBWxiKHbXkCyTqH9pump). https://solscan.io/tx/4myrcuEThWgVPN2HVNCywvpqD1LTBKSyS2KNbsCYbxHux3buyc5pjUytj3AbSthPuZ3brvLd7JvfMwHKYxy525yS
+[19:45] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (BsMfgbrA)
+🆕 BidAsk 1-Sided Position | soluna-SOL
+🎯 Target: 20260125_2eWqo
+💰 MC: $1,895,295.561 | Age: 20h ago
+🪐 Jup Score: 91
+💎 Target Pos: soluna: 0.0000 | SOL: 25.0000
+💎 Your Pos: soluna: 0.0000 | SOL: 3.0200
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 3 | Target Tx 1 | Target Tx 3
+[19:46] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (GjHoBJR5)
+🎯 Target: 20260125_2eWqo
+🏁 Starting SOL balance: 7.80 SOL ($621.97 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 2 | Target Tx 1 | Target Tx 2
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 10.92 SOL ($870.76 USD) on your wallet
+💎 Total SOL balance: 27.84 SOL ($2220.24 USD) (6 Active Positions)
+Obraz
+[19:53] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (Hv3WVrp9)
+🆕 BidAsk 1-Sided Position | BIG-SOL
+🎯 Target: 20260125_2eWqo
+💰 MC: $1,031,370.932 | Age: 14h ago
+🪐 Jup Score: 87
+💎 Target Pos: Something Big Is Happening: 0.0000 | SOL: 25.0000
+💎 Your Pos: Something Big Is Happening: 0.0000 | SOL: 3.0200
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 3 | Target Tx 1 | Target Tx 3
+[19:59] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (EAusfdFQ)
+🎯 Target: 20260127_3WrPRi
+🏁 Starting SOL balance: 4.71 SOL ($375.48 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 3 | Target Tx 1 | Target Tx 3
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 7.86 SOL ($626.60 USD) on your wallet
+💎 Total SOL balance: 27.87 SOL ($2221.41 USD) (7 Active Positions)
+Obraz
+[20:02] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (Hv3WVrp9)
+🎯 Target: 20260125_2eWqo
+🏁 Starting SOL balance: 7.86 SOL ($627.07 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 2 | Target Tx 1 | Target Tx 2
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 10.96 SOL ($874.39 USD) on your wallet
+💎 Total SOL balance: 27.89 SOL ($2224.97 USD) (6 Active Positions)
+Obraz
+[20:06] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (HVu8MF1h)
+🆕 BidAsk 1-Sided Position | USELESS-SOL
+🎯 Target: 20260127_3WrPRi
+💰 MC: $33,400,034.987 | Age: 9mo ago
+🪐 Jup Score: 86
+💎 Target Pos: USELESS COIN: 0.0000 | SOL: 4.9518
+💎 Your Pos: USELESS COIN: 0.0000 | SOL: 2.2283
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 4 | Target Tx 1 | Target Tx 4
+[20:07] 
+APL.
+ Valhalla Bot: Swapped 1 UNKNOWN (Dz9mQ9NzkBcCsuGPFJ3r1bS4wgqKMHBPiVuniW8Mbonk). https://solscan.io/tx/2McQiiCCx8KcxGC5PjF4Ww4BmoJzrCXg3dQjCrP6pnL5AgFhSjz2Q1TPPbfGwDCC5KPpeEsuXz6dH2cscT81AZSN
+[20:15] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (HURiY69y)
+🆕 BidAsk 1-Sided Position | BIG-SOL
+🎯 Target: 20260125_2eWqo
+💰 MC: $899,977.224 | Age: 15h ago
+🪐 Jup Score: 87
+💎 Target Pos: Something Big Is Happening: 0.0000 | SOL: 25.0000
+💎 Your Pos: Something Big Is Happening: 0.0000 | SOL: 3.0200
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 3 | Target Tx 1 | Target Tx 3
+[20:29] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (B2EEZ5Ai)
+🆕 BidAsk 1-Sided Position | COPPERINU-SOL
+🎯 Target: 20260125_2eWqo
+💰 MC: $11,407,015.162 | Age: 2w ago
+🪐 Jup Score: 90
+💎 Target Pos: copper inu: 0.0000 | SOL: 20.0000
+💎 Your Pos: copper inu: 0.0000 | SOL: 3.0200
+🔗 🔍 View Tx - Your Solscan | Target Tx
+[20:35] 
+APL.
+ Valhalla Bot: ❌ Insufficient Effective Balance for Copy Trading ❌
+       Trade copied from: 20260125_2eWqo
+        Your SOL balance: 2.44 SOL
+        Total effective balance: 2.44 SOL
+        Required amount for this trade: 3.13 SOL (Trade Amount: 3.0200 SOL + Fees)
+
+        Your max copy trade amount setting: 3.02 SOL
+
+        You cannot open new positions until you add more SOL to your wallet.
+        If this required amount seems too high based on your settings, please check the target wallet's transaction size.
+        You may also lower your max trade amount in the settings.
+        Tx : Target Tx
+[20:42] 
+APL.
+ Valhalla Bot: Swapped 3217 Something Big Is Happening (Gz7VJWyQW6Uqt1Py5S2ZvtYNEFbP4Thmi31n5mx1pump). https://solscan.io/tx/3rNzQaKCyHE2BdMgvMRmmqgx5o6CxXz5MVeW9PWGeytGEdUYBFSAJr5KJXycHFafqFDRtHUYMHVRdwBEjdSZg8ZN
+[20:43] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (HURiY69y)
+🎯 Target: 20260125_2eWqo
+🏁 Starting SOL balance: 2.44 SOL ($195.13 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 2 | Target Tx 1 | Target Tx 2
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 5.55 SOL ($443.83 USD) on your wallet
+💎 Total SOL balance: 27.90 SOL ($2227.71 USD) (8 Active Positions)
+Obraz
+[20:44] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (6ohuFmhi)
+🆕 BidAsk 1-Sided Position | BIG-SOL
+🎯 Target: 20260125_2eWqo
+💰 MC: $862,509.802 | Age: 15h ago
+🪐 Jup Score: 87
+💎 Target Pos: Something Big Is Happening: 0.0000 | SOL: 25.0000
+💎 Your Pos: Something Big Is Happening: 0.0000 | SOL: 3.0200
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 3 | Target Tx 1 | Target Tx 3
+[20:44] 
+APL.
+ Valhalla Bot: Swapped 115387 Something Big Is Happening (Gz7VJWyQW6Uqt1Py5S2ZvtYNEFbP4Thmi31n5mx1pump). https://solscan.io/tx/n338zrQPJ9Lc8hgBhKkBHxvbwcywt7Lnh1Q2vUUFZQfQRGxM6CKL3p8ANos3uwp2RCbgafpgECDEeK23tEfSdu2
+[20:46] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (59pmsFtu)
+🎯 Target: 20260121_7tB8WHYK
+🏁 Starting SOL balance: 2.45 SOL ($195.88 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan | Target Tx
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 5.82 SOL ($465.31 USD) on your wallet
+💎 Total SOL balance: 27.82 SOL ($2224.48 USD) (8 Active Positions)
+Obraz
+[20:47] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (B2EEZ5Ai)
+🎯 Target: 20260125_2eWqo
+🏁 Starting SOL balance: 5.82 SOL ($465.69 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan | Target Tx
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 8.90 SOL ($712.14 USD) on your wallet
+💎 Total SOL balance: 27.88 SOL ($2228.95 USD) (7 Active Positions)
+Obraz
+[20:49] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (3Qm9xdDa)
+🆕 BidAsk 1-Sided Position | BIG-SOL
+🎯 Target: 20260121_7tB8WHYK
+💰 MC: $716,753.046 | Age: 15h ago
+🪐 Jup Score: 87
+💎 Target Pos: Something Big Is Happening: 0.0000 | SOL: 40.0000
+💎 Your Pos: Something Big Is Happening: 0.0000 | SOL: 3.2000
+🔗 🔍 View Tx - Your Solscan | Target Tx
+[20:53] 
+APL.
+ Valhalla Bot: Swapped 774 soluna (2qT8JVotQ2C1gKbqpuqNatkpSBWxiKHbXkCyTqH9pump). https://solscan.io/tx/2co7iPnWsipsBAEGiBkPLaKNdqTWJCWyoEsqprstna7jeeND1YfMwhdSdG8TkA5W3bHb5Gsj3CJgCHQCxMfDkRJR
+[20:55] 
+APL.
+ Valhalla Bot: Swapped 11825 soluna (2qT8JVotQ2C1gKbqpuqNatkpSBWxiKHbXkCyTqH9pump). https://solscan.io/tx/CJfDQNvCHycK1aJVMci18ZJBVcQpKDehrxEdU9km3bu8VRBiNVap3mW9Qhb2abCa4WGpE2jJrjPrZtRsZQWUHZe
+[20:57] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (BsMfgbrA)
+🎯 Target: 20260125_2eWqo
+🏁 Starting SOL balance: 5.67 SOL ($451.90 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 2 | Target Tx 1 | Target Tx 2
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 8.78 SOL ($699.77 USD) on your wallet
+💎 Total SOL balance: 27.96 SOL ($2228.64 USD) (7 Active Positions)
+Obraz
+[20:58] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (CRD4Vy58)
+🆕 BidAsk 1-Sided Position | soluna-SOL
+🎯 Target: 20260125_2eWqo
+💰 MC: $1,484,214.606 | Age: 21h ago
+🪐 Jup Score: 91
+💎 Target Pos: soluna: 0.0000 | SOL: 25.0000
+💎 Your Pos: soluna: 0.0000 | SOL: 3.0200
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 3 | Target Tx 1 | Target Tx 3
+[20:59] 
+APL.
+ Valhalla Bot: Swapped all soluna (2qT8JVotQ2C1gKbqpuqNatkpSBWxiKHbXkCyTqH9pump). https://solscan.io/tx/4h1Uun3ADd3s7XNrDCcot13fErASoD6BQMeFBJHjAPtGKZndJgyfvfK5ga1b7dGAwbT9R7723oxMAbXzwwFNdT1o
+[21:00] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (H4ydSW1W)
+🆕 BidAsk 1-Sided Position | soluna-SOL
+🎯 Target: 20260125_2eWqo
+💰 MC: $1,597,055.182 | Age: 21h ago
+🪐 Jup Score: 91
+💎 Target Pos: soluna: 0.0000 | SOL: 25.0000
+💎 Your Pos: soluna: 0.0000 | SOL: 3.0200
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 3 | Target Tx 1 | Target Tx 3
+[21:01] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (CRD4Vy58)
+🎯 Target: 20260125_2eWqo
+🏁 Starting SOL balance: 5.67 SOL ($452.07 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 2 | Target Tx 1 | Target Tx 2
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 8.78 SOL ($699.85 USD) on your wallet
+💎 Total SOL balance: 27.99 SOL ($2231.34 USD) (7 Active Positions)
+Obraz
+[21:02] 
+APL.
+ Valhalla Bot: Swapped 9728 soluna (2qT8JVotQ2C1gKbqpuqNatkpSBWxiKHbXkCyTqH9pump). https://solscan.io/tx/3ibmYKw6CJbTgnfDWvpW8CtUikic9zzJ1Qb7fbzFkwUc2sqX4P16rRsQUrEm4WvLYssQQvcdxNbzo84qYwESMPPe
+[21:03] 
+APL.
+ Valhalla Bot: Swapped 1039 soluna (2qT8JVotQ2C1gKbqpuqNatkpSBWxiKHbXkCyTqH9pump). https://solscan.io/tx/tc9iQ65ynUNcnn7X4GCsyUyEjzA9ksLLTcP51ZwoGwrGY4uHX4ghhBD2utgzZGecRPaiL94y4RkW5JLSqv8AJAg
+[21:03] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (FsRjW7rD)
+🆕 BidAsk 1-Sided Position | LIQUID-SOL
+🎯 Target: 20260125_2eWqo
+💰 MC: $863,515.419 | Age: 3d ago
+🪐 Jup Score: 80
+💎 Target Pos: Meme Liquid: 0.0000 | SOL: 20.0000
+💎 Your Pos: Meme Liquid: 0.0000 | SOL: 3.0200
+🔗 🔍 View Tx - Your Solscan | Target Tx
+[21:04] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (75LwNAgj)
+🎯 Target: 20251126_9iGhFppB
+🏁 Starting SOL balance: 5.67 SOL ($452.01 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 3 | Target Tx 1 | Target Tx 3
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 8.72 SOL ($695.16 USD) on your wallet
+💎 Total SOL balance: 30.99 SOL ($2470.19 USD) (8 Active Positions)
+Obraz
+[21:05] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (8AN5knEX)
+🆕 BidAsk 1-Sided Position | soluna-SOL
+🎯 Target: 20251126_9iGhFppB
+💰 MC: $1,611,734.349 | Age: 21h ago
+🪐 Jup Score: 91
+💎 Target Pos: soluna: 0.0000 | SOL: 30.0000
+💎 Your Pos: soluna: 0.0000 | SOL: 3.0000
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 4 | Target Tx 1 | Target Tx 4
+[21:07] 
+APL.
+ Valhalla Bot: ❌ Insufficient Effective Balance for Copy Trading ❌
+       Trade copied from: 20251126_9iGhFppB
+        Your SOL balance: 2.54 SOL
+        Total effective balance: 2.54 SOL
+        Required amount for this trade: 3.17 SOL (Trade Amount: 3.0000 SOL + Fees)
+
+        Your max copy trade amount setting: 3.00 SOL
+
+        You cannot open new positions until you add more SOL to your wallet.
+        If this required amount seems too high based on your settings, please check the target wallet's transaction size.
+        You may also lower your max trade amount in the settings.
+        Tx : Target Tx 1 | Target Tx 3
+[21:15] 
+APL.
+ Valhalla Bot: Swapped 40581 Something Big Is Happening (Gz7VJWyQW6Uqt1Py5S2ZvtYNEFbP4Thmi31n5mx1pump). https://solscan.io/tx/3nH5Q7agcXM2S7LCfFhSUnbuhcqHKjLqJYNbHL6hHva26CJjucHdYokWjP92iRUd61o412EL1hShhnUdMsXpye4y
+[21:16] 
+APL.
+ Valhalla Bot: Swapped all Meme Liquid (71mfKdePwyWXtiF1mqu2aaCdMKnKuN664z2vEM2Xpump). https://solscan.io/tx/jFcvYRatKATYUvGWY7T6nia54pGDRKPaVKh6BFaYMKeQHFzBwDNACxxSpuCU6vxt34ZmYWA98mxwUSvHEcSv7Af
+[21:16] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (7dFG5j66)
+🆕 BidAsk 1-Sided Position | LIQUID-SOL
+🎯 Target: 20260125_2eWqo
+💰 MC: $924,358.252 | Age: 3d ago
+🪐 Jup Score: 80
+💎 Target Pos: Meme Liquid: 0.0000 | SOL: 20.0000
+💎 Your Pos: Meme Liquid: 0.0000 | SOL: 3.0200
+🔗 🔍 View Tx - Your Solscan | Target Tx
+[21:16] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (6ohuFmhi)
+🎯 Target: 20260125_2eWqo
+🏁 Starting SOL balance: 2.54 SOL ($203.17 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 2 | Target Tx 1 | Target Tx 2
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 5.64 SOL ($449.96 USD) on your wallet
+💎 Total SOL balance: 28.01 SOL ($2234.74 USD) (8 Active Positions)
+Obraz
+[21:16] 
+APL.
+ Valhalla Bot: Swapped 104 WAR (8opvqaWysX1oYbXuTL8PHaoaTiXD69VFYAX4smPebonk). https://solscan.io/tx/3KgVKt2h34H2gp9ooNgFCJmszU29eRs7get6gbaxzxLnqmiAyUidz45TgLG3avwZQ2tKgFSvgKTkdX1VcCJwvMb4
+[21:17] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (G6wENvHi)
+🆕 BidAsk 1-Sided Position | BIG-SOL
+🎯 Target: 20260125_2eWqo
+💰 MC: $679,439.156 | Age: 16h ago
+🪐 Jup Score: 87
+💎 Target Pos: Something Big Is Happening: 0.0000 | SOL: 25.0000
+💎 Your Pos: Something Big Is Happening: 0.0000 | SOL: 3.0200
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 3 | Target Tx 1 | Target Tx 3
+[21:17] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (FsRjW7rD)
+🎯 Target: 20260125_2eWqo
+🏁 Starting SOL balance: 5.64 SOL ($451.14 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan | Target Tx
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 8.71 SOL ($694.71 USD) on your wallet
+💎 Total SOL balance: 28.00 SOL ($2239.86 USD) (7 Active Positions)
+Obraz
+[21:18] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (A3rcfrJf)
+🎯 Target: 20260127_3WrPRi
+🏁 Starting SOL balance: 5.64 SOL ($449.85 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 2 | Target Tx 1 | Target Tx 2
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 7.66 SOL ($609.97 USD) on your wallet
+💎 Total SOL balance: 28.01 SOL ($2230.42 USD) (7 Active Positions)
+Obraz
+[21:19] 
+APL.
+ Valhalla Bot: Swapped 12 TROLL (5UUH9RTDiSpq6HKS6bp4NdU9PNJpXRXuiw6ShBTBhgH2). https://solscan.io/tx/BfixS7UA89WhjVGeiQDWG1DEQPrv917cHVhsNK1QAJnKk6ExE1bzPJJp7pUg4smvX1WDc85UccKA3Y2yRHhm9a9
+[21:21] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (CaJZahzR)
+🎯 Target: 20260127_3WrPRi
+🏁 Starting SOL balance: 4.56 SOL ($363.16 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 3 | Target Tx 1 | Target Tx 3
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 6.70 SOL ($533.59 USD) on your wallet
+💎 Total SOL balance: 28.02 SOL ($2231.14 USD) (7 Active Positions)
+Obraz
+[21:22] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (2mcGjLww)
+🆕 BidAsk 1-Sided Position | WAR-SOL
+🎯 Target: 20260127_3WrPRi
+💰 MC: $38,325,939.577 | Age: 3w ago
+🪐 Jup Score: 89
+💎 Target Pos: WAR: 0.0000 | SOL: 5.7387
+💎 Your Pos: WAR: 0.0000 | SOL: 2.5824
+🔗 🔍 View Tx - Your Solscan 1 | Your Solscan 3 | Target Tx 1 | Target Tx 3
+[21:28] 
+APL.
+ Valhalla Bot:
+🔓 Opened New DLMM Position! (CJV1SPre)
+🆕 BidAsk 1-Sided Position | LIQUID-SOL
+🎯 Target: 20260125_2eWqo
+💰 MC: $1,059,245.776 | Age: 3d ago
+🪐 Jup Score: 80
+💎 Target Pos: Meme Liquid: 0.0000 | SOL: 25.0000
+💎 Your Pos: Meme Liquid: 0.0000 | SOL: 3.0200
+🔗 🔍 View Tx - Your Solscan | Target Tx
+[21:29] 
+APL.
+ Valhalla Bot:
+🔐 Closed DLMM Position! (7dFG5j66)
+🎯 Target: 20260125_2eWqo
+🏁 Starting SOL balance: 4.03 SOL ($318.85 USD) on your wallet
+🔗 🔍 View Tx - Your Solscan | Target Tx
+📊 🔍 View Position History - Your Metlex | Target Metlex
+🔚 Ending SOL balance: 7.10 SOL ($561.75 USD) on your wallet
+💎 Total SOL balance: 28.01 SOL ($2215.88 USD) (7 Active Positions)
+Obraz
+[21:44] 
+APL.
+ Valhalla Bot: Swapped 3301 Something Big Is Happening (Gz7VJWyQW6Uqt1Py5S2ZvtYNEFbP4Thmi31n5mx1pump). https://solscan.io/tx/yiDj3FuRavZ8hYJ2scerVGRRNaBkdUqhbuEaiYvLwgN65Ym9caaCCcafzMrS1udxxoN578nD9B1W9nxs7fsF8Zw
+[21:44] 
+APL.
+ Valhalla Bot:
+🫗 Partially Removed DLMM Liquidity (3Qm9xdDa)
+🎯 Target: 20260121_7tB8WHYK
+📊 Amount: 30% of bin range
+🔗 🔍 View Tx - Your Solscan | Target Tx

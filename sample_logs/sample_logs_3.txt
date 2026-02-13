@@ -1,0 +1,786 @@
+[03:16] APL. Valhalla Bot: 
+Skipping position due to token age restriction
+Target: 20260125_C5JXfmK
+Token 8hccoPdPATEXiZaoZXUJ6rTTDcfTDN3h5huTsn8rpump is less than your required age of 4h
+Token If aliens visit us: 8hccoPdPATEXiZaoZXUJ6rTTDcfTDN3h5huTsn8rpump (Age: 1h ago)
+Token SOL: So11111111111111111111111111111111111111112 (Age: Stable Token)
+
+To adjust this: type /settings_dlmm → More Copy Trade Settings → Set Minimum Token Age
+Target Tx: Target Tx 1 [https://solscan.io/tx/2qLSuNuWLh27WEnDxqtaQ7PHu1BZtMfLRJdGzty6UhNwDDvVBHkAwV5bbY24sc2X9QDMcuemkbpSq16Ehe4arhaH] | Target Tx 3 [https://solscan.io/tx/2BjGopdfSj1rA1mJh6a69wvyMnaah8PbZvZWAXSvRQ2AbHcFiRmAhvNx7wCUi9UM7onNz56HknLx8tAu3nydPZ82]
+
+[03:19] APL. Valhalla Bot: 
+Skipping position due to token age restriction
+Target: 20260125_C5JXfmK
+Token 8hccoPdPATEXiZaoZXUJ6rTTDcfTDN3h5huTsn8rpump is less than your required age of 4h
+Token If aliens visit us: 8hccoPdPATEXiZaoZXUJ6rTTDcfTDN3h5huTsn8rpump (Age: 1h ago)
+Token SOL: So11111111111111111111111111111111111111112 (Age: Stable Token)
+
+To adjust this: type /settings_dlmm → More Copy Trade Settings → Set Minimum Token Age
+Target Tx: Target Tx [https://solscan.io/tx/2ChqR4FuadZPijzrDRuxoY1EEf5Rh8JAiVPNnA5BQEbGdMwzB5gpLTu4kYgwZ1eZGzdxibHWVxgF83Cd6Gud5yCB]
+
+[03:19] APL. Valhalla Bot: 
+Skipping position due to SOL-only deposit restriction
+Target: 20260125_C5JXfmK
+This position requires both tokens (8hccoPdPATEXiZaoZXUJ6rTTDcfTDN3h5huTsn8rpump and So11111111111111111111111111111111111111112), but you have SOL-only deposits enabled.
+
+This setting ensures you only enter positions that require pure SOL deposits (single-sided).
+
+To adjust this: type /settings_dlmm → More Copy Trade Settings → Toggle SOL-Only Mode
+Target Tx: Target Tx [https://solscan.io/tx/2ChqR4FuadZPijzrDRuxoY1EEf5Rh8JAiVPNnA5BQEbGdMwzB5gpLTu4kYgwZ1eZGzdxibHWVxgF83Cd6Gud5yCB]
+
+[03:23] APL. Valhalla Bot:
+🔓 Opened New DLMM Position! (6w6YidRv)
+BidAsk 1-Sided Position | RATHBUN-SOL [https://dexscreener.com/solana/Bq9D4BbhVR4kL1qSdsYpQ5JM59q2LzUYzv7zFA1epump]
+Target: 20260121_7tB8WHYK [https://app.lpagent.io/portfolio?address=7tB8WHYKxSpxcL4UgaAcXFVfoLw37rJqfkBPnv8ChYQi]
+MC: $520,873.158 | Age: 4h ago
+Jup Score: 75
+Target Pos: MJ Rathbun: 0.0000 | SOL: 35.0000
+Your Pos: MJ Rathbun: 0.0000 | SOL: 2.8000
+View Tx - Your Solscan 1 [https://solscan.io/tx/4r2SAwsJsnXXh3zh51iJS1iQccNo7sVdYzvkG7esDz1q7cWXiHWxEvMT6FLsnKNpkhgoiFTkcpcmP4xQJ7LcF1ph] | Your Solscan 3 [https://solscan.io/tx/51B97AhYPVWpbnN71FqXTTRNCyWewXBQC7PPvTSzcHJasaKUb9ReUghnQe1JgfY62Nx1yEcMotsKSFxe8QuWZNeW] | Target Tx 1 [https://solscan.io/tx/4kSyajgxnit4rpF2ReQJzRovooosHiirJ158zQ2MDQSVZKMzfD2nNAPyw91YNpXpHJHFCXmAgysXKPAxMpnhc5xf] | Target Tx 3 [https://solscan.io/tx/4UiC78XTnPciX1N8rQyCwFoieDXHxPd9oAGhFGrRPg9jLBP4e6xcMXHzGKsZRZii5bQ3PVYPmaa948H8gCzb8mfe]
+
+[03:33] APL. Valhalla Bot: 
+Swapped 20452 The Fastest Runner (84hqMeGHxqegpvf4kGaRp38iVd145DSoEBwnmBTtpump). https://solscan.io/tx/355sZhHfhhzXZoKT1cQ9GNHmXpN3b7GJnE4sx4Gvj32UPERQiMs2fMiwjDzZkBtzxbPgU36tFYjAMou6yd1GqTTK [https://solscan.io/tx/355sZhHfhhzXZoKT1cQ9GNHmXpN3b7GJnE4sx4Gvj32UPERQiMs2fMiwjDzZkBtzxbPgU36tFYjAMou6yd1GqTTK]
+
+[03:34] APL. Valhalla Bot:
+🔐 Closed DLMM Position! (C7R6DtRx)
+Target: 20260125_2eWqo [https://app.lpagent.io/portfolio?address=2eWqouq9gmiEBgLdkGqzPT61VxfS3yW5kvzUCCbazmCV]
+Starting SOL balance: 9.00 SOL ($708.75 USD) on your wallet
+View Tx - Your Solscan 1 [https://solscan.io/tx/5kYMEAA6vHaHq17ztNvTwhyMUUsfDBNwXcjZ44irQMTzDteptAe1ZRVqp9wNnT3ThQkdvYJAisBRUH23tgUhH61s] | Your Solscan 2 [https://solscan.io/tx/5Hw8dgyCmRgnZtPzEXMYmqWAMiSBLv1PZvo3dMBd3PYf97RQYxGic8GngYCu7thagnAb79unZ55HNrrA4jenPaJm] | Target Tx 1 [https://solscan.io/tx/2uT7VHfnYEB7vu9mFWrGpgfPYmZsaWe1P96EJCCxPsdz2ccprVEG8DEVnAaQDjHfzkHUXhUQgEEcPjYtXz3EDicb] | Target Tx 2 [https://solscan.io/tx/5fXqR6LRARuF5z1uRwdfWSD2WeJDgNEDCr1gqsXorBVQjJvwqQJeWHSMMQCXc25MvMuSvwaVM7akSHRYTwfGHG6N]
+View Position History - Your Metlex [https://metlex.io/pnl2/5kYMEAA6vHaHq17ztNvTwhyMUUsfDBNwXcjZ44irQMTzDteptAe1ZRVqp9wNnT3ThQkdvYJAisBRUH23tgUhH61s] | Target Metlex [https://metlex.io/pnl2/2uT7VHfnYEB7vu9mFWrGpgfPYmZsaWe1P96EJCCxPsdz2ccprVEG8DEVnAaQDjHfzkHUXhUQgEEcPjYtXz3EDicb]
+Ending SOL balance: 12.13 SOL ($955.24 USD) on your wallet
+Total SOL balance: 28.08 SOL ($2210.99 USD) (6 Active Positions)
+
+[https://cdn.discordapp.com/attachments/1420300712427913227/1471696088548380724/output-C7R6iTNjenofGZpfATRuwnmxZR4Ts2syX3NyU7SQDtRx.jpeg?ex=6990880a&is=698f368a&hm=40aacfa2e879130916224e3f9d341ee0c041536ec9cf3c4664c022520912db3b&]
+
+[03:46] APL. Valhalla Bot: 
+Swapped 3075 MJ Rathbun (Bq9D4BbhVR4kL1qSdsYpQ5JM59q2LzUYzv7zFA1epump). https://solscan.io/tx/3EEjz9RG6UvLQmJgaaiH2DE54TDBjXaEkhr5njgg2Qi7UqvnXWCL36eU3tvLY4iDhjCF5P28gBAcRevfWTrA3rH5 [https://solscan.io/tx/3EEjz9RG6UvLQmJgaaiH2DE54TDBjXaEkhr5njgg2Qi7UqvnXWCL36eU3tvLY4iDhjCF5P28gBAcRevfWTrA3rH5]
+
+[04:00] APL. Valhalla Bot: 
+Swapped 1951 MJ Rathbun (Bq9D4BbhVR4kL1qSdsYpQ5JM59q2LzUYzv7zFA1epump). https://solscan.io/tx/3QEBuh1wvYNDipMG1Ez8LuzztNs2kwcbDUmWTm5tgDJbG9v4YugXLbVxRMLjRKZvopLMvCWrNvUW5avF6216rznL [https://solscan.io/tx/3QEBuh1wvYNDipMG1Ez8LuzztNs2kwcbDUmWTm5tgDJbG9v4YugXLbVxRMLjRKZvopLMvCWrNvUW5avF6216rznL]
+
+[04:01] APL. Valhalla Bot:
+🔐 Closed DLMM Position! (6w6YidRv)
+Target: 20260121_7tB8WHYK [https://app.lpagent.io/portfolio?address=7tB8WHYKxSpxcL4UgaAcXFVfoLw37rJqfkBPnv8ChYQi]
+Starting SOL balance: 12.16 SOL ($962.71 USD) on your wallet
+View Tx - Your Solscan 1 [https://solscan.io/tx/4eKckML7Cmzoz3Yu6nhKxgBKaZBhmSDr7cm4aLLPBXHVKNWCYvcQ53AckfjuLt3E1RV3UonsV6peiLatVj5nio6t] | Your Solscan 2 [https://solscan.io/tx/2rwwdTNsWt1rtgmhUjie85XYvXkcgbZdSuyUwuH96ME69ju4WneHiWcf2A9VimUy6Y8ktnteeqSd46k5mi2Q9XdV] | Target Tx 1 [https://solscan.io/tx/4iuJcU4ukf2zW7uPTQ3JVo4D6mJetYacPqoKn5E7HV4D3FzKzvnG6b2isoxqGfk5QK6hegiXynoDeex5zDxQadso] | Target Tx 2 [https://solscan.io/tx/33URCh65rHPKWo14ykpBd2fgxmNYpChQUVNrHHcVvog1Xptpf7v3JKVzXVXn54YLRSYAy3Hk9sMh1p9X5Q4XsL1G]
+View Position History - Your Metlex [https://metlex.io/pnl2/4eKckML7Cmzoz3Yu6nhKxgBKaZBhmSDr7cm4aLLPBXHVKNWCYvcQ53AckfjuLt3E1RV3UonsV6peiLatVj5nio6t] | Target Metlex [https://metlex.io/pnl2/4iuJcU4ukf2zW7uPTQ3JVo4D6mJetYacPqoKn5E7HV4D3FzKzvnG6b2isoxqGfk5QK6hegiXynoDeex5zDxQadso]
+Ending SOL balance: 15.05 SOL ($1191.36 USD) on your wallet
+Total SOL balance: 28.13 SOL ($2227.06 USD) (5 Active Positions)
+
+[https://cdn.discordapp.com/attachments/1420300712427913227/1471702888156889231/output-6w6YfhGSA98vnTqDzb4U1BSkYt4fp38Mva1b4f1EidRv.jpeg?ex=69908e5f&is=698f3cdf&hm=7547b571dd2e79374f6032b6b6f2a1ffeb4847a10d3f71cdee25f670c0e436fb&]
+
+[04:03] APL. Valhalla Bot:
+🔓 Opened New DLMM Position! (5k8ntnJM)
+BidAsk 1-Sided Position | LIZARD-SOL [https://dexscreener.com/solana/5T17aqgJ8cM39SNuVBu2LK2cq5MWUpZxcQnnuwNjpump]
+Target: 20260212_BPnaTk [https://app.lpagent.io/portfolio?address=BPnaTkPS7svcvYqRsZP8v5EfQ4L81K7JcxXofV8SVDzk]
+MC: $266,454.746 | Age: 4h ago
+Jup Score: 61
+Target Pos: Official Lizard Coin: 0.0000 | SOL: 20.0000
+Your Pos: Official Lizard Coin: 0.0000 | SOL: 1.6000
+View Tx - Your Solscan 1 [https://solscan.io/tx/3dzh3TZzkbtjBHS6owDTWnZbpwX4SdLCtzBoUkLWxVRPjiuTRPZ7pUMEF2ZjJQroigRbMDWy4ng9xzZKEe4kgGiv] | Your Solscan 4 [https://solscan.io/tx/2ryfEeaj2S3BkgagWccBVP6gYNkBhrDhykU16PAo7dfUG5pwbkn6iSpiEmFDGsWMfempQ62zDDxPvLcnHzE3Bhrx] | Target Tx 1 [https://solscan.io/tx/2RqFDeziC6xdiiESrD2crh3fcPh5THpNno8KAykotHV7GvykzWL5GjMKyvGy615HMjaADYpar1FqMhYAGprZJv1K] | Target Tx 4 [https://solscan.io/tx/3ocCKCunNE1NA5xFwg8Se9dGXBsqyJ5GLHqHPGTJXRkjSb3wQXeDKaVGLcmfb4g8DZyEdeKiYijGvEaJJeQ6NvSq]
+
+[04:05] APL. Valhalla Bot:
+🔓 Opened New DLMM Position! (ELwUmsnK)
+BidAsk 1-Sided Position | LIZARD-SOL [https://dexscreener.com/solana/5T17aqgJ8cM39SNuVBu2LK2cq5MWUpZxcQnnuwNjpump]
+Target: 20260212_BPnaTk [https://app.lpagent.io/portfolio?address=BPnaTkPS7svcvYqRsZP8v5EfQ4L81K7JcxXofV8SVDzk]
+MC: $352,309.966 | Age: 4h ago
+Jup Score: 61
+Target Pos: Official Lizard Coin: 0.0000 | SOL: 30.0000
+Your Pos: Official Lizard Coin: 0.0000 | SOL: 2.4000
+View Tx - Your Solscan 1 [https://solscan.io/tx/4civLCD2cWxLBJBg7jw2dBv7yaVLHubfMDVuNBtVzWHCzn86iQvU98ykUeGimryoMWFRUvZFVaot6fzTUxYLjpPK] | Your Solscan 4 [https://solscan.io/tx/PxwwtPjCz9snZ8fpZLBsTmFHmH6UeZaP9RWHyJWxNxdiBCGwUc2Yo3PqM2dhb7NLSmxL32LW4gbEmEhrUfmQuLK] | Target Tx 1 [https://solscan.io/tx/5A45MVH1NgugtCfnZzWuqQ26Q6JceYmfikGvqg5vjzV9bsV7Xamyyrq6Xwy77NRgmgjp7oon5EE5EpWxZ2t4PPPn] | Target Tx 4 [https://solscan.io/tx/3VK673tgnQ8yFKLsadWawy2oiz6Ky8u2vfo9ELnANBJ5HuGB594qtz5NqPTgbBVr6uqYgVtErP7nUayYH2DM7rF2]
+
+[04:06] APL. Valhalla Bot:
+🔓 Opened New DLMM Position! (mkDrNvcL)
+BidAsk 1-Sided Position | LIZARD-SOL [https://dexscreener.com/solana/5T17aqgJ8cM39SNuVBu2LK2cq5MWUpZxcQnnuwNjpump]
+Target: 20260121_7tB8WHYK [https://app.lpagent.io/portfolio?address=7tB8WHYKxSpxcL4UgaAcXFVfoLw37rJqfkBPnv8ChYQi]
+MC: $385,275.722 | Age: 4h ago
+Jup Score: 61
+Target Pos: Official Lizard Coin: 0.0000 | SOL: 44.0000
+Your Pos: Official Lizard Coin: 0.0000 | SOL: 3.2000
+View Tx - Your Solscan [https://solscan.io/tx/4HpAuy86TxdbYmkHdJc3RWJ6nicRDYsfCRKVTY1Hyh2NnPosg4v5U28JDRGxaRJw6EALu3LmTjfM9JvXPNqoyByL] | Target Tx [https://solscan.io/tx/63jyMCT8UJW5rpMoMoiJVQRhdETC8QRV3DBKCjLwtmyyEXGWpVBDdhEgmTHsKG8g7U9QuU5THeexjgpkCxuso15F]
+
+[04:06] APL. Valhalla Bot:
+🔐 Closed DLMM Position! (5k8ntnJM)
+Target: 20260212_BPnaTk [https://app.lpagent.io/portfolio?address=BPnaTkPS7svcvYqRsZP8v5EfQ4L81K7JcxXofV8SVDzk]
+Starting SOL balance: 13.31 SOL ($1051.09 USD) on your wallet
+View Tx - Your Solscan 1 [https://solscan.io/tx/3WYmh7hFJHGv1AGAixtnnzbN9aJkxrCS1NmnxtqvX3tow5roiZf7AvMokddK3tuF4Rx48RgBcQc8MJFoPcqq7xet] | Your Solscan 3 [https://solscan.io/tx/3HcaKdrp6Fbs5wxvwQQZUwVDnywtRT3d8p1hqu8UshDsSS2Fa2UYXgWo1PzHJeiWxQzMP2eBS6aqskcL12eGHfNX] | Target Tx 1 [https://solscan.io/tx/351TU8UmvndYzh411Nb3hEQBuHe99WssZ4oue6oNsvkKRBgzscM5mcFvrUY1qgo4RqvzZjsbqSqP3X3TBzaCxnM5] | Target Tx 3 [https://solscan.io/tx/4qgyXfgQGmaicCATsxdCZxi4uuTtsjx3R5hac39fXN6UMVzWVea2pQRUe2ZkKUiAXC3RHNRLVRDcjk6qZxwdx9R]
+View Position History - Your Metlex [https://metlex.io/pnl2/3WYmh7hFJHGv1AGAixtnnzbN9aJkxrCS1NmnxtqvX3tow5roiZf7AvMokddK3tuF4Rx48RgBcQc8MJFoPcqq7xet] | Target Metlex [https://metlex.io/pnl2/351TU8UmvndYzh411Nb3hEQBuHe99WssZ4oue6oNsvkKRBgzscM5mcFvrUY1qgo4RqvzZjsbqSqP3X3TBzaCxnM5]
+Ending SOL balance: 15.05 SOL ($1188.50 USD) on your wallet
+Total SOL balance: 28.13 SOL ($2220.87 USD) (5 Active Positions)
+
+[https://cdn.discordapp.com/attachments/1420300712427913227/1471704117138161726/output-5k8n7KuwYDuxLiXDpzeBw4QoEMqAMH6o7LE5jMhStnJM.jpeg?ex=69908f84&is=698f3e04&hm=7f6454a05d75d4713694247dbe31c14b23c8e706e4be448bb417eebf7b31bd3a&]
+
+[04:07] APL. Valhalla Bot:
+💰 Added DLMM Liquidity (ELwUmsnK)
+Target: 20260212_BPnaTk
+Amount: 0.3964 SOL
+Copied First Add Liquidity. This means they are adding more funds to a position they ALREADY have. Currently, you only copy the first ADDITIONAL liquidity transaction to prevent positions from becoming much larger than originally intended.
+
+To enable adding infinite liquidity, type /settings_dlmm → More Copy Trade Settings → Infinite Add Liquidity - Turn ON
+View Tx - Your Solscan 1 [https://solscan.io/tx/4bGJpN89xhscsEMiVLG3ePCcCH5kqrenb35Nma8trx8Uq4Zyor4t4vswbQx73h9BT2t4B4rixotBKwcVCmwzeFZq] | Your Solscan 3 [https://solscan.io/tx/2tZnWCCo6YjCchVCRx32mpAX1H6vkyVcRcpHJDKFH51Qc6vKzeGSrKkjvkSqAfmcGPfkbAUXBMnAvNh3Hg7cokYF] | Target Tx 1 [https://solscan.io/tx/2fD2f2MN8cWGJKk7ZzNawUZHx9hK7oUL6nxdz5T8mFNGqHzEd6hc7UZY9xBfauii6f6nZZtjQBd4myVoBsGFR8Ga] | Target Tx 3 [https://solscan.io/tx/4ZgiEja7EaVkeqh25KbErPYxz7bX3tTYU1TR97aipoFqq29Dv4C5KFSPqVigdF1fXH2qhhPvHuBk5X2rT1S1azdD]
+Note: This add liquidity operation has increased your position size by 17%
+
+[04:10] APL. Valhalla Bot: 
+Skipping position due to SOL-only deposit restriction
+Target: 20260125_C5JXfmK
+This position requires both tokens (5T17aqgJ8cM39SNuVBu2LK2cq5MWUpZxcQnnuwNjpump and So11111111111111111111111111111111111111112), but you have SOL-only deposits enabled.
+
+This setting ensures you only enter positions that require pure SOL deposits (single-sided).
+
+To adjust this: type /settings_dlmm → More Copy Trade Settings → Toggle SOL-Only Mode
+Target Tx: Target Tx [https://solscan.io/tx/4jHwEomYhAHxmsMxuymdmqig7kFxtRVrhdA1Gc4n4ZTcirAYgTZHkAkpWqdqgXGHdz6W345vgTvdqseDxRu9jZZx]
+
+[04:10] APL. Valhalla Bot:
+🔓 Opened New DLMM Position! (D5EyUGL6)
+Spot 1-Sided Position | LIZARD-SOL [https://dexscreener.com/solana/5T17aqgJ8cM39SNuVBu2LK2cq5MWUpZxcQnnuwNjpump]
+Target: 20260125_C5JXfmK [https://app.lpagent.io/portfolio?address=C5JXfmKo4sqTYYriBB9JSw6jE8cxQrAA4wRHb6p3HJYR]
+MC: $294,811.977 | Age: 4h ago
+Jup Score: 61
+Target Pos: Official Lizard Coin: 0.0000 | SOL: 2.0000
+Your Pos: Official Lizard Coin: 0.0000 | SOL: 4.0000
+View Tx - Your Solscan 1 [https://solscan.io/tx/4wEPEpAC9jaMg6zmRUuT3NANdU73joWc24iqHhC3FGNa4yJfJMPFk3uPe6cCgi8pzGRwoSNe8eTF328va9xuxJbt] | Your Solscan 5 [https://solscan.io/tx/3YHvgty4GS7V5nSLgVFdgEaYkxuc52ZVgaB61Fo5mZ9nLWqNXX9fa2BnqWnsSjYeVu4UP9gxjuveoj93H2nkhMbr] | Target Tx 1 [https://solscan.io/tx/2GRChu6DgkmUpvmaDTdA9SRq2vV7ykZrMPUQHa5rskS2VEUbjvB28FdihV6Sq46y9znU2VJnrAbcV8w4QfozpRzL] | Target Tx 5 [https://solscan.io/tx/5LNV87fRzj7yhDTVJgDoerCDk4urc7t72A8NuwSLsXJNb3Cg4YPA8LTtjCuYpmPRy8xGsoWtM12qRA7KKd8dsCA7]
+
+[04:11] APL. Valhalla Bot: 
+Swapped 436637 Official Lizard Coin (5T17aqgJ8cM39SNuVBu2LK2cq5MWUpZxcQnnuwNjpump). https://solscan.io/tx/u1b6QkfwmHsTSLmHCKHuYa31gtk79NPhe5nqoFZWNKQoJ1U25SR4yr62Lecpfxbr4eqdRVmdF9iiGqXomi3Z35H [https://solscan.io/tx/u1b6QkfwmHsTSLmHCKHuYa31gtk79NPhe5nqoFZWNKQoJ1U25SR4yr62Lecpfxbr4eqdRVmdF9iiGqXomi3Z35H]
+
+[04:12] APL. Valhalla Bot:
+🔓 Opened New DLMM Position! (Dw435e8C)
+BidAsk 1-Sided Position | LIZARD-SOL [https://dexscreener.com/solana/5T17aqgJ8cM39SNuVBu2LK2cq5MWUpZxcQnnuwNjpump]
+Target: 20260121_7tB8WHYK [https://app.lpagent.io/portfolio?address=7tB8WHYKxSpxcL4UgaAcXFVfoLw37rJqfkBPnv8ChYQi]
+MC: $308,005.046 | Age: 5h ago
+Jup Score: 61
+Target Pos: Official Lizard Coin: 0.0000 | SOL: 35.0000
+Your Pos: Official Lizard Coin: 0.0000 | SOL: 2.8000
+View Tx - Your Solscan [https://solscan.io/tx/33Gs9w7TYfSHQEyzTYF4d3asnjCSkcoopyvBtxGHE8qcvc7Fp9vBh85QaZk7s4k5LqdtqPbDYSpCVHPQtKno9bus] | Target Tx [https://solscan.io/tx/3ND1eeUzwikXWQMusPaCMLkgFeuZfNn89uXhG2mZHTGmcDdUjb7iuXmU6rk6yYNK3G5ZU6zYm9BXWNGhTpBawjab]
+
+[04:13] APL. Valhalla Bot:
+🔐 Closed DLMM Position! (mkDrNvcL)
+Target: 20260121_7tB8WHYK [https://app.lpagent.io/portfolio?address=7tB8WHYKxSpxcL4UgaAcXFVfoLw37rJqfkBPnv8ChYQi]
+Starting SOL balance: 4.66 SOL ($368.17 USD) on your wallet
+View Tx - Your Solscan [https://solscan.io/tx/2YHhmFtn7iSKkAS24WLFFDgFNLyDbx2xZPsT4dNZEvV3kcV9aPVaejrNkq5KwJJe8FaNUbNcJky6RcL9XdjgL9hm] | Target Tx [https://solscan.io/tx/4kCKSmdUKEkEqUUxX2P54C97269iocKLqZ42wDzVqQFGyT9w8LW2kXERC2k9p8GujZpsn2H8oWF94uJve9ANARSf]
+View Position History - Your Metlex [https://metlex.io/pnl2/2YHhmFtn7iSKkAS24WLFFDgFNLyDbx2xZPsT4dNZEvV3kcV9aPVaejrNkq5KwJJe8FaNUbNcJky6RcL9XdjgL9hm] | Target Metlex [https://metlex.io/pnl2/4kCKSmdUKEkEqUUxX2P54C97269iocKLqZ42wDzVqQFGyT9w8LW2kXERC2k9p8GujZpsn2H8oWF94uJve9ANARSf]
+Ending SOL balance: 7.95 SOL ($628.11 USD) on your wallet
+Total SOL balance: 28.18 SOL ($2226.07 USD) (7 Active Positions)
+
+[https://cdn.discordapp.com/attachments/1420300712427913227/1471705703453294807/output-mkDrGG1rUBGc7vacZJUMYzGqxBSCeVUHJEDE9rRNvcL.jpeg?ex=699090fe&is=698f3f7e&hm=da6d03307883ff56cc36b283f38b7cff8e0692c182ea4daf77b3e73971cdbe2b&]
+
+[04:21] APL. Valhalla Bot: 
+Swapped 5477 Official Lizard Coin (5T17aqgJ8cM39SNuVBu2LK2cq5MWUpZxcQnnuwNjpump). https://solscan.io/tx/2KRQqZPa3XebisZ6nWrtGkjT3xDCTvejSMqVRoBVNVpZWD9UqiqvFbDfSPCeUGYmk9GNVAEb5fDE9eHEz9fMrPkF [https://solscan.io/tx/2KRQqZPa3XebisZ6nWrtGkjT3xDCTvejSMqVRoBVNVpZWD9UqiqvFbDfSPCeUGYmk9GNVAEb5fDE9eHEz9fMrPkF]
+
+[04:22] APL. Valhalla Bot:
+🔐 Closed DLMM Position! (ELwUmsnK)
+Target: 20260212_BPnaTk [https://app.lpagent.io/portfolio?address=BPnaTkPS7svcvYqRsZP8v5EfQ4L81K7JcxXofV8SVDzk]
+Starting SOL balance: 5.09 SOL ($402.19 USD) on your wallet
+View Tx - Your Solscan 1 [https://solscan.io/tx/5gVLe4CBKs6BbUpP7MSLd5RWBdq5vqtvN36g7y72TU7TbwaJBQ6QkeBqTKpWPWw76oT2YhTZCHFkqDbWJed5PQbd] | Your Solscan 3 [https://solscan.io/tx/3ayobBdKRd1jns2k1KNYhea5hkhfdVGdARFNMgxZZrhvyDEtz8YBW7P8BoKxDjYzz48ggu8H6dzox3bh2Z5oFkkt] | Target Tx 1 [https://solscan.io/tx/4srnjFH9jeKWvsSCmG5PUqDXDfnq8XeFG6q9PdzU1s3xmDS3nD6qEDzv2ViJmNd8uTwTVZSzBpuD1DbwexyY2BB4] | Target Tx 3 [https://solscan.io/tx/4eEvgAuXQuWJqJ53bAwQd8ZMPV8TQC1pGYcnGK2WTEpaa3EFXaC1EeiSbsYju7iqgCL8LxPUYbL5WKBqWZoNU8Kv]
+View Position History - Your Metlex [https://metlex.io/pnl2/5gVLe4CBKs6BbUpP7MSLd5RWBdq5vqtvN36g7y72TU7TbwaJBQ6QkeBqTKpWPWw76oT2YhTZCHFkqDbWJed5PQbd] | Target Metlex [https://metlex.io/pnl2/4srnjFH9jeKWvsSCmG5PUqDXDfnq8XeFG6q9PdzU1s3xmDS3nD6qEDzv2ViJmNd8uTwTVZSzBpuD1DbwexyY2BB4]
+Ending SOL balance: 8.05 SOL ($636.08 USD) on your wallet
+Total SOL balance: 28.23 SOL ($2230.35 USD) (7 Active Positions)
+
+[https://cdn.discordapp.com/attachments/1420300712427913227/1471708134757240903/output-ELwUEoofrimWsMQUP5ft79ZJerDthj63JCJtz6kfmsnK.jpeg?ex=69909342&is=698f41c2&hm=219802a32e88da0dd3e708b300a86c43e40ed88095491bbf1e30eb64629b415c&]
+
+[04:22] APL. Valhalla Bot: 
+Swapped 9533 Official Lizard Coin (5T17aqgJ8cM39SNuVBu2LK2cq5MWUpZxcQnnuwNjpump). https://solscan.io/tx/2Fc19hvX9ybpwNFk7uA2CymCKf7rFRyU6taaN8tciuRcQbXrpBFjQudYPgxSdmFQLhfP2VYs5Ajmfu5HuYN1PKAb [https://solscan.io/tx/2Fc19hvX9ybpwNFk7uA2CymCKf7rFRyU6taaN8tciuRcQbXrpBFjQudYPgxSdmFQLhfP2VYs5Ajmfu5HuYN1PKAb]
+
+[04:27] APL. Valhalla Bot: 
+Swapped 252995 Official Lizard Coin (5T17aqgJ8cM39SNuVBu2LK2cq5MWUpZxcQnnuwNjpump). https://solscan.io/tx/5i2XfhALPzpFuTCcn7P4VU6B2m6wjXUC62fyfYsKxBTLddLpCi4rAZw1SP5JxHv5n5rvWM5cD6UbRGWFMfHryzpK [https://solscan.io/tx/5i2XfhALPzpFuTCcn7P4VU6B2m6wjXUC62fyfYsKxBTLddLpCi4rAZw1SP5JxHv5n5rvWM5cD6UbRGWFMfHryzpK]
+
+[04:27] APL. Valhalla Bot: 
+Swapped 8581 Official Lizard Coin (5T17aqgJ8cM39SNuVBu2LK2cq5MWUpZxcQnnuwNjpump). https://solscan.io/tx/26hAdLt1VGtbyVMDXqWue5sXdR9auBuqtt2Et4rSN6e21REuEuSEd4Z3YVeVvpP2ZJRtFoz3Nr45TJCdhR3L7Bht [https://solscan.io/tx/26hAdLt1VGtbyVMDXqWue5sXdR9auBuqtt2Et4rSN6e21REuEuSEd4Z3YVeVvpP2ZJRtFoz3Nr45TJCdhR3L7Bht]
+
+[04:27] APL. Valhalla Bot:
+🔓 Opened New DLMM Position! (AkP2rDtt)
+BidAsk 1-Sided Position | LIZARD-SOL [https://dexscreener.com/solana/5T17aqgJ8cM39SNuVBu2LK2cq5MWUpZxcQnnuwNjpump]
+Target: 20260121_7tB8WHYK [https://app.lpagent.io/portfolio?address=7tB8WHYKxSpxcL4UgaAcXFVfoLw37rJqfkBPnv8ChYQi]
+MC: $219,612.792 | Age: 5h ago
+Jup Score: 68
+Target Pos: Official Lizard Coin: 0.0000 | SOL: 25.0000
+Your Pos: Official Lizard Coin: 0.0000 | SOL: 2.0000
+View Tx - Your Solscan [https://solscan.io/tx/4izJ9fKNS9J1wJdrAHtmX2FYgCvpjygMLboURsurxd3pKvzocfNpX3M1Fn46FK26vT9RisynASMRLr1wxmBf1Knk] | Target Tx [https://solscan.io/tx/5yWf7iMoc6N5F9dLvTxE2nCAbQFhYpPtT1mGgtN51FBf8SSSDbS7Hv9B7MPt1B5B3Vj5eFUdq4tG1cGvsVPyEo2F]
+
+[04:28] APL. Valhalla Bot:
+🔐 Closed DLMM Position! (Dw435e8C)
+Target: 20260121_7tB8WHYK [https://app.lpagent.io/portfolio?address=7tB8WHYKxSpxcL4UgaAcXFVfoLw37rJqfkBPnv8ChYQi]
+Starting SOL balance: 8.11 SOL ($641.99 USD) on your wallet
+View Tx - Your Solscan [https://solscan.io/tx/4VK1c7jxs5kgftx3kUFyvNwiyibzjaccBi7TbYpNXioPzAzY2UZwJ6qCqxbp8EoWMWVvp9x9wuACmSc6XkgnGHx3] | Target Tx [https://solscan.io/tx/3vhz49YWE85B849o9QyskSuoUK9gmtHR7tzXJyywpzgFtud5z1kdxTWQpSsrzCrBeNYGRyusGmbmoofbtEJbysyA]
+View Position History - Your Metlex [https://metlex.io/pnl2/4VK1c7jxs5kgftx3kUFyvNwiyibzjaccBi7TbYpNXioPzAzY2UZwJ6qCqxbp8EoWMWVvp9x9wuACmSc6XkgnGHx3] | Target Metlex [https://metlex.io/pnl2/3vhz49YWE85B849o9QyskSuoUK9gmtHR7tzXJyywpzgFtud5z1kdxTWQpSsrzCrBeNYGRyusGmbmoofbtEJbysyA]
+Ending SOL balance: 11.00 SOL ($870.21 USD) on your wallet
+Total SOL balance: 28.27 SOL ($2236.15 USD) (6 Active Positions)
+
+[https://cdn.discordapp.com/attachments/1420300712427913227/1471709583990067398/output-Dw43PnBU1wEZDgzgWRTCuSdY6iH7eEkWFqZrhzGh5e8C.jpeg?ex=6990949b&is=698f431b&hm=23650ee2ab60019afa75bb16ab20def5b2b6e554e420348c3a8f00007baf02db&]
+
+[04:28] APL. Valhalla Bot:
+🔓 Opened New DLMM Position! (EpqevBQF)
+BidAsk 1-Sided Position | LIZARD-SOL [https://dexscreener.com/solana/5T17aqgJ8cM39SNuVBu2LK2cq5MWUpZxcQnnuwNjpump]
+Target: 20260212_BPnaTk [https://app.lpagent.io/portfolio?address=BPnaTkPS7svcvYqRsZP8v5EfQ4L81K7JcxXofV8SVDzk]
+MC: $240,205.432 | Age: 5h ago
+Jup Score: 68
+Target Pos: Official Lizard Coin: 0.0000 | SOL: 20.0000
+Your Pos: Official Lizard Coin: 0.0000 | SOL: 1.6000
+View Tx - Your Solscan 1 [https://solscan.io/tx/46UQKDKd7nSxVz2DQmYc1M1Cz61wP8JLXySsN1LB7BqZ2e2sfK7tzyn2iN2HT9Wh9BijbG5vFFEGbaVdFtsFJ4zg] | Your Solscan 3 [https://solscan.io/tx/2zC7x7PQCiegYEmUYy4Vdtyp6yD3z4XLgziUMAQSHsQv3fwPGkox8D66LMaZgAaYCD5opyeLQPQNwaJ5k3prtVau] | Target Tx 1 [https://solscan.io/tx/2xJBGGSZod27P34ssckGGC6edShkb2eg4AZEHHvxgELTf4yq1c1hgDpVTWFFKLxY5W4Ywu3Bv2csifYjq3earH7P] | Target Tx 3 [https://solscan.io/tx/2ebQpRz5ULLS7csPLgJPwRBPjhVREetVPwb6ifE4XVQKjAPLoMa45Wg7WuL3XeQGzBPjeYyjoW16aTMDXDZ2xHr3]
+
+[04:33] APL. Valhalla Bot:
+🔓 Opened New DLMM Position! (7hoRg57y)
+BidAsk 1-Sided Position | LIZARD-SOL [https://dexscreener.com/solana/5T17aqgJ8cM39SNuVBu2LK2cq5MWUpZxcQnnuwNjpump]
+Target: 20260121_7tB8WHYK [https://app.lpagent.io/portfolio?address=7tB8WHYKxSpxcL4UgaAcXFVfoLw37rJqfkBPnv8ChYQi]
+MC: $253,919.025 | Age: 5h ago
+Jup Score: 74
+Target Pos: Official Lizard Coin: 0.0000 | SOL: 25.0000
+Your Pos: Official Lizard Coin: 0.0000 | SOL: 2.0000
+View Tx - Your Solscan [https://solscan.io/tx/NLoYdWfH933j1dT7oRNSwhQbNxnuJwM691BeXAALzquHc34Yiewab8PqvLRNwnwCD1thnH742KH3uPhU6kJd9Ri] | Target Tx [https://solscan.io/tx/3KsdVMXcory3gvTHQ67Xih87jXjruVoBjkbPrJFduo4oqv5Bb94Vvm3JRuMEqV4CKrAvBuQ5hWgjESpwK8YK9qyT]
+
+[04:33] APL. Valhalla Bot:
+🔐 Closed DLMM Position! (AkP2rDtt)
+Target: 20260121_7tB8WHYK [https://app.lpagent.io/portfolio?address=7tB8WHYKxSpxcL4UgaAcXFVfoLw37rJqfkBPnv8ChYQi]
+Starting SOL balance: 7.29 SOL ($578.46 USD) on your wallet
+View Tx - Your Solscan [https://solscan.io/tx/3YJ5psCnLYCY2dmYoZvDzmxUuPCXkEWyFi25fxu947X8sP2h4YYDJAaU6p7bczKi4mHePk825B17DpbzD2baPek] | Target Tx [https://solscan.io/tx/5kNoYXV5c9T2dZuux7xjyyT8bQu9ocwnP6MzBfCKwyqBWURjaJ5cjR8suTqeZz6e2WwjgDKG9QPkGv6hYADCAJdk]
+View Position History - Your Metlex [https://metlex.io/pnl2/3YJ5psCnLYCY2dmYoZvDzmxUuPCXkEWyFi25fxu947X8sP2h4YYDJAaU6p7bczKi4mHePk825B17DpbzD2baPek] | Target Metlex [https://metlex.io/pnl2/5kNoYXV5c9T2dZuux7xjyyT8bQu9ocwnP6MzBfCKwyqBWURjaJ5cjR8suTqeZz6e2WwjgDKG9QPkGv6hYADCAJdk]
+Ending SOL balance: 9.35 SOL ($742.48 USD) on your wallet
+Total SOL balance: 28.27 SOL ($2245.25 USD) (7 Active Positions)
+
+[https://cdn.discordapp.com/attachments/1420300712427913227/1471710786534506706/output-AkP2dDRAVabcArYgjT9Do8MuGRAt8tutWcCNtGB6rDtt.jpeg?ex=699095ba&is=698f443a&hm=494688cd55b04d1faf39eec9e16cbb6933c442a0bce5a437b3d040f7fca94dc8&]
+
+[04:34] APL. Valhalla Bot: 
+Skipping position due to SOL-only deposit restriction
+Target: 20260212_BPnaTk
+This position requires both tokens (5T17aqgJ8cM39SNuVBu2LK2cq5MWUpZxcQnnuwNjpump and So11111111111111111111111111111111111111112), but you have SOL-only deposits enabled.
+
+This setting ensures you only enter positions that require pure SOL deposits (single-sided).
+
+To adjust this: type /settings_dlmm → More Copy Trade Settings → Toggle SOL-Only Mode
+Target Tx: Target Tx [https://solscan.io/tx/4uf9LDqJVUMYaZMuFJyN8txnUbTyNbhTjoTqUtxGMXi8W63gJjnVX4N8Hh3CZn8bJhunKXvVJ9MZox7QwKjVH48B]
+
+[04:34] APL. Valhalla Bot: 
+Swapped all Official Lizard Coin (5T17aqgJ8cM39SNuVBu2LK2cq5MWUpZxcQnnuwNjpump). https://solscan.io/tx/53ASMCmYMkyrE7gBSHA4UHzXEUKFZLrAcGThFvVmPJNmvjLCuh1sK8PibLttjeenp5mnRZ6BdPH48EzPka2cfbQ [https://solscan.io/tx/53ASMCmYMkyrE7gBSHA4UHzXEUKFZLrAcGThFvVmPJNmvjLCuh1sK8PibLttjeenp5mnRZ6BdPH48EzPka2cfbQ]
+
+[04:36] APL. Valhalla Bot: 
+Swapped 1527 Official Lizard Coin (5T17aqgJ8cM39SNuVBu2LK2cq5MWUpZxcQnnuwNjpump). https://solscan.io/tx/2gBV26zWTC86v5Zigp3bVwXsceXVenB3u8EpsRhFFztLgrkntCB1Hmz8U7q22Jk8VaZJWrDW6bBwPSr5UYsMsyRf [https://solscan.io/tx/2gBV26zWTC86v5Zigp3bVwXsceXVenB3u8EpsRhFFztLgrkntCB1Hmz8U7q22Jk8VaZJWrDW6bBwPSr5UYsMsyRf]
+
+[04:36] APL. Valhalla Bot:
+🔐 Closed DLMM Position! (EpqevBQF)
+Target: 20260212_BPnaTk [https://app.lpagent.io/portfolio?address=BPnaTkPS7svcvYqRsZP8v5EfQ4L81K7JcxXofV8SVDzk]
+Starting SOL balance: 7.29 SOL ($577.88 USD) on your wallet
+View Tx - Your Solscan 1 [https://solscan.io/tx/4CvpdQAszyseMnJnLyfumwHo1KJtSFmp69eoGJifAz3NSFiBVy4zfrNf2t8zNc2qC24SoHdPAjqr2wEKNJLA7ox1] | Your Solscan 2 [https://solscan.io/tx/2jQ7cWDXGhPZ4vv6g221okRQVn8zkyg1McrfAsANATr68anzVgGj4QUr3YrC8eNHg3adzQJyAFHK285shUupxwao] | Target Tx 1 [https://solscan.io/tx/4cn6e5dT7r5RWFsZ4tpe5sHM6LJf2v5jsxCJowxeXJ9KuQ8kK2bLGwYw955VCL3Jq2kRDGFpMQsGeXazGsrBf9pN] | Target Tx 2 [https://solscan.io/tx/iGLtoXUf3VPRARPUy6CzrL1sYssgsC6g2SVTiY4eGGcmMq9eAhh3Spvp2LnAP1QeyTc5cZq1S3t1CQWtPPxiDjy]
+View Position History - Your Metlex [https://metlex.io/pnl2/4CvpdQAszyseMnJnLyfumwHo1KJtSFmp69eoGJifAz3NSFiBVy4zfrNf2t8zNc2qC24SoHdPAjqr2wEKNJLA7ox1] | Target Metlex [https://metlex.io/pnl2/4cn6e5dT7r5RWFsZ4tpe5sHM6LJf2v5jsxCJowxeXJ9KuQ8kK2bLGwYw955VCL3Jq2kRDGFpMQsGeXazGsrBf9pN]
+Ending SOL balance: 8.97 SOL ($710.78 USD) on your wallet
+Total SOL balance: 28.33 SOL ($2245.07 USD) (7 Active Positions)
+
+[https://cdn.discordapp.com/attachments/1420300712427913227/1471711504096039066/output-EpqeA1KzbTmix43n5nEJZ74ytN6xyZEAmxcgk9umvBQF.jpeg?ex=69909665&is=698f44e5&hm=623ceba5088a7937d381deb2363ccad6161bb7ed4860b3fc41b29790093d1c86&]
+
+[04:36] APL. Valhalla Bot:
+🔓 Opened New DLMM Position! (9gtSbiQU)
+BidAsk 1-Sided Position | LIZARD-SOL [https://dexscreener.com/solana/5T17aqgJ8cM39SNuVBu2LK2cq5MWUpZxcQnnuwNjpump]
+Target: 20260212_BPnaTk [https://app.lpagent.io/portfolio?address=BPnaTkPS7svcvYqRsZP8v5EfQ4L81K7JcxXofV8SVDzk]
+MC: $346,784.167 | Age: 5h ago
+Jup Score: 74
+Target Pos: Official Lizard Coin: 0.0000 | SOL: 20.0000
+Your Pos: Official Lizard Coin: 0.0000 | SOL: 1.6000
+View Tx - Your Solscan 1 [https://solscan.io/tx/pCHHoR6b7C2b9x21tWAFb7Nganf1xAUJEH4sQMToE5cSJiSacQFX6rhs1TFFrQgzdnpKKxD9VY4LUdhkp24mfk3] | Your Solscan 4 [https://solscan.io/tx/4aswXaiPVwoRvVJ3F9vH8oJxTWey4xNmQdSTSXREFFP6o6qNXJHUddELdyAdMmbCAkzLNchCs5LPvWjcoWA46Kao] | Target Tx 1 [https://solscan.io/tx/2AMwMstabRUaGH1DYzT5GSrKU293gxzHqCcRdXG1zay4Yb63CM5QqEyABNjvLmrZf8Va2AQC1YLVw2XCeEwWyGq4] | Target Tx 4 [https://solscan.io/tx/4pVTJENFmTyrUu2229DmDes6PbBC2AaWwNqcf1xk8sbd7aLYH5qdK2zDRbFaFjhgSddGBURgHw9oJCfQWfrf7LGA]
+
+[04:37] APL. Valhalla Bot:
+🔐 Closed DLMM Position! (D5EyUGL6)
+Target: 20260125_C5JXfmK [https://app.lpagent.io/portfolio?address=C5JXfmKo4sqTYYriBB9JSw6jE8cxQrAA4wRHb6p3HJYR]
+Starting SOL balance: 8.97 SOL ($710.96 USD) on your wallet
+View Tx - Your Solscan 1 [https://solscan.io/tx/gwMjyo6WNRdqrXLo9X2nHYzVeJjCFHHtwuDYsHYknCkpZyiak9hyYPuTEKNGqtBTpPkngTeHitgsRFi17XFBYgn] | Your Solscan 4 [https://solscan.io/tx/5LXUD8to4abGxiUxvfKqYi4AAfCDFWXc14F9yLLY4WoWzoJN6RjzcvSMpfn6Zxm1G2ecFq6LEKzHKmL5iBBjRsVC] | Target Tx 1 [https://solscan.io/tx/2xEGkGtKN7cJE7arxmBR1maPsJNhzcGcCnDYitvHJffa4ov5urHoTfEUdU5zMMysY7dm5mvDTWVFi1nGPSSM2ABv] | Target Tx 4 [https://solscan.io/tx/3pqFUNMqRbws2xhehAoytkWBe4uDG6dysSm7swzTHBP81WkB949uu8njuzYcxwF8GXcg6QnbRk8YySmUGLYt9GHv]
+View Position History - Your Metlex [https://metlex.io/pnl2/gwMjyo6WNRdqrXLo9X2nHYzVeJjCFHHtwuDYsHYknCkpZyiak9hyYPuTEKNGqtBTpPkngTeHitgsRFi17XFBYgn] | Target Metlex [https://metlex.io/pnl2/2xEGkGtKN7cJE7arxmBR1maPsJNhzcGcCnDYitvHJffa4ov5urHoTfEUdU5zMMysY7dm5mvDTWVFi1nGPSSM2ABv]
+Ending SOL balance: 13.20 SOL ($1046.23 USD) on your wallet
+Total SOL balance: 28.34 SOL ($2246.02 USD) (6 Active Positions)
+
+[https://cdn.discordapp.com/attachments/1420300712427913227/1471711794501255423/output-D5Ey1wqiYt9D2uKLGY7bX14HSH9nNZN6a5KFUUbwUGL6.jpeg?ex=699096aa&is=698f452a&hm=31154be13839fcfb3974c0e481d53f8574ba7c2df33aac417080d13aba015849&]
+
+[04:40] APL. Valhalla Bot:
+🔓 Opened New DLMM Position! (3nHb4XW6)
+BidAsk 1-Sided Position | LIZARD-SOL [https://dexscreener.com/solana/5T17aqgJ8cM39SNuVBu2LK2cq5MWUpZxcQnnuwNjpump]
+Target: 20260125_C5JXfmK [https://app.lpagent.io/portfolio?address=C5JXfmKo4sqTYYriBB9JSw6jE8cxQrAA4wRHb6p3HJYR]
+MC: $360,523.554 | Age: 5h ago
+Jup Score: 74
+Target Pos: Official Lizard Coin: 0.0000 | SOL: 2.0000
+Your Pos: Official Lizard Coin: 0.0000 | SOL: 4.0000
+View Tx - Your Solscan 1 [https://solscan.io/tx/35mD1F4m5q5UJQ8yStNdP6M5ad2b54kDw3PR8atxFgy6ZNq8A25yJSh2EkNz5Vs3o2riUUwKnFEYVSkbGNfj2pmt] | Your Solscan 6 [https://solscan.io/tx/63h85UJoYJ9TLtnuuh8v8FFwwiEcem3W2FdkECS6QLvDRAQFGwpefCRdy2rdeQerACegyQqkPQvFh4SZizqSLn2y] | Target Tx 1 [https://solscan.io/tx/NMPBxtr24tEp7nPUB9FsPeNmG421YkY9bun2u9FSNNg5epgGDtdRN361hjFudDREsz8gTnTUTTEwfQwKvTd9Hfh] | Target Tx 6 [https://solscan.io/tx/iz8dAYVMWNdj8mVBVM8oW6qamD5VWV2J2Hw62tXhWdnh8qmsRbVJ6ncQJi6w1UXWB66U6HYDPjhistUFMA53nM1]
+
+[04:42] APL. Valhalla Bot:
+🔓 Opened New DLMM Position! (9GeqDkK3)
+Spot 1-Sided Position | LIZARD-SOL [https://dexscreener.com/solana/5T17aqgJ8cM39SNuVBu2LK2cq5MWUpZxcQnnuwNjpump]
+Target: 20260125_C5JXfmK [https://app.lpagent.io/portfolio?address=C5JXfmKo4sqTYYriBB9JSw6jE8cxQrAA4wRHb6p3HJYR]
+MC: $401,456.312 | Age: 5h ago
+Jup Score: 74
+Target Pos: Official Lizard Coin: 0.0000 | SOL: 2.0000
+Your Pos: Official Lizard Coin: 0.0000 | SOL: 4.0000
+View Tx - Your Solscan 1 [https://solscan.io/tx/5fKHarBPX7VXxb5Pvkx4p16otCxRgDivq9NsyGkPAX2K7nFDRygTrkKZdnyRQYGRCtgsyBbPKEmZq5A4d2UVAa5w] | Your Solscan 6 [https://solscan.io/tx/5P75voR26TwcPYdL8dGbWPGZ6kAwHiJcUpsS92XEZdvSTBnzpzMJHZX4W6QBB7JG5ZJd8kKgdKmEkig2Gk17E1sF] | Target Tx 1 [https://solscan.io/tx/5WhDTMtmSxUAP2DkZ6MzmPL1RhbtJaHcrwkxM38WCgKa4weeEzez6Ar7U4cKJG4EzGMA8exSsYY9KyhgwVDTD7dA] | Target Tx 6 [https://solscan.io/tx/67g5v4dD9ctDuAAdKPJYsbLj9DPiKeQSza1JQLfY8D7hvHs3jEXKnKsxpKUaJDF5HhCP1oRAiurCeic67yr9ZGDN]
+
+[04:43] APL. Valhalla Bot:
+🔐 Closed DLMM Position! (3nHb4XW6)
+Target: 20260125_C5JXfmK [https://app.lpagent.io/portfolio?address=C5JXfmKo4sqTYYriBB9JSw6jE8cxQrAA4wRHb6p3HJYR]
+Starting SOL balance: 7.24 SOL ($573.70 USD) on your wallet
+View Tx - Your Solscan 1 [https://solscan.io/tx/KnZsxjiuSuUuM1Jqm3aL3qEgyhKcp5WQTbmS8Hx6SSX9s8ssK583fMKBAsyNn24cfd6gMVSDfx6qG2SazSjNH3B] | Your Solscan 5 [https://solscan.io/tx/4UUvVnHFqLAkkXtK1m7NVoHVdrjjrqFR3gzLwrX8RU5HvyWpFEjFSoPe66Z4cToPavTyjy9wn6BLG93KCA9aqJni] | Target Tx 1 [https://solscan.io/tx/3rxyDKwwSqbLfYK8F7bvzf1nq8trgm8zfqFMPdZfdfFFZR4J3hDAw52KVcCdNFJsWr74iYTcrxYsVtHQW77AQ9Xo] | Target Tx 5 [https://solscan.io/tx/2a6wcL42cfkyCwPHpnoav7v7BBmrz6w3dn7PPXHGpojro33HrKmZHwe3TmHq5gsc9vMMDaVqD6E7ohs3TKRKpRtb]
+View Position History - Your Metlex [https://metlex.io/pnl2/KnZsxjiuSuUuM1Jqm3aL3qEgyhKcp5WQTbmS8Hx6SSX9s8ssK583fMKBAsyNn24cfd6gMVSDfx6qG2SazSjNH3B] | Target Metlex [https://metlex.io/pnl2/3rxyDKwwSqbLfYK8F7bvzf1nq8trgm8zfqFMPdZfdfFFZR4J3hDAw52KVcCdNFJsWr74iYTcrxYsVtHQW77AQ9Xo]
+Ending SOL balance: 11.48 SOL ($909.68 USD) on your wallet
+Total SOL balance: 28.34 SOL ($2245.56 USD) (7 Active Positions)
+
+[https://cdn.discordapp.com/attachments/1420300712427913227/1471713376601374760/output-3nHbzekKvBQMDdMxaYFEBTxx5fR5H6PtnNkWGcoF4XW6.jpeg?ex=69909824&is=698f46a4&hm=4b5ba5c191486dacde36c6d2a1be5f6599109c083919027ad86631f655c595fc&]
+
+[04:46] APL. Valhalla Bot: 
+Swapped 5224 Official Lizard Coin (5T17aqgJ8cM39SNuVBu2LK2cq5MWUpZxcQnnuwNjpump). https://solscan.io/tx/2kW5o5PfkKuB8HoyxUXufCs3AYqMEk4KJ4tKjrVL28bpvRHqDcGEsnS4ScqDZYPUkjwhUoQyxXKWkcrLBmNcXPuZ [https://solscan.io/tx/2kW5o5PfkKuB8HoyxUXufCs3AYqMEk4KJ4tKjrVL28bpvRHqDcGEsnS4ScqDZYPUkjwhUoQyxXKWkcrLBmNcXPuZ]
+
+[05:03] APL. Valhalla Bot: 
+Swapped 132008 Official Lizard Coin (5T17aqgJ8cM39SNuVBu2LK2cq5MWUpZxcQnnuwNjpump). https://solscan.io/tx/2v6BqosMDeKSyT9mkw28HoAEaCfvpCDeGfvbRLgh1AcTrK9jSTeS5yuHrbJjXD2yGxqe7EhiZKw7hXprBRYPSAvX [https://solscan.io/tx/2v6BqosMDeKSyT9mkw28HoAEaCfvpCDeGfvbRLgh1AcTrK9jSTeS5yuHrbJjXD2yGxqe7EhiZKw7hXprBRYPSAvX]
+
+[05:04] APL. Valhalla Bot:
+🔐 Closed DLMM Position! (9GeqDkK3)
+Target: 20260125_C5JXfmK [https://app.lpagent.io/portfolio?address=C5JXfmKo4sqTYYriBB9JSw6jE8cxQrAA4wRHb6p3HJYR]
+Starting SOL balance: 7.27 SOL ($575.13 USD) on your wallet
+View Tx - Your Solscan 1 [https://solscan.io/tx/4e91iRPBWTybu6iL9KoyokvskbA2xYrixE584KHMZUERkiqx2MGzVyth45E6EVwUpJs75tRgb41tcR44DMMKSLbd] | Your Solscan 5 [https://solscan.io/tx/3Vs9C2E7GTNmRiz8jmY5hWUHfUy3YwPhXgx1eDTnXaYdjCQyzEnFLrF8CEJmXGAgHGV15QMbJW6Urv7qyeVaqvwA] | Target Tx 1 [https://solscan.io/tx/4tpUBVcNmuF6TzR8bhZx8PigUu6HzcFCYDsFCVQViMv3gH3gPmybo3yJ1nQiJEzMPUdjh2RMGhCBmhrf4AFghfa5] | Target Tx 5 [https://solscan.io/tx/4w71KcTdoPpwzbVFzhTiNaBv1Yojv3YDQ1uZeJr4aKTFccLgTo32dez4KGkoJCo76aoh8ht4oK9yWVJYsUxDPfk]
+View Position History - Your Metlex [https://metlex.io/pnl2/4e91iRPBWTybu6iL9KoyokvskbA2xYrixE584KHMZUERkiqx2MGzVyth45E6EVwUpJs75tRgb41tcR44DMMKSLbd] | Target Metlex [https://metlex.io/pnl2/4tpUBVcNmuF6TzR8bhZx8PigUu6HzcFCYDsFCVQViMv3gH3gPmybo3yJ1nQiJEzMPUdjh2RMGhCBmhrf4AFghfa5]
+Ending SOL balance: 11.44 SOL ($905.02 USD) on your wallet
+Total SOL balance: 28.31 SOL ($2239.51 USD) (7 Active Positions)
+
+[https://cdn.discordapp.com/attachments/1420300712427913227/1471718739518029935/output-9Geq44fQrW1a1xPsKuKBuYzT179TMdeRhw5iXnj3DkK3.jpeg?ex=698ff462&is=698ea2e2&hm=2ff46fb5b31f26f297abaaad1c655bf3efb4b0fa596badbfec3d5c0f67921226&]
+
+[05:08] APL. Valhalla Bot: 
+Swapped 44375 Official Lizard Coin (5T17aqgJ8cM39SNuVBu2LK2cq5MWUpZxcQnnuwNjpump). https://solscan.io/tx/39gUmjhVP8yStKz6a1eAFNyHNU9BQZsCRuFS9zJsJxh69FAGD1eywGS8DrfvsMHmfDVNceHSYUFTd4n6kNapFHQE [https://solscan.io/tx/39gUmjhVP8yStKz6a1eAFNyHNU9BQZsCRuFS9zJsJxh69FAGD1eywGS8DrfvsMHmfDVNceHSYUFTd4n6kNapFHQE]
+
+[05:10] APL. Valhalla Bot:
+🔐 Closed DLMM Position! (9gtSbiQU)
+Target: 20260212_BPnaTk [https://app.lpagent.io/portfolio?address=BPnaTkPS7svcvYqRsZP8v5EfQ4L81K7JcxXofV8SVDzk]
+Starting SOL balance: 11.44 SOL ($903.19 USD) on your wallet
+View Tx - Your Solscan 1 [https://solscan.io/tx/4Rgcwa9NZij2pidE57n2Uesc2Ftv5wVMU6GoQnLa8u6ZzvS2EdidngeLPtEsKqFHtE5dTqEPwN7uRuPHKB9s3WA2] | Your Solscan 3 [https://solscan.io/tx/fbTeMCHmqfgCrAenmeBtcgQQgh1mXRKpVmZQnMnnWgXa2kvwLeoHGRQdWioKX1pumwmd9pfWCFToNUKFgmf3tqK] | Target Tx 1 [https://solscan.io/tx/jm8FaoXd83UWSWPdyiVbUkf6wq4RP2su8WrRCMG4ERZqN2iBv37wWDAjK6Kx46gGcqb6i3CvTDzEqFLKnzCxuj8] | Target Tx 3 [https://solscan.io/tx/4yq9yR2j1SZFFW29ibLLsWkd17Xv7JBy23b6TpkfD2hZ84VdENHo3Q1uMqmV5AnEXJgPYmTeDiwWMX58ddyk3ErV]
+View Position History - Your Metlex [https://metlex.io/pnl2/4Rgcwa9NZij2pidE57n2Uesc2Ftv5wVMU6GoQnLa8u6ZzvS2EdidngeLPtEsKqFHtE5dTqEPwN7uRuPHKB9s3WA2] | Target Metlex [https://metlex.io/pnl2/jm8FaoXd83UWSWPdyiVbUkf6wq4RP2su8WrRCMG4ERZqN2iBv37wWDAjK6Kx46gGcqb6i3CvTDzEqFLKnzCxuj8]
+Ending SOL balance: 13.18 SOL ($1041.60 USD) on your wallet
+Total SOL balance: 28.32 SOL ($2236.23 USD) (6 Active Positions)
+
+[https://cdn.discordapp.com/attachments/1420300712427913227/1471720051949437114/output-9gtSpop1mKrr1vdXo5ZQiiozThQe9JKTiiQqpHiabiQU.jpeg?ex=698ff59b&is=698ea41b&hm=7add3ee4059999246e58d8a58dc84e0a9b9ed631ba8cbd015b8c8b2a25e8edfd&]
+
+[05:27] APL. Valhalla Bot: 
+Swapped 550747 Official Lizard Coin (5T17aqgJ8cM39SNuVBu2LK2cq5MWUpZxcQnnuwNjpump). https://solscan.io/tx/2bmqB9ij45pUK6f3nRtjPaZYkS6DZarjGjuNCQT7YicNfVws5nCWmZ2XW3JHoq1N3LpyAXbwMFsDkbk1FqvP8rxG [https://solscan.io/tx/2bmqB9ij45pUK6f3nRtjPaZYkS6DZarjGjuNCQT7YicNfVws5nCWmZ2XW3JHoq1N3LpyAXbwMFsDkbk1FqvP8rxG]
+
+[05:28] APL. Valhalla Bot: 
+Rug Check Stop Loss Executed (DLMM) (7hoRg57y) (Copied From: 20260121_7tB8WHYK)
+
+Pair: 5T17aqgJ8cM39SNuVBu2LK2cq5MWUpZxcQnnuwNjpump/So11111111111111111111111111111111111111112
+Position: 7hoRzEgvdwLhfVrJNSPuphTQTDbbZ2o9XAFo9Uvvg57y
+Price Drop: 22.66%
+Rug Check Threshold: 20%
+
+Your Solscan [https://solscan.io/tx/4zaaNJnguyh8tCFRdsiDHBSQL2A3Qaj8SoJPFBBuYkTK3LraMk2SoNfDHrVzPKhY4gJDFusnXb5u64JebGcvTUZ3]
+Your Metlex [https://metlex.io/pnl2/4zaaNJnguyh8tCFRdsiDHBSQL2A3Qaj8SoJPFBBuYkTK3LraMk2SoNfDHrVzPKhY4gJDFusnXb5u64JebGcvTUZ3]
+
+[https://cdn.discordapp.com/attachments/1420300712427913227/1471724716732452998/output-7hoRzEgvdwLhfVrJNSPuphTQTDbbZ2o9XAFo9Uvvg57y.jpeg?ex=698ff9f3&is=698ea873&hm=8e2eab1aecc95b8f92a9558c96d52212672685ab59ef05136cefe73932cde60b&]
+
+[05:30] APL. Valhalla Bot: 
+Your position 7hoRzEgvdwLhfVrJNSPuphTQTDbbZ2o9XAFo9Uvvg57y was already closed (7hoRg57y)
+Target: 20260121_7tB8WHYK
+Target Tx [https://solscan.io/tx/rtir8Fr3SHeVGFm1E7MZxPYbAB6ufySy2gVjU6umiGBmiEE4uCk4qWeUQXnJzBRway2tcvpud9XoaJ1VNFXq51N]
+
+[06:44] APL. Valhalla Bot: 
+Skipping position due to token age restriction
+Target: 20260125_C5JXfmK
+Token EFt9JrrGyLWLU6Wc4oxfTjDKryENPrjbGgZ2V6x8pump is less than your required age of 4h
+Token helicator: EFt9JrrGyLWLU6Wc4oxfTjDKryENPrjbGgZ2V6x8pump (Age: 1h ago)
+Token SOL: So11111111111111111111111111111111111111112 (Age: Stable Token)
+
+To adjust this: type /settings_dlmm → More Copy Trade Settings → Set Minimum Token Age
+Target Tx: Target Tx 1 [https://solscan.io/tx/4xfCJ3NPzpY2gqmHEwjYhNiybdm6aSJwtirmoyKtHYoMhr3oPwuRhm9dFbFWJoQxhAhBfcLp4PsTryrWAEzpKnRX] | Target Tx 3 [https://solscan.io/tx/3941bBuKNsBBQ5JqKudHJtaTwTXaXXZ7XpAVwaHCgLaZDqh4mj7ebZ7uMNZg8w5qigeqMEjjwdJi7zevoDxC45JU]
+
+[09:00] APL. Valhalla Bot: 
+Skipping position due to token age restriction
+Target: 20260125_C5JXfmK
+Token 6NBVMyJ29Bt9UgwAXU1s9yZYZwkiCoTs74iPhMd9pump is less than your required age of 4h
+Token Nations: 6NBVMyJ29Bt9UgwAXU1s9yZYZwkiCoTs74iPhMd9pump (Age: 1h ago)
+Token SOL: So11111111111111111111111111111111111111112 (Age: Stable Token)
+
+To adjust this: type /settings_dlmm → More Copy Trade Settings → Set Minimum Token Age
+Target Tx: Target Tx 1 [https://solscan.io/tx/57PREmSDdBujCD5unAUwmuYk4wjra9VuYrhena81zcA7rGJPKC1hnTKNMNV1upoA43SHkqDizCuVyc2PLc7Ejfi9] | Target Tx 3 [https://solscan.io/tx/4emHtf2oGWSJQLaa2zLFNcjgaWWBrXPzneoABnsfz5Xi6aMLqcww7qCVD5bQyhD6MhxCAhxwGtDyg6VTk61QtAtM]
+
+[09:02] APL. Valhalla Bot: 
+Skipping position due to SOL-only deposit restriction
+Target: 20260125_C5JXfmK
+This position requires both tokens (6NBVMyJ29Bt9UgwAXU1s9yZYZwkiCoTs74iPhMd9pump and So11111111111111111111111111111111111111112), but you have SOL-only deposits enabled.
+
+This setting ensures you only enter positions that require pure SOL deposits (single-sided).
+
+To adjust this: type /settings_dlmm → More Copy Trade Settings → Toggle SOL-Only Mode
+Target Tx: Target Tx 1 [https://solscan.io/tx/4S74F28N22PoXAK8SqbsQHhr5C5M9n4bSZ4T2uuaQx5vPUJweTePdgxtivaxDo2HcV4BQNGD5Mpx2FbNj8Lq7fU4] | Target Tx 3 [https://solscan.io/tx/2dfqXJHGaXX1EixTDX6sybpkiCgXyWSQUhybPuh4vJMM4DURUCreCznd7Egy98PhC5n9wyEPHugRiCynjqvj8U2b]
+
+[09:02] APL. Valhalla Bot: 
+Skipping position due to token age restriction
+Target: 20260125_C5JXfmK
+Token 6NBVMyJ29Bt9UgwAXU1s9yZYZwkiCoTs74iPhMd9pump is less than your required age of 4h
+Token Nations: 6NBVMyJ29Bt9UgwAXU1s9yZYZwkiCoTs74iPhMd9pump (Age: 1h ago)
+Token SOL: So11111111111111111111111111111111111111112 (Age: Stable Token)
+
+To adjust this: type /settings_dlmm → More Copy Trade Settings → Set Minimum Token Age
+Target Tx: Target Tx 1 [https://solscan.io/tx/4S74F28N22PoXAK8SqbsQHhr5C5M9n4bSZ4T2uuaQx5vPUJweTePdgxtivaxDo2HcV4BQNGD5Mpx2FbNj8Lq7fU4] | Target Tx 3 [https://solscan.io/tx/2dfqXJHGaXX1EixTDX6sybpkiCgXyWSQUhybPuh4vJMM4DURUCreCznd7Egy98PhC5n9wyEPHugRiCynjqvj8U2b]
+
+[11:06] APL. Valhalla Bot:
+🔓 Opened New DLMM Position! (6YAygSvY)
+BidAsk 1-Sided Position | PsyopAnime-SOL [https://dexscreener.com/solana/2nP9yKQNSGQy851iyawDvBkzkK2R2aqKArQCKc2gpump]
+Target: 20251126_9iGhFppB [https://app.lpagent.io/portfolio?address=9iGhFppBYXJGKQ2fG4zTbNtmSrotoBg2XqRKNFdfQPef]
+MC: $4,704,099.264 | Age: 1mo ago
+Jup Score: 83
+Target Pos: PsyopAnime: 0.0000 | SOL: 12.5000
+Your Pos: PsyopAnime: 0.0000 | SOL: 2.5000
+View Tx - Your Solscan 1 [https://solscan.io/tx/5s6YQHd3mSbhD73isgHb4Hiqev6Ei4jpSpHWyWivg5dmq1AfB72agXkCJW4kfk7SnmgZQTcjaSby2F7ikfZdzHfB] | Your Solscan 4 [https://solscan.io/tx/5Wtiers9dUVAfjtuxnu2sGRmuFpaBq2fqgyPew6jQ4rBrLDg73ZnEg9gsDrVKyE1PguKdxwfGPTZjRwFEW1hXd1G] | Target Tx 1 [https://solscan.io/tx/4puinHn95MPELcp34xngY82nTFkHAkfme3qF5fX3U9J5VKZPHkoRMCSAqknZ9XxbaVvo4rRv8ukMoTuhQda8Pmyg] | Target Tx 4 [https://solscan.io/tx/3scG3PKAmmY3GQ6eTgkRoMGxAzk9xPbXpotnAftDNhWu62CByay6HQGWL3xmh325PeGkUTnN7K58UdzwPQu6zSmU]
+
+[11:07] APL. Valhalla Bot:
+🔐 Closed DLMM Position! (8rVoR92s)
+Target: 20251126_9iGhFppB [https://app.lpagent.io/portfolio?address=9iGhFppBYXJGKQ2fG4zTbNtmSrotoBg2XqRKNFdfQPef]
+Starting SOL balance: 15.19 SOL ($1213.07 USD) on your wallet
+View Tx - Your Solscan 1 [https://solscan.io/tx/64dtWeQeLPZeCbMCNLVnitYWemmqMzkwr4NsMmg5tPwv9jugBzqpftDpVYmWWRnKowQtksrnTyMrnLKnDvN15EAk] | Your Solscan 3 [https://solscan.io/tx/4XmaanxLDDHFU4DsZQymKR51qb39J69fvagEzoPFScq3YdQQoccwQdmA7N49J1KELGwdGX5rdg1n9QcY5h4HRA1j] | Target Tx 1 [https://solscan.io/tx/4vSy8W1977x1ugd6XKYuJsF3WK4FAZZfw3YYuFu4BbnjiuBG7fn76yWRMDxxWWHU6cs6jx1oAg8occpLQDVq4QLC] | Target Tx 3 [https://solscan.io/tx/4N9U3SciXGwE1U7tmdF5fqJKYauDSJ3PWy3uRgEQP1NwbvS6ikpBXKBz89GuSDdnjhFN2tw96t3ZBhQMkSPXcHXi]
+View Position History - Your Metlex [https://metlex.io/pnl2/64dtWeQeLPZeCbMCNLVnitYWemmqMzkwr4NsMmg5tPwv9jugBzqpftDpVYmWWRnKowQtksrnTyMrnLKnDvN15EAk] | Target Metlex [https://metlex.io/pnl2/4vSy8W1977x1ugd6XKYuJsF3WK4FAZZfw3YYuFu4BbnjiuBG7fn76yWRMDxxWWHU6cs6jx1oAg8occpLQDVq4QLC]
+Ending SOL balance: 17.80 SOL ($1421.51 USD) on your wallet
+Total SOL balance: 28.27 SOL ($2257.51 USD) (4 Active Positions)
+
+[https://cdn.discordapp.com/attachments/1420300712427913227/1471810071666229258/output-8rVohDujm1gjvESpKiyC9Z2DL4To7rm7kSQcoYaTR92s.jpeg?ex=69904971&is=698ef7f1&hm=90b601cafb323fed0890920ae9963bf0a7cb2fb9f9097b2a183d65d794bc9f1a&]
+
+[11:08] APL. Valhalla Bot:
+🔓 Opened New DLMM Position! (8PadB1mm)
+BidAsk 1-Sided Position | COPPERINU-SOL [https://dexscreener.com/solana/61Wj56QgGyyB966T7YsMzEAKRLcMvJpDbPzjkrCZc4Bi]
+Target: 20251126_9iGhFppB [https://app.lpagent.io/portfolio?address=9iGhFppBYXJGKQ2fG4zTbNtmSrotoBg2XqRKNFdfQPef]
+MC: $9,199,327.761 | Age: 2w ago
+Jup Score: 83
+Target Pos: copper inu: 0.0000 | SOL: 20.0000
+Your Pos: copper inu: 0.0000 | SOL: 3.0000
+View Tx - Your Solscan 1 [https://solscan.io/tx/4S7EN5mVKd2NEGWyKxfdxP3X3L8otdh3RthXuL5V9U12ekecyKAWQD57xSt3PS8Hmao2A7ipsRpoxs7X63dmpoEC] | Your Solscan 4 [https://solscan.io/tx/XsDsrKZxsN1F4G2KhZQPU55LcUUf1Xvf1UzbJ2rHTmTV1T9RXcKFbXMw78Go6DsMHM15FpmyE7kXzEfQ7vkD6Rr] | Target Tx 1 [https://solscan.io/tx/2W6xwjqL62HxiKjnxY6LhUnYymLWcSewv9VRPEdtt5DkHX7JfNXH3oUtBXfrK4epBoSRcjQYSLykZSci8uE9tAy1] | Target Tx 4 [https://solscan.io/tx/4nEaoXxAu7yPzB6t5dL5zFmU1f46rti4ph5H3f6gKw5xCSwnueAkYYjMnSyC2P4x6JUgisJtJk9gvHudttG3nWKK]
+
+[11:08] APL. Valhalla Bot: 
+Swapped all PsyopAnime (2nP9yKQNSGQy851iyawDvBkzkK2R2aqKArQCKc2gpump). https://solscan.io/tx/5qRZ1QMsbWwfjke6VR6G2J327AmJW9ET6Mvgwby9KpAxGrJEokRMYjr7uVUzgPprcbq2fyUP1u8YyYCWRXJ7g7xX [https://solscan.io/tx/5qRZ1QMsbWwfjke6VR6G2J327AmJW9ET6Mvgwby9KpAxGrJEokRMYjr7uVUzgPprcbq2fyUP1u8YyYCWRXJ7g7xX]
+
+[11:08] APL. Valhalla Bot:
+🔓 Opened New DLMM Position! (9chia6Ti)
+BidAsk 1-Sided Position | PsyopAnime-SOL [https://dexscreener.com/solana/2nP9yKQNSGQy851iyawDvBkzkK2R2aqKArQCKc2gpump]
+Target: 20251126_9iGhFppB [https://app.lpagent.io/portfolio?address=9iGhFppBYXJGKQ2fG4zTbNtmSrotoBg2XqRKNFdfQPef]
+MC: $4,678,062.802 | Age: 1mo ago
+Jup Score: 83
+Target Pos: PsyopAnime: 0.0000 | SOL: 10.0000
+Your Pos: PsyopAnime: 0.0000 | SOL: 2.0000
+View Tx - Your Solscan 1 [https://solscan.io/tx/32F22U8Ne4ZDcPT4UJ2q1dQucuWG5rq62XATmsqMYgzxGhvwuBXEup1acfRnNBNCnuwRWXurebwXi1CPdDKmw22x] | Your Solscan 4 [https://solscan.io/tx/4hTPHxtwgBGqsLf2ypnLoGHBSrFHYYRqgPNZW2HxbwuojqNu6cpwGxdxPyzCS2YA534ov4C1ZwcyzjA7cCGAgUqE] | Target Tx 1 [https://solscan.io/tx/3wisyKWxwPRdzKgSvMWDsf9ZvQuZNTgoeScr3iQUej2kMiBT3SpoyVXuKcuojAWWRdLStbE6j7ung2o9qg25H4oB] | Target Tx 4 [https://solscan.io/tx/64F9QGxXuiPscpK6vkfn4ik2gND2VRBXKFr54JdNwrKNrbPfBiAyTrN93cmHatVmhfeuwHLvie7QyzS7cujXmz7e]
+
+[11:09] APL. Valhalla Bot:
+🔐 Closed DLMM Position! (AqXHpCDM)
+Target: 20251126_9iGhFppB [https://app.lpagent.io/portfolio?address=9iGhFppBYXJGKQ2fG4zTbNtmSrotoBg2XqRKNFdfQPef]
+Starting SOL balance: 15.17 SOL ($1212.69 USD) on your wallet
+View Tx - Your Solscan 1 [https://solscan.io/tx/5qz64PiXZeJfa5kupVe1EdEx7afmy8DFizpFnqZBCbPYVBrnRcmX5e5wt5GDa2ZAbmKb3EswVQEbd4qEJg42kwsz] | Your Solscan 3 [https://solscan.io/tx/BozZg4EHt7vkex8MRhtXkGvd8fEAPEkM786jSzqopz5iKAgyUza7aE6RaFrbeP84ZSSRGKHUEECijz5fWuMFTvf] | Target Tx 1 [https://solscan.io/tx/4ZdiqRPwmY6YsqsPB6XRtfzaphEBsyThgd1ZaZP4Ly1UEbAKCpJ89sCSa89Y1Y3ZC8yHSdegFK16AzUNYEM8VAb8] | Target Tx 3 [https://solscan.io/tx/5cHjm3VMpwM7M6oKmboLbJGMvhcqazB3DqeBHaqRerL9zXUsuxwK6haPKhDzos2Yw2Hoz88LyY95HU9ZsBpcnbAX]
+View Position History - Your Metlex [https://metlex.io/pnl2/5qz64PiXZeJfa5kupVe1EdEx7afmy8DFizpFnqZBCbPYVBrnRcmX5e5wt5GDa2ZAbmKb3EswVQEbd4qEJg42kwsz] | Target Metlex [https://metlex.io/pnl2/4ZdiqRPwmY6YsqsPB6XRtfzaphEBsyThgd1ZaZP4Ly1UEbAKCpJ89sCSa89Y1Y3ZC8yHSdegFK16AzUNYEM8VAb8]
+Ending SOL balance: 18.30 SOL ($1463.09 USD) on your wallet
+Total SOL balance: 28.28 SOL ($2260.68 USD) (4 Active Positions)
+
+[https://cdn.discordapp.com/attachments/1420300712427913227/1471810428660351046/output-AqXH3GYhB9JTAbdy9Mic37kbz2WNggg5P8hoUtpHpCDM.jpeg?ex=699049c7&is=698ef847&hm=1a0b2b17c6aea9e421f07a0c3a0d25a4bace2f6833a38fd83491936b16e20cf7&]
+
+[11:10] APL. Valhalla Bot:
+🔐 Closed DLMM Position! (6YAygSvY)
+Target: 20251126_9iGhFppB [https://app.lpagent.io/portfolio?address=9iGhFppBYXJGKQ2fG4zTbNtmSrotoBg2XqRKNFdfQPef]
+Starting SOL balance: 15.17 SOL ($1212.84 USD) on your wallet
+View Tx - Your Solscan 1 [https://solscan.io/tx/2RNWqEfAxLcxLm6EywJkSBUu2ooaNoqogznEV8ea5eBUHThGrdTkBtYcnHLWLLS5tGuAdQjU1rmoWy9qBMgLThSP] | Your Solscan 3 [https://solscan.io/tx/4NxsjEFeH5zg8DPPSP84MsQKXqTkUfLx3iJfUPV9UPgwAtiscnjP9dggKY1vKHXc6zpgjCajZhyqrdabnXbYpv5g] | Target Tx 1 [https://solscan.io/tx/dFSqfqAHyZteirx8RQFrd3LtM6ztLPZFcnQXL7Vsvi4w72TSbSdeoBpVL4h54LKbi8ZZ2ectv8ot5ofctmfYHHr] | Target Tx 3 [https://solscan.io/tx/62YvgLjS1tL8sQqbhNHKnqKVaF8GYssSPXaCD9k7imQcf1KeXJpLEPpcYBniDH8RFUKGhhMpSvMZtuoU43Gx1NFW]
+View Position History - Your Metlex [https://metlex.io/pnl2/2RNWqEfAxLcxLm6EywJkSBUu2ooaNoqogznEV8ea5eBUHThGrdTkBtYcnHLWLLS5tGuAdQjU1rmoWy9qBMgLThSP] | Target Metlex [https://metlex.io/pnl2/dFSqfqAHyZteirx8RQFrd3LtM6ztLPZFcnQXL7Vsvi4w72TSbSdeoBpVL4h54LKbi8ZZ2ectv8ot5ofctmfYHHr]
+Ending SOL balance: 17.80 SOL ($1423.11 USD) on your wallet
+Total SOL balance: 28.27 SOL ($2260.05 USD) (4 Active Positions)
+
+[https://cdn.discordapp.com/attachments/1420300712427913227/1471810657816150157/output-6YAysZYzjsp4Y8vFDcV3v5fKfw8GB6Bo6us75NeDgSvY.jpeg?ex=699049fd&is=698ef87d&hm=9653e54ccff9f45e9b536fc2502c4c9da99f44976ab49befcea3036888d002e1&]
+
+[11:43] APL. Valhalla Bot: 
+Skipping position due to token age restriction
+Target: 20260212_BPnaTk
+Token 58Ghft9TvGNuBiDzy9cFD2Px9rz5cDVZ1XoMFk1xpump is less than your required age of 4h
+Token Buttfish Coin: 58Ghft9TvGNuBiDzy9cFD2Px9rz5cDVZ1XoMFk1xpump (Age: 3h ago)
+Token SOL: So11111111111111111111111111111111111111112 (Age: Stable Token)
+
+To adjust this: type /settings_dlmm → More Copy Trade Settings → Set Minimum Token Age
+Target Tx: Target Tx 1 [https://solscan.io/tx/7KHo5jqVBFHV1coib7tE6CNhx9HTqvzf5CL9vwJpv8815uvgfALLQAsQK1YmmbSKDKHxZAnDChWHhAGTnChPVv7] | Target Tx 5 [https://solscan.io/tx/3o9R71CbfhReUCKjDqmJAdzE6GJM7P9bKuj5rrjd8v6TBWBBC5uy8Dh8eq9bAVQt5MPwPxbMbbJcGUBtXFGmd4nh]
+
+[12:35] APL. Valhalla Bot:
+🔓 Opened New DLMM Position! (5ZaAE7BF)
+Spot 1-Sided Position | Buttfish-SOL [https://dexscreener.com/solana/58Ghft9TvGNuBiDzy9cFD2Px9rz5cDVZ1XoMFk1xpump]
+Target: 20260125_C5JXfmK [https://app.lpagent.io/portfolio?address=C5JXfmKo4sqTYYriBB9JSw6jE8cxQrAA4wRHb6p3HJYR]
+MC: $579,717.277 | Age: 4h ago
+Jup Score: 79
+Target Pos: Buttfish Coin: 0.0000 | SOL: 2.0000
+Your Pos: Buttfish Coin: 0.0000 | SOL: 4.0000
+View Tx - Your Solscan 1 [https://solscan.io/tx/4ki2jeHZvMZ6VyKJR7vc4GavnoJzqJmnyfanHs3rMVQSF3yqDpDDjD7wP39R9MuM7PRPNeU1A5HXYk8L65YU2FwX] | Your Solscan 4 [https://solscan.io/tx/4VBbBNwRWtcWCgoBvx6FcfpViMyGb6dHhG7Fu28s57LTy3AtoK6WVNf9qWbqWpHfhZB2Mt2Nj9b6VhgxSPjXj7oQ] | Target Tx 1 [https://solscan.io/tx/4F2dxR3f5tDPmGoe1ATne2vKx5QohWrf3iNowAFtAn6mR3ipKh5YUXScKNhgG2WQZf1iF2qsxpRYqtpVcamQwcTU] | Target Tx 4 [https://solscan.io/tx/5oSGdj3r2QZaBAW5K8xtBSBPHBNRGoFWNysPFNvGvTzfK7BWVKuE7mGAU8sGrXi9Ti7xddMBwr4V6ae4L1zRbpGP]
+
+[12:35] APL. Valhalla Bot:
+🔓 Opened New DLMM Position! (8B2WSuNt)
+BidAsk 1-Sided Position | Buttfish-SOL [https://dexscreener.com/solana/58Ghft9TvGNuBiDzy9cFD2Px9rz5cDVZ1XoMFk1xpump]
+Target: 20260125_C5JXfmK [https://app.lpagent.io/portfolio?address=C5JXfmKo4sqTYYriBB9JSw6jE8cxQrAA4wRHb6p3HJYR]
+MC: $594,652.825 | Age: 4h ago
+Jup Score: 79
+Target Pos: Buttfish Coin: 0.0000 | SOL: 7.0000
+Your Pos: Buttfish Coin: 0.0000 | SOL: 5.5100
+View Tx - Your Solscan 1 [https://solscan.io/tx/2bibZHRjZscR9Cjo91e9qN5sSCHemBGRaC6CPNWMLPccDYYGHoB2RqoFRMWyPif3Rfy5oJ1zt9gWzo1JNAwXrmSn] | Your Solscan 4 [https://solscan.io/tx/5kcX1tAgb6JMmsCj7oAo4pCLR1qbba9VqdenEBLFDMTYvx7oiHEYftzYWVxVBvHcGMocdFnxeuQVnBbfcdKVXrud] | Target Tx 1 [https://solscan.io/tx/37x84wySzfZ9wpKAV2qhPBqgdvZ14EaYuLe5j1csg69fMMn3NJZ9oshfA3jTwwWan1yfFnFJUzVczNEAPzLaegRV] | Target Tx 4 [https://solscan.io/tx/5QN84DvBVyJV9CXtQmdDekJPakwaLQ9ABXnL5WQargBNUDUDFdNCcrH87Th8mpgaZBUJTa7c5XywuC2JoGfViXUA]
+
+[12:36] APL. Valhalla Bot:
+🔐 Closed DLMM Position! (5ZaAE7BF)
+Target: 20260125_C5JXfmK [https://app.lpagent.io/portfolio?address=C5JXfmKo4sqTYYriBB9JSw6jE8cxQrAA4wRHb6p3HJYR]
+Starting SOL balance: 11.52 SOL ($921.14 USD) on your wallet
+View Tx - Your Solscan 1 [https://solscan.io/tx/5PzX5PCBUhyieaXGfMxu4X8W42ttafa844NDUGSMmeuCk6xbNZKV9waBwUrHJzkK4jvqzHvrMZzrHeMZjBJ9NC3e] | Your Solscan 3 [https://solscan.io/tx/36bQmMKWNes2JreVXaiLMaLyPDXGncg8ud7JhabzAD1zHkPRv3bMN7QMULJ11xTAtvLnumWyR829GyF97GZ2HEJE] | Target Tx 1 [https://solscan.io/tx/53v3RpNpL7u8UeQ365YSU9QjTTXXFbU3kXMN4ANzSaSQt3uGp1GvX1HVV2vZTu7hzHSPZ4fjjt1vpUnZ5DXEp2TW] | Target Tx 3 [https://solscan.io/tx/3R3Qc4XH3tXVLxXNNAajhAEjJyALHp1FaBuRMu4h6VmFYup1Qj2rct4qB1kTSxwwL3T8fRMuc8589rw477U3vNFS]
+View Position History - Your Metlex [https://metlex.io/pnl2/5PzX5PCBUhyieaXGfMxu4X8W42ttafa844NDUGSMmeuCk6xbNZKV9waBwUrHJzkK4jvqzHvrMZzrHeMZjBJ9NC3e] | Target Metlex [https://metlex.io/pnl2/53v3RpNpL7u8UeQ365YSU9QjTTXXFbU3kXMN4ANzSaSQt3uGp1GvX1HVV2vZTu7hzHSPZ4fjjt1vpUnZ5DXEp2TW]
+Ending SOL balance: 15.67 SOL ($1252.97 USD) on your wallet
+Total SOL balance: 28.27 SOL ($2260.27 USD) (5 Active Positions)
+
+[https://cdn.discordapp.com/attachments/1420300712427913227/1471832499998031952/output-5ZaASE5AxjdjcCoHcp7mn8yauHM1LwPuJG5y4kRAE7BF.jpeg?ex=69905e55&is=698f0cd5&hm=89f7d39fdbca21af9da29ab0d113ea088822ad4bbd970fcc15387588a752b110&]
+
+[12:38] APL. Valhalla Bot:
+🔓 Opened New DLMM Position! (BxKvaWdZ)
+BidAsk 1-Sided Position | Buttfish-SOL [https://dexscreener.com/solana/58Ghft9TvGNuBiDzy9cFD2Px9rz5cDVZ1XoMFk1xpump]
+Target: 20260212_BPnaTk [https://app.lpagent.io/portfolio?address=BPnaTkPS7svcvYqRsZP8v5EfQ4L81K7JcxXofV8SVDzk]
+MC: $610,392.003 | Age: 4h ago
+Jup Score: 79
+Target Pos: Buttfish Coin: 0.0000 | SOL: 20.0000
+Your Pos: Buttfish Coin: 0.0000 | SOL: 1.6000
+View Tx - Your Solscan 1 [https://solscan.io/tx/2X7bxKoUrnL8XRGVJmi4ToWYTzsvPEU8YEMoCqNhasXxLbVur1aHv5YyAn1cf2r4LMzasn8RpsN5hHGUNK9nvU62] | Your Solscan 4 [https://solscan.io/tx/5erCv63zDhVXqqih7H2onn6oavogekizJf4U2QAirqD6p38Q9NHzsosqYQxZURih7UWKhsdwzQbcGEc1MzVezkJk] | Target Tx 1 [https://solscan.io/tx/61mzusbec8Dm2ytTPxNgh3qSzD5C8PjoryHSsLjc52YXL33LSF2Ud9UgPBNnttn6TvNBxmsWnKbA4coLJrEYrZK3] | Target Tx 4 [https://solscan.io/tx/2TjhXMiKrMQ7PPRCTgTLujj8rmRrMuNVLNF2AeuyA4ZosVSeoiWEXzvzXNvv2BT1AYnBFeD7LkQeMMEoz7ACRFqZ]
+
+[12:40] APL. Valhalla Bot:
+🔓 Opened New DLMM Position! (FakFZND7)
+Spot 1-Sided Position | Buttfish-SOL [https://dexscreener.com/solana/58Ghft9TvGNuBiDzy9cFD2Px9rz5cDVZ1XoMFk1xpump]
+Target: 20260125_C5JXfmK [https://app.lpagent.io/portfolio?address=C5JXfmKo4sqTYYriBB9JSw6jE8cxQrAA4wRHb6p3HJYR]
+MC: $590,381.342 | Age: 4h ago
+Jup Score: 79
+Target Pos: Buttfish Coin: 0.0000 | SOL: 2.0000
+Your Pos: Buttfish Coin: 0.0000 | SOL: 4.0000
+View Tx - Your Solscan 1 [https://solscan.io/tx/5MAEWBAysPmjkuzaeXsjHKvAGEjmnyD3geH2aNU59VHNGb6gsZ5tXiG9zYtu9bNgefrq8Rz6wGvALfGkcJrNPjgi] | Your Solscan 4 [https://solscan.io/tx/2GJxoAaUYXgPkYfeKYwFDwFr4c1eJZR7CDhuesWYG85qyd25CiTVJJCrDpMNMpHa7kJ9CiL2uC7a1jFX4BP8rJpb] | Target Tx 1 [https://solscan.io/tx/3rmLz8X6gUGm6PmLjb91TrGgkxUxfm2akmMQTTNL8QFN1j1dipS3gpnjfG8B3frau5KzWpdhAh8VMVKQYQTWcSb4] | Target Tx 4 [https://solscan.io/tx/3ydJiwrvdVtNQy7rmP3eYFnPg1tNdQCrzxWa5ByFSdiM7AearBPwQmY2WVcQjkbvMmsVHKgYje2t9cCJyQpJf1Dr]
+
+[12:40] APL. Valhalla Bot:
+💰 Added DLMM Liquidity (FakFZND7)
+Target: 20260125_C5JXfmK
+Amount: 5.5100 SOL
+Copied First Add Liquidity. This means they are adding more funds to a position they ALREADY have. Currently, you only copy the first ADDITIONAL liquidity transaction to prevent positions from becoming much larger than originally intended.
+
+To enable adding infinite liquidity, type /settings_dlmm → More Copy Trade Settings → Infinite Add Liquidity - Turn ON
+View Tx - Your Solscan 1 [https://solscan.io/tx/5MPrGPpwoS1DhhbgCa2MZxUWbQRFbyGNmejjCLkBSTRM3FqG7n6ZR6d3FRkBMgVmCkxMDU59c9e1QEW1S5RHZQUo] | Your Solscan 3 [https://solscan.io/tx/5FpY5HsuRtZmRC1TQFZdGiCm621mM9jmiVvx92DQMztHYx3yMi7G5LyX8zs6RTqMSb1nbu2zAk9Faow1985imW2G] | Target Tx 1 [https://solscan.io/tx/4214HrSrdEbHMvtZ4E81ubKzECYb27MBH6fSJuB3Sx8nF8mAaJPBofjHoJRTTLmx12Gye8gUjWi9ZQQD7tTsMZhr] | Target Tx 3 [https://solscan.io/tx/3SjSRo8fADG87P7BetLwqZ3iueHupMWTpNL3nFe4JBJMtY6kJrQZ6AzASJY9EYPLbQRvQNzSLEXnCpbzvKmWRanf]
+Note: This add liquidity operation has increased your position size by 138%
+
+[12:41] APL. Valhalla Bot:
+🔐 Closed DLMM Position! (8B2WSuNt)
+Target: 20260125_C5JXfmK [https://app.lpagent.io/portfolio?address=C5JXfmKo4sqTYYriBB9JSw6jE8cxQrAA4wRHb6p3HJYR]
+Starting SOL balance: 8.29 SOL ($662.95 USD) on your wallet
+View Tx - Your Solscan 1 [https://solscan.io/tx/5ZXtxP7jAB8JsMPgqWJDvDoL3KQMhFDqEPGs8aVk5ZNmRU3Z5dA8FTNQiPXvNc7mZ8SGt2nBP7WtkfNxsBHZeVyT] | Your Solscan 3 [https://solscan.io/tx/3quycXvCCLXjqeSjAX9mqXHSAvQwQtEpQPRvdNomYLsLuuXumNrSNk6PQRfQsRVZ8jTHeRDT8cVePKHjNtAMXC8F] | Target Tx 1 [https://solscan.io/tx/5rZDP9prHm8iyYXnCqnVMmRCr7zeQGnR99oHj4iNCcGQEixR9HFArLGKH2Nz4LGTnVNJjVKVQPDrDdQ79AcWKL3o] | Target Tx 3 [https://solscan.io/tx/4TrXMMLdTT5AfHjE4a5zL826kCVBwPn1nsu6XvoEfTfDbFkY3WW8U5qUQHY1Av1Wzhuqqg6P9cPBJhYzpyZgDiLn]
+View Position History - Your Metlex [https://metlex.io/pnl2/5ZXtxP7jAB8JsMPgqWJDvDoL3KQMhFDqEPGs8aVk5ZNmRU3Z5dA8FTNQiPXvNc7mZ8SGt2nBP7WtkfNxsBHZeVyT] | Target Metlex [https://metlex.io/pnl2/5rZDP9prHm8iyYXnCqnVMmRCr7zeQGnR99oHj4iNCcGQEixR9HFArLGKH2Nz4LGTnVNJjVKVQPDrDdQ79AcWKL3o]
+Ending SOL balance: 13.95 SOL ($1115.58 USD) on your wallet
+Total SOL balance: 28.27 SOL ($2260.51 USD) (6 Active Positions)
+
+[https://cdn.discordapp.com/attachments/1420300712427913227/1471833545361063967/output-8B2WtnB5b7gzuGaokLiEYxpxcVB4y8G9jGF2po6RSuNt.jpeg?ex=69905f4e&is=698f0dce&hm=aa8b9d32ffedebc8f5dd174df9004f68f16fd807a6d438d78139f3ad2e0657fc&]
+
+[12:46] APL. Valhalla Bot: 
+Swapped 43462 Buttfish Coin (58Ghft9TvGNuBiDzy9cFD2Px9rz5cDVZ1XoMFk1xpump). https://solscan.io/tx/2b69gtqtrEttyYdW6ocHanf7KRQBteMjREH7AYeBfd8sUwng2gVZL3J5NYbQYjYzXEY3SttbEqmxY9yV7xaTARhp [https://solscan.io/tx/2b69gtqtrEttyYdW6ocHanf7KRQBteMjREH7AYeBfd8sUwng2gVZL3J5NYbQYjYzXEY3SttbEqmxY9yV7xaTARhp]
+
+[12:47] APL. Valhalla Bot:
+🔐 Closed DLMM Position! (FakFZND7)
+Target: 20260125_C5JXfmK [https://app.lpagent.io/portfolio?address=C5JXfmKo4sqTYYriBB9JSw6jE8cxQrAA4wRHb6p3HJYR]
+Starting SOL balance: 4.29 SOL ($344.44 USD) on your wallet
+View Tx - Your Solscan 1 [https://solscan.io/tx/2mVGbHSDB7ZdRt3FLZVzGBnjRqqgRDs88yPRLEjcrzcHeLWVnRs5qnwA5rCSW5myPUmRj159W7MwvMd1tg5723xA] | Your Solscan 3 [https://solscan.io/tx/4KkjzkVMtFVF8yTaspKPDWPMd1DjsouFuqX9RHpbQGbaifuxbMNtdwKBGr1nAFDwqMcDG9cPVLvdhFbx5EKWw5Wc] | Target Tx 1 [https://solscan.io/tx/2kzKVf9GpBvN8BCrNqo3fCTQh8uvu8m3FZ5sjuRzxfREbzYjYADt1AYskN8wXZ7XtWy1vrDTQnPxEJ599dr2Q2tK] | Target Tx 3 [https://solscan.io/tx/2PBvvJnW2DAUAAnjjY267jK55nJyZfuTXF499BBB5FsjpdYnvibhKtan81PpMt526vvagbJFPKoT4cHX6hrLRHCs]
+View Position History - Your Metlex [https://metlex.io/pnl2/2mVGbHSDB7ZdRt3FLZVzGBnjRqqgRDs88yPRLEjcrzcHeLWVnRs5qnwA5rCSW5myPUmRj159W7MwvMd1tg5723xA] | Target Metlex [https://metlex.io/pnl2/2kzKVf9GpBvN8BCrNqo3fCTQh8uvu8m3FZ5sjuRzxfREbzYjYADt1AYskN8wXZ7XtWy1vrDTQnPxEJ599dr2Q2tK]
+Ending SOL balance: 13.96 SOL ($1119.03 USD) on your wallet
+Total SOL balance: 28.28 SOL ($2266.62 USD) (6 Active Positions)
+
+[https://cdn.discordapp.com/attachments/1420300712427913227/1471835287138209874/output-FakFfj3eHvrFSCJnhkBoRNxRLV9xjzuwTADim5BrZND7.jpeg?ex=699060ed&is=698f0f6d&hm=f6ce902a0515cd1c2b31d742210f3deccbca87bad3a6bb569e40097ae3d50345&]
+
+[13:32] APL. Valhalla Bot: 
+Skipping position due to SOL-only deposit restriction
+Target: 20260125_C5JXfmK
+This position requires both tokens (58ExX8TFqiDqUpr1ZGiAhhiUsKfT14gwTFykLoVCpump and So11111111111111111111111111111111111111112), but you have SOL-only deposits enabled.
+
+This setting ensures you only enter positions that require pure SOL deposits (single-sided).
+
+To adjust this: type /settings_dlmm → More Copy Trade Settings → Toggle SOL-Only Mode
+Target Tx: Target Tx 1 [https://solscan.io/tx/4Tv6HeTL3cwZXm5t5Sk4To9JPJsTJqLtUwLcjrUrukCRSPnCWbcWr2ku21zCwEFaTSmpav58KVeNGQReGAZsEvHK] | Target Tx 6 [https://solscan.io/tx/3kmiefX6bAsF13fEb6uJz561wf4fFSn3C1vzXauudfT9ZydvjJF2cWgYzKogx5WVm5XHT8gixmGeSrKwHqsYxbx3]
+
+[13:35] APL. Valhalla Bot:
+🔓 Opened New DLMM Position! (BFyoTTiC)
+BidAsk 1-Sided Position | PsyopAnime-SOL [https://dexscreener.com/solana/2nP9yKQNSGQy851iyawDvBkzkK2R2aqKArQCKc2gpump]
+Target: 20251126_9iGhFppB [https://app.lpagent.io/portfolio?address=9iGhFppBYXJGKQ2fG4zTbNtmSrotoBg2XqRKNFdfQPef]
+MC: $4,997,153.895 | Age: 1mo ago
+Jup Score: 82
+Target Pos: PsyopAnime: 0.0000 | SOL: 11.0000
+Your Pos: PsyopAnime: 0.0000 | SOL: 2.2000
+View Tx - Your Solscan 1 [https://solscan.io/tx/4PCG9ZFDAMh5n3Pj15afiLGudgKcvBwhRcDL4H8uTLbWGGVJYfqgnU2oC3BwUzmHjwfmLwFguT1vwaoRWBKY8F4U] | Your Solscan 3 [https://solscan.io/tx/3gWsM6j2MmDZsgXbcmhEsQ95PZT8GwDEq5prfha9mf7RMkFBVhqGRD64hoYq6vW6xG438YkdkZSjvoZHfTUzWvTz] | Target Tx 1 [https://solscan.io/tx/5dczuLkQPEutA8mU7AaMsfxsUHsKdLH3YBcnZAwnaPA3UKwdQ3NLVhTURRfiDPk8EJQJDQqau55pZqGcngU64zEj] | Target Tx 3 [https://solscan.io/tx/5UvGfuQPgb2kYRQUiMv7kEhxoM5BZVVv7scKNZ51b2eCRRFSwGuAczhwCTLNJnBVizpx416ejCCPrw2JQfcmXLce]
+
+[13:36] APL. Valhalla Bot:
+🔓 Opened New DLMM Position! (ASPJuNHu)
+BidAsk 1-Sided Position | crust-SOL [https://dexscreener.com/solana/HkBWJJiaUW5Kod4HpHWZiGD9PQVipmMiPDgiRPcNpump]
+Target: 20251126_9iGhFppB [https://app.lpagent.io/portfolio?address=9iGhFppBYXJGKQ2fG4zTbNtmSrotoBg2XqRKNFdfQPef]
+MC: $2,541,111.748 | Age: 2w ago
+Jup Score: 78
+Target Pos: Crustafarianism: 0.0000 | SOL: 10.0000
+Your Pos: Crustafarianism: 0.0000 | SOL: 2.0000
+View Tx - Your Solscan 1 [https://solscan.io/tx/5oVsSHpw1Z9UqFEN74KLXnw9VeycYZAGG6wv8BvpH6tDgoeEaxHsbwxnhxnVvGUKSTdbiU8Ah1VUUq2Xfg6y1JFN] | Your Solscan 4 [https://solscan.io/tx/qNFoen7mUzUrCUuJYuW2tLjXSFppdNSFvWKhvLbjf4qnrt8S7dpzQVHbQVZGBonv5XMDzMSP7tAs9AaNYn1Woou] | Target Tx 1 [https://solscan.io/tx/4gAjoFpjspUjQYxvPjxguPPE8gjd8mRTws1nSC1SnGaiMnLrnxinW56xUuAJEGQBzo3HrWBhHFPto1v7mpqonMxN] | Target Tx 4 [https://solscan.io/tx/5vZPd4tVVR7Z6TXsC8ePoveoFxryCdVLJdhfqekuDGZFF6NwDKEaRwDiFjs8k9jPJgVNNnyMsTrfnAP35cS23tqv]
+
+[13:36] APL. Valhalla Bot: 
+Swapped 10 UNKNOWN (HkBWJJiaUW5Kod4HpHWZiGD9PQVipmMiPDgiRPcNpump). https://solscan.io/tx/4peRTjXvKm6YMzFRGxjUhc39WmEFKHCk44XeTsovapZH5LijVjgEDn6Vhh52jXZiFFPaEy8f3xMXKtcosMMtb5VU [https://solscan.io/tx/4peRTjXvKm6YMzFRGxjUhc39WmEFKHCk44XeTsovapZH5LijVjgEDn6Vhh52jXZiFFPaEy8f3xMXKtcosMMtb5VU]
+
+[13:37] APL. Valhalla Bot:
+🔐 Closed DLMM Position! (9chia6Ti)
+Target: 20251126_9iGhFppB [https://app.lpagent.io/portfolio?address=9iGhFppBYXJGKQ2fG4zTbNtmSrotoBg2XqRKNFdfQPef]
+Starting SOL balance: 13.96 SOL ($1116.38 USD) on your wallet
+View Tx - Your Solscan 1 [https://solscan.io/tx/3czcjgY9dfS8C844wYxjVB4QPPQ6FojHTzcAAGzBeqxW7iLctQx5UEFm9L5X5iFwoAZobsHiYvXc7eWit2uezU8r] | Your Solscan 3 [https://solscan.io/tx/5ar6hQkukNzdjFHhfN6gTaSBV9tSKotxgYqgD6wNq5rrE5PeabPMXmJPNa52kshJtz8gjGjKiJ59vJf79pCJVLdX] | Target Tx 1 [https://solscan.io/tx/4FGJfTcZaX67qthSiKMqadqWkSnuHdfYkhPMGhSVteL7WuqK8UpFRZd8KCpSJAyv4tD7AYUZejiNfhz4rfsTYr2n] | Target Tx 3 [https://solscan.io/tx/67cZxYXxqGiTPtzqWoCgp8BeMD7QdtnRAnXcreeksohNZwd8ArxsoTKWaPkWmrRp4qzPTwcpnqPi2zmMYpr7h7Cp]
+View Position History - Your Metlex [https://metlex.io/pnl2/3czcjgY9dfS8C844wYxjVB4QPPQ6FojHTzcAAGzBeqxW7iLctQx5UEFm9L5X5iFwoAZobsHiYvXc7eWit2uezU8r] | Target Metlex [https://metlex.io/pnl2/4FGJfTcZaX67qthSiKMqadqWkSnuHdfYkhPMGhSVteL7WuqK8UpFRZd8KCpSJAyv4tD7AYUZejiNfhz4rfsTYr2n]
+Ending SOL balance: 16.09 SOL ($1286.72 USD) on your wallet
+Total SOL balance: 28.29 SOL ($2262.10 USD) (5 Active Positions)
+
+[https://cdn.discordapp.com/attachments/1420300712427913227/1471847659777294588/output-9chiHkVgyb5dNQvMyXAvcNexpYKjH9f3mDK2bA9Ka6Ti.jpeg?ex=69906c73&is=698f1af3&hm=46b6b5c3195aa836070ca23fa4e02e66958b99b4d774ce9054709a977b14162e&]
+
+[13:37] APL. Valhalla Bot:
+🔐 Closed DLMM Position! (7yHv6n3L)
+Target: 20251126_9iGhFppB [https://app.lpagent.io/portfolio?address=9iGhFppBYXJGKQ2fG4zTbNtmSrotoBg2XqRKNFdfQPef]
+Starting SOL balance: 13.78 SOL ($1102.57 USD) on your wallet
+View Tx - Your Solscan 1 [https://solscan.io/tx/2fdeJajniukKpWGNQPrdWSjQyjAJBZ2QbZ6Xbx6bybBKE3KuSPHgf5DnVzw3JFy7Tiyb8VscKd6DGphj6mfhD4uu] | Your Solscan 3 [https://solscan.io/tx/39PzkTsgs1SqbmcXCnZork1WzwnAJn8XvYfWcPSoi3i4G1fVtjtPfeR3fSa9HZWoCDPRRH7wvrNf8ea3dwkD82WP] | Target Tx 1 [https://solscan.io/tx/3xJjBtFH8zgwPU4jxzbJZMhDWWVyGAYhaZDs1hR29Z1mKuUk2fm6Uj8ffNkmiQK3PpuhgWzvpCdfvcEwxNf2aNnj] | Target Tx 3 [https://solscan.io/tx/66h3kUbX8AcLHSsMCNLFvfa9YALeUVor4CNT5pkLGnaSB66ffX1NSRDb6SRCZqyn5NuHrrXSWKUkTLeBRefv9Qvz]
+View Position History - Your Metlex [https://metlex.io/pnl2/2fdeJajniukKpWGNQPrdWSjQyjAJBZ2QbZ6Xbx6bybBKE3KuSPHgf5DnVzw3JFy7Tiyb8VscKd6DGphj6mfhD4uu] | Target Metlex [https://metlex.io/pnl2/3xJjBtFH8zgwPU4jxzbJZMhDWWVyGAYhaZDs1hR29Z1mKuUk2fm6Uj8ffNkmiQK3PpuhgWzvpCdfvcEwxNf2aNnj]
+Ending SOL balance: 15.91 SOL ($1272.99 USD) on your wallet
+Total SOL balance: 28.29 SOL ($2263.26 USD) (5 Active Positions)
+
+[https://cdn.discordapp.com/attachments/1420300712427913227/1471847733626404864/output-7yHvUnNRru4jA8gicRVuwRrhjS5vwFe8xMXCTM3X6n3L.jpeg?ex=69906c85&is=698f1b05&hm=1b1bb5badadabaec5afe5200c949563837f14bd3c455573b4d35d172b60d77c1&]
+
+[13:54] APL. Valhalla Bot: 
+Swapped 828 Buttfish Coin (58Ghft9TvGNuBiDzy9cFD2Px9rz5cDVZ1XoMFk1xpump). https://solscan.io/tx/5U85cqZhnBwCEaSdCKKaQdzARQiATGp55o7tgHpgBuWz5VTrUNTicYqcUJbJ2L5rMqbRZ7JvQdt11wTXa7X5kbRT [https://solscan.io/tx/5U85cqZhnBwCEaSdCKKaQdzARQiATGp55o7tgHpgBuWz5VTrUNTicYqcUJbJ2L5rMqbRZ7JvQdt11wTXa7X5kbRT]
+
+[13:56] APL. Valhalla Bot:
+🔐 Closed DLMM Position! (BxKvaWdZ)
+Target: 20260212_BPnaTk [https://app.lpagent.io/portfolio?address=BPnaTkPS7svcvYqRsZP8v5EfQ4L81K7JcxXofV8SVDzk]
+Starting SOL balance: 13.78 SOL ($1104.33 USD) on your wallet
+View Tx - Your Solscan 1 [https://solscan.io/tx/S2MARuNFuFZHVw9aRKY1zAoJXemUcQqykHssppdLUBYywQrWQ7Nv3NUx525pvEbNYNCrweAvJnyJjJRiyC5BZLJ] | Your Solscan 3 [https://solscan.io/tx/3N1P83mcgMUaeET4t1JcTLqvRgEPxMJ5zVTxHv1249eGZhVdcYjaomk9p55F9Uh1EbqarcecPhRkgZdHVsYQhDk5] | Target Tx 1 [https://solscan.io/tx/4ZSLXfmrVJMKFFRgw8u1XwoAZ6wVJ2U6TvPGcV7YTWjaaGxgcRxvGDin6b2xpx943SvsG4xhcc6fE6usngwrMphk] | Target Tx 3 [https://solscan.io/tx/57kDJPGA1hyFPsGooWSFGvgoqb31WvBko9fhLuW7VtvHPrJQt49dSyrEvE4N7mN7M8qo6UYr1ppuQS2L5jwH8V4C]
+View Position History - Your Metlex [https://metlex.io/pnl2/S2MARuNFuFZHVw9aRKY1zAoJXemUcQqykHssppdLUBYywQrWQ7Nv3NUx525pvEbNYNCrweAvJnyJjJRiyC5BZLJ] | Target Metlex [https://metlex.io/pnl2/4ZSLXfmrVJMKFFRgw8u1XwoAZ6wVJ2U6TvPGcV7YTWjaaGxgcRxvGDin6b2xpx943SvsG4xhcc6fE6usngwrMphk]
+Ending SOL balance: 15.51 SOL ($1242.97 USD) on your wallet
+Total SOL balance: 28.29 SOL ($2266.83 USD) (5 Active Positions)
+
+[https://cdn.discordapp.com/attachments/1420300712427913227/1471852555389767804/output-BxKvUKRGh9yfeoaLtNAH3jHxAYmVY2AbKuvcVxfDaWdZ.jpeg?ex=69907102&is=698f1f82&hm=1d110231e7c3b60d946feb0c1cfe034c67b02b5f937799766481bdd662624cc2&]
+
+[15:06] APL. Valhalla Bot: 
+Skipping position due to token age restriction
+Target: 20260125_C5JXfmK
+Token Fiz3UzjMudjXcXaRK78A179DMbVZcFsUFD5AbbJpump is less than your required age of 4h
+Token The Camusian Fish: Fiz3UzjMudjXcXaRK78A179DMbVZcFsUFD5AbbJpump (Age: 33min ago)
+Token SOL: So11111111111111111111111111111111111111112 (Age: Stable Token)
+
+To adjust this: type /settings_dlmm → More Copy Trade Settings → Set Minimum Token Age
+Target Tx: Target Tx 1 [https://solscan.io/tx/5ba1ybsfE1W8rpE521zJt8HBXh8DS4kJdVLHsM7Z52KnndQ35fMNA7z8vaYD9bGZBaqEUBhjMs4QrhSALX9RaW2J] | Target Tx 3 [https://solscan.io/tx/3yv6nBCkbgkc6CisHUmL8YA8fAGcvjCe9YS37NquBn6jG6NgFEovpWe7pNLXddgdJ51ecZg3AMQm9uD2bvoDk6yk]
+
+[15:06] APL. Valhalla Bot: 
+Skipping position due to token age restriction
+Target: 20260125_C5JXfmK
+Token Fiz3UzjMudjXcXaRK78A179DMbVZcFsUFD5AbbJpump is less than your required age of 4h
+Token The Camusian Fish: Fiz3UzjMudjXcXaRK78A179DMbVZcFsUFD5AbbJpump (Age: 34min ago)
+Token SOL: So11111111111111111111111111111111111111112 (Age: Stable Token)
+
+To adjust this: type /settings_dlmm → More Copy Trade Settings → Set Minimum Token Age
+Target Tx: Target Tx [https://solscan.io/tx/Cwk99AcCFDyWndBWMEbczAbvb2wVebXdmt6bgtKhAYoKhBiWPHSdT3v8bR7u2vdLneENEV57X9i6rPZBWsdK138]
+
+[15:08] APL. Valhalla Bot: 
+Skipping position due to SOL-only deposit restriction
+Target: 20260125_C5JXfmK
+This position requires both tokens (Fiz3UzjMudjXcXaRK78A179DMbVZcFsUFD5AbbJpump and So11111111111111111111111111111111111111112), but you have SOL-only deposits enabled.
+
+This setting ensures you only enter positions that require pure SOL deposits (single-sided).
+
+To adjust this: type /settings_dlmm → More Copy Trade Settings → Toggle SOL-Only Mode
+Target Tx: Target Tx 1 [https://solscan.io/tx/3R5jVuezs66nEbdpoVxGYimwPyB3DEAJcw6qtVsXu8cRkLu9xqEN8i9GJZXNm54d1pMAUENHwLJ7XBrxgBGrbUx6] | Target Tx 4 [https://solscan.io/tx/4HbFu3A26KJ6tojd8VRxwRXvpSFovkQvt7JkyANdjmdpCX3hznCk7UsoQLUak9JWAiNL8n82FhjRF1qywmW2zEEq]
+
+[15:08] APL. Valhalla Bot: 
+Skipping position due to token age restriction
+Target: 20260125_C5JXfmK
+Token Fiz3UzjMudjXcXaRK78A179DMbVZcFsUFD5AbbJpump is less than your required age of 4h
+Token The Camusian Fish: Fiz3UzjMudjXcXaRK78A179DMbVZcFsUFD5AbbJpump (Age: 35min ago)
+Token SOL: So11111111111111111111111111111111111111112 (Age: Stable Token)
+
+To adjust this: type /settings_dlmm → More Copy Trade Settings → Set Minimum Token Age
+Target Tx: Target Tx 1 [https://solscan.io/tx/3R5jVuezs66nEbdpoVxGYimwPyB3DEAJcw6qtVsXu8cRkLu9xqEN8i9GJZXNm54d1pMAUENHwLJ7XBrxgBGrbUx6] | Target Tx 4 [https://solscan.io/tx/4HbFu3A26KJ6tojd8VRxwRXvpSFovkQvt7JkyANdjmdpCX3hznCk7UsoQLUak9JWAiNL8n82FhjRF1qywmW2zEEq]
+
+[15:11] APL. Valhalla Bot: 
+Skipping position due to token age restriction
+Target: 20260125_C5JXfmK
+Token Fiz3UzjMudjXcXaRK78A179DMbVZcFsUFD5AbbJpump is less than your required age of 4h
+Token The Camusian Fish: Fiz3UzjMudjXcXaRK78A179DMbVZcFsUFD5AbbJpump (Age: 38min ago)
+Token SOL: So11111111111111111111111111111111111111112 (Age: Stable Token)
+
+To adjust this: type /settings_dlmm → More Copy Trade Settings → Set Minimum Token Age
+Target Tx: Target Tx 1 [https://solscan.io/tx/2R2QAEnHdhsaNQ697mNbjEPDnbjCqZQz8L9K78GEC9meKcRaBB4WhvbwKZ593DD6jTBadTB9gTZhhSqbx2CfSiLD] | Target Tx 4 [https://solscan.io/tx/2dESRp8ZLdTpsPuKhA8DVJ64hNtaqoh5TeQ1Ec9wta8ZCVP91RHiDXLixP7R32JRrpadh147qj97wmTJ1wnLPNbW]
+
+[15:12] APL. Valhalla Bot: 
+Skipping position due to token age restriction
+Target: 20260125_C5JXfmK
+Token Fiz3UzjMudjXcXaRK78A179DMbVZcFsUFD5AbbJpump is less than your required age of 4h
+Token The Camusian Fish: Fiz3UzjMudjXcXaRK78A179DMbVZcFsUFD5AbbJpump (Age: 39min ago)
+Token SOL: So11111111111111111111111111111111111111112 (Age: Stable Token)
+
+To adjust this: type /settings_dlmm → More Copy Trade Settings → Set Minimum Token Age
+Target Tx: Target Tx 1 [https://solscan.io/tx/4APKnXAAhD2tWj1xUSnpxQ9Lotcv7E4AUp2M9M3bQNM4AyWhs6SwxhxBEYLrqxVwFHNZRTnHuhCNwG3fpf3rXjh9] | Target Tx 4 [https://solscan.io/tx/5VvtyGVhGs1cvMssVy54rLHFVvwr7q3YotbY8Fh2nf7Qim8RG4Ei6PBkdyWENuWA5XgxUHQPt4rEXhcpU67iCPYT]
+
+[15:12] APL. Valhalla Bot: 
+Skipping position due to token age restriction
+Target: 20260125_C5JXfmK
+Token Fiz3UzjMudjXcXaRK78A179DMbVZcFsUFD5AbbJpump is less than your required age of 4h
+Token The Camusian Fish: Fiz3UzjMudjXcXaRK78A179DMbVZcFsUFD5AbbJpump (Age: 39min ago)
+Token SOL: So11111111111111111111111111111111111111112 (Age: Stable Token)
+
+To adjust this: type /settings_dlmm → More Copy Trade Settings → Set Minimum Token Age
+Target Tx: Target Tx [https://solscan.io/tx/29H1dDBBswrwHFa6cW8rFa94Fr1deEueJQR64ePXncPQm8AGqs5LqFnGFcZ5uhrSEyjxLQg62Vg6HfZh6dAic56t]
+
+[15:17] APL. Valhalla Bot: 
+Skipping position due to token age restriction
+Target: 20260125_C5JXfmK
+Token Fiz3UzjMudjXcXaRK78A179DMbVZcFsUFD5AbbJpump is less than your required age of 4h
+Token The Camusian Fish: Fiz3UzjMudjXcXaRK78A179DMbVZcFsUFD5AbbJpump (Age: 44min ago)
+Token SOL: So11111111111111111111111111111111111111112 (Age: Stable Token)
+
+To adjust this: type /settings_dlmm → More Copy Trade Settings → Set Minimum Token Age
+Target Tx: Target Tx 1 [https://solscan.io/tx/2BT8uqsBuAqdMH3RoPkx3FYFF6o3Nf32vPQDEKDBfbKAhbKxy4Drjt53fUvsXh158HK4xF2dJfuvf7dieuoBwwAJ] | Target Tx 4 [https://solscan.io/tx/2NiADVuyuyHLaKx5mcEcVsbK9VxftK7oetCitj1e1xGv4gYLVkYYjdA1yNH2X7T9BUgYhaY6AKxUksqeSzjVq1NC]
+
+[15:17] APL. Valhalla Bot: 
+Skipping position due to token age restriction
+Target: 20260125_C5JXfmK
+Token Fiz3UzjMudjXcXaRK78A179DMbVZcFsUFD5AbbJpump is less than your required age of 4h
+Token The Camusian Fish: Fiz3UzjMudjXcXaRK78A179DMbVZcFsUFD5AbbJpump (Age: 45min ago)
+Token SOL: So11111111111111111111111111111111111111112 (Age: Stable Token)
+
+To adjust this: type /settings_dlmm → More Copy Trade Settings → Set Minimum Token Age
+Target Tx: Target Tx 1 [https://solscan.io/tx/36LpFfHb2J1rHeiu8syQuHxmLNwVQFUsXwDiicPPB4rxY29mz9pJi5ZKmr5qcDXPuz4MuMa93uYkYSgBh5cwecTx] | Target Tx 4 [https://solscan.io/tx/5oTdUcYXskL6YjNJTRRU4bnwekDusTh3qwdvHM5fsFtL3P16VTfANg6TMpwRs7XJTVCeLbtXdBug7uAV3e41EqEt]
+
+[15:18] APL. Valhalla Bot: 
+Skipping position due to token age restriction
+Target: 20260125_C5JXfmK
+Token Fiz3UzjMudjXcXaRK78A179DMbVZcFsUFD5AbbJpump is less than your required age of 4h
+Token The Camusian Fish: Fiz3UzjMudjXcXaRK78A179DMbVZcFsUFD5AbbJpump (Age: 46min ago)
+Token SOL: So11111111111111111111111111111111111111112 (Age: Stable Token)
+
+To adjust this: type /settings_dlmm → More Copy Trade Settings → Set Minimum Token Age
+Target Tx: Target Tx [https://solscan.io/tx/2enh4epwovzzVoRizruhvj78vA8eMsjoAEzvjn4hFwfoyK9Tx3SH5JzTs87fobjzvxddJt4CJR64pc8E1gq7mX8u]
+
+[15:19] APL. Valhalla Bot: 
+Skipping position due to token age restriction
+Target: 20260125_C5JXfmK
+Token Fiz3UzjMudjXcXaRK78A179DMbVZcFsUFD5AbbJpump is less than your required age of 4h
+Token The Camusian Fish: Fiz3UzjMudjXcXaRK78A179DMbVZcFsUFD5AbbJpump (Age: 46min ago)
+Token SOL: So11111111111111111111111111111111111111112 (Age: Stable Token)
+
+To adjust this: type /settings_dlmm → More Copy Trade Settings → Set Minimum Token Age
+Target Tx: Target Tx [https://solscan.io/tx/5utVUUQiGNrd6vbxCEAuL1t9qWVifJJBMD9NeoT3v3PmHoc8GD4Ru2SS3vmtkCshFDdks7yJ4Hh7iDLQnQAcQuET]
+
+[15:19] APL. Valhalla Bot: 
+Skipping position due to token age restriction
+Target: 20260125_C5JXfmK
+Token Fiz3UzjMudjXcXaRK78A179DMbVZcFsUFD5AbbJpump is less than your required age of 4h
+Token The Camusian Fish: Fiz3UzjMudjXcXaRK78A179DMbVZcFsUFD5AbbJpump (Age: 47min ago)
+Token SOL: So11111111111111111111111111111111111111112 (Age: Stable Token)
+
+To adjust this: type /settings_dlmm → More Copy Trade Settings → Set Minimum Token Age
+Target Tx: Target Tx 1 [https://solscan.io/tx/2s8KDYG4p4etXZJZxequ6hGuju2bAhSGGCBANFwtjbd92eiLrbf6b59eK9HXAuZNaLuXUFkfMWrsVVXkcpkjKGwX] | Target Tx 4 [https://solscan.io/tx/29GCgUDJauCWCyZSVY3DyK27sLKYGCK2mvJxFWojbJqoq4od8JdLngpJagjMJXVxSLFtpCE8tmcsD1DBqu7F8wWY]
+
+[15:44] APL. Valhalla Bot:
+🔓 Opened New DLMM Position! (7c66w24U)
+BidAsk 1-Sided Position | USEFUL-SOL [https://dexscreener.com/solana/D67BSPqECWv8GEozzFT4KCMtT9aFkswK5fC3oeBBbonk]
+Target: 20260127_3WrPRi [https://app.lpagent.io/portfolio?address=3WrPRi9LKKfgMuEeNYuWxZRMNhJscu2M96utmWUPmmvb]
+MC: $1,620,445.005 | Age: 3d ago
+Jup Score: 85
+Target Pos: USEFUL COIN: 0.0000 | SOL: 6.5235
+Your Pos: USEFUL COIN: 0.0000 | SOL: 2.9356
+View Tx - Your Solscan [https://solscan.io/tx/5utJoQzASFuez9iSqJmeTRGNB2kPzsUPbLdaMVYpHcbp5tw4WAbU85bLBuMR9dEr22KSmeR9yBQYcxHzdpi6KwqL] | Target Tx [https://solscan.io/tx/3xqtCFbFAA1gBtA4cnru2R8ksLjjmzyniXB7CPEMhyk3ELG7dfcRLrKu6Lc5kAFof6fQomXcBCSZ629zvRqPPsCt]
+
+[16:51] APL. Valhalla Bot: 
+Swapped 3238 USEFUL COIN (D67BSPqECWv8GEozzFT4KCMtT9aFkswK5fC3oeBBbonk). https://solscan.io/tx/3VVru2TCyNbQNFtXdV4WzsivTLmbo1GjZ29MK1igPjVxWcJZPxtpDSqNHo6ULuiZ7QTZaq1oE2rXjr2CWtN2DXir [https://solscan.io/tx/3VVru2TCyNbQNFtXdV4WzsivTLmbo1GjZ29MK1igPjVxWcJZPxtpDSqNHo6ULuiZ7QTZaq1oE2rXjr2CWtN2DXir]
+
+[16:53] APL. Valhalla Bot:
+🔐 Closed DLMM Position! (7c66w24U)
+Target: 20260127_3WrPRi [https://app.lpagent.io/portfolio?address=3WrPRi9LKKfgMuEeNYuWxZRMNhJscu2M96utmWUPmmvb]
+Starting SOL balance: 12.52 SOL ($1041.04 USD) on your wallet
+View Tx - Your Solscan [https://solscan.io/tx/5TUKiYJ35w2DN8TzXEhtuAjywBvNkFMEkVsS2yPoZzh8Dv4zECi6sZh4L3EXL7PKjim2DskRjXG6pTFdhshC8sfW] | Target Tx [https://solscan.io/tx/5VBShCSAB4tBF5K3NeDRKu1na1LiyzCaZ9ADfGPbV5haVEJULnMEsCfs8CvNWxuv7HFsCqbzmJHaAMfgF2zkTb3j]
+View Position History - Your Metlex [https://metlex.io/pnl2/5TUKiYJ35w2DN8TzXEhtuAjywBvNkFMEkVsS2yPoZzh8Dv4zECi6sZh4L3EXL7PKjim2DskRjXG6pTFdhshC8sfW] | Target Metlex [https://metlex.io/pnl2/5VBShCSAB4tBF5K3NeDRKu1na1LiyzCaZ9ADfGPbV5haVEJULnMEsCfs8CvNWxuv7HFsCqbzmJHaAMfgF2zkTb3j]
+Ending SOL balance: 15.46 SOL ($1285.50 USD) on your wallet
+Total SOL balance: 28.24 SOL ($2348.51 USD) (5 Active Positions)
+
+[https://cdn.discordapp.com/attachments/1420300712427913227/1471897063880003819/output-7c66aPBhTFTKMEv8F5wTjG6UzPpqpvxXW2RKWq9Xw24U.jpeg?ex=69909a76&is=698f48f6&hm=7b80901c75f046e414afeefbcb293d0965e8e7fd91d133458bcd69378fa13ce4&]
