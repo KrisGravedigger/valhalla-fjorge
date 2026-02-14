@@ -214,6 +214,16 @@ class AddLiquidityEvent:
 
 
 @dataclass
+class InsufficientBalanceEvent:
+    timestamp: str          # "[HH:MM]" or "[YYYY-MM-DDTHH:MM]"
+    target: str             # wallet that triggered the trade
+    sol_balance: float      # "Your SOL balance"
+    effective_balance: float # "Total effective balance"
+    required_amount: float  # "Required amount for this trade"
+    date: str = ""
+
+
+@dataclass
 class SwapEvent:
     timestamp: str
     amount: str

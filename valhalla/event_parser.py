@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 
 from .models import (
     OpenEvent, CloseEvent, RugEvent, SkipEvent, FailsafeEvent,
-    AddLiquidityEvent, SwapEvent, short_id
+    AddLiquidityEvent, SwapEvent, InsufficientBalanceEvent, short_id
 )
 
 
@@ -54,6 +54,12 @@ class EventParser:
     # Swap pattern
     SWAP_PATTERN = r'Swapped\s+([\d,]+|all)\s+(.+?)\s+\((\S+)\)'
 
+    # Insufficient balance patterns
+    INSUF_TARGET_PATTERN = r'Trade copied from:\s*(\S+)'
+    INSUF_SOL_BALANCE_PATTERN = r'Your SOL balance:\s*([\d.]+)\s*SOL'
+    INSUF_EFFECTIVE_PATTERN = r'Total effective balance:\s*([\d.]+)\s*SOL'
+    INSUF_REQUIRED_PATTERN = r'Required amount for this trade:\s*([\d.]+)\s*SOL'
+
     def __init__(self, base_date: Optional[str] = None):
         """
         Initialize EventParser.
@@ -68,6 +74,7 @@ class EventParser:
         self.swap_events: List[SwapEvent] = []
         self.failsafe_events: List[FailsafeEvent] = []
         self.add_liquidity_events: List[AddLiquidityEvent] = []
+        self.insufficient_balance_events: List[InsufficientBalanceEvent] = []
         self.base_date = base_date
         self.current_date = base_date
 
@@ -145,6 +152,12 @@ class EventParser:
             if event:
                 event.date = self.current_date or ""
                 self.skip_events.append(event)
+
+        elif "Insufficient Effective Balance" in message:
+            event = self._parse_insufficient_balance_event(timestamp, message)
+            if event:
+                event.date = self.current_date or ""
+                self.insufficient_balance_events.append(event)
 
         elif "Swapped" in message:
             event = self._parse_swap_event(timestamp, message)
@@ -354,6 +367,28 @@ class EventParser:
             )
         except (ValueError, AttributeError) as e:
             print(f"Warning: Failed to parse skip event: {e}")
+            return None
+
+    def _parse_insufficient_balance_event(self, timestamp: str, message: str) -> Optional[InsufficientBalanceEvent]:
+        """Parse an insufficient balance event"""
+        try:
+            target_match = re.search(self.INSUF_TARGET_PATTERN, message)
+            sol_match = re.search(self.INSUF_SOL_BALANCE_PATTERN, message)
+            effective_match = re.search(self.INSUF_EFFECTIVE_PATTERN, message)
+            required_match = re.search(self.INSUF_REQUIRED_PATTERN, message)
+
+            if not all([target_match, sol_match, effective_match, required_match]):
+                return None
+
+            return InsufficientBalanceEvent(
+                timestamp=timestamp,
+                target=target_match.group(1),
+                sol_balance=float(sol_match.group(1)),
+                effective_balance=float(effective_match.group(1)),
+                required_amount=float(required_match.group(1))
+            )
+        except (ValueError, AttributeError) as e:
+            print(f"Warning: Failed to parse insufficient balance event: {e}")
             return None
 
     def _parse_swap_event(self, timestamp: str, message: str) -> Optional[SwapEvent]:

@@ -23,7 +23,7 @@ from valhalla.matcher import PositionMatcher
 from valhalla.csv_writer import CsvWriter
 from valhalla.json_io import export_to_json, import_from_json, merge_with_imported
 from valhalla.merge import merge_with_existing_csv, merge_positions_csvs
-from valhalla.charts import generate_charts
+from valhalla.charts import generate_charts, generate_insufficient_balance_chart
 
 
 def main():
@@ -178,6 +178,7 @@ def main():
         event_parser.swap_events.extend(file_parser.swap_events)
         event_parser.failsafe_events.extend(file_parser.failsafe_events)
         event_parser.add_liquidity_events.extend(file_parser.add_liquidity_events)
+        event_parser.insufficient_balance_events.extend(file_parser.insufficient_balance_events)
 
         # Track for archiving
         processed_files.append((input_file, file_date))
@@ -192,6 +193,7 @@ def main():
     print(f"  Rug events: {len(event_parser.rug_events)}")
     print(f"  Skip events: {len(event_parser.skip_events)}")
     print(f"  Swap events: {len(event_parser.swap_events)}")
+    print(f"  Insufficient balance events: {len(event_parser.insufficient_balance_events)}")
 
     # Step 3: Resolve addresses
     resolved_addresses: Dict[str, str] = {}
@@ -290,6 +292,14 @@ def main():
     csv_writer.generate_positions_csv(matched_positions, unmatched_opens, str(positions_csv))
     csv_writer.generate_summary_csv(matched_positions, event_parser.skip_events, str(summary_csv))
 
+    # Generate insufficient balance CSV
+    if event_parser.insufficient_balance_events:
+        insuf_csv = output_dir / 'insufficient_balance.csv'
+        csv_writer.generate_insufficient_balance_csv(
+            event_parser.insufficient_balance_events, str(insuf_csv)
+        )
+        print(f"  {insuf_csv}")
+
     print(f"  {positions_csv}")
     print(f"  {summary_csv}")
 
@@ -297,6 +307,10 @@ def main():
     if not args.skip_charts:
         print(f"\nGenerating charts...")
         generate_charts(matched_positions, str(output_dir))
+        if event_parser.insufficient_balance_events:
+            generate_insufficient_balance_chart(
+                event_parser.insufficient_balance_events, str(output_dir)
+            )
 
     # Step 6.6: Export to JSON if requested
     if args.export_json:

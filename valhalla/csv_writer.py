@@ -8,7 +8,10 @@ from decimal import Decimal
 from typing import Dict, List
 from datetime import datetime
 
-from .models import MatchedPosition, OpenEvent, SkipEvent, make_iso_datetime, normalize_token_age, parse_iso_datetime
+from .models import (
+    MatchedPosition, OpenEvent, SkipEvent, InsufficientBalanceEvent,
+    make_iso_datetime, normalize_token_age, parse_iso_datetime
+)
 
 
 class CsvWriter:
@@ -304,4 +307,24 @@ class CsvWriter:
                     rugs_7d if ref_time and count_7d > 0 else "",
                     avg_pos_per_day,
                     date_range
+                ])
+
+    def generate_insufficient_balance_csv(self, events: List[InsufficientBalanceEvent],
+                                          output_path: str) -> None:
+        """Generate insufficient_balance.csv"""
+        with open(output_path, 'w', newline='', encoding='utf-8') as f:
+            writer = csv.writer(f)
+            writer.writerow([
+                'datetime', 'target_wallet', 'sol_balance',
+                'effective_balance', 'required_amount'
+            ])
+
+            for event in events:
+                dt = make_iso_datetime(event.date, event.timestamp)
+                writer.writerow([
+                    dt,
+                    event.target,
+                    f"{event.sol_balance:.4f}",
+                    f"{event.effective_balance:.4f}",
+                    f"{event.required_amount:.4f}"
                 ])
