@@ -69,6 +69,7 @@ def _aggregate_daily_data(dated_positions: List[Tuple[MatchedPosition, date]]) -
     Dict[Tuple[str, date], int],    # entries_data
     Dict[Tuple[str, date], float],  # winrate_data
     Dict[Tuple[str, date], int],    # rugs_data
+    Dict[Tuple[str, date], float],  # pnl_pct_data
     List[date],                      # sorted_dates
     List[str]                        # sorted_wallets
 ]:
@@ -84,6 +85,7 @@ def _aggregate_daily_data(dated_positions: List[Tuple[MatchedPosition, date]]) -
         - entries_data: {(wallet, date): count}
         - winrate_data: {(wallet, date): win_rate_pct}
         - rugs_data: {(wallet, date): rug_count}
+        - pnl_pct_data: {(wallet, date): pnl_pct (ROI)}
         - sorted_dates: List of unique dates sorted
         - sorted_wallets: List of unique wallets sorted
     """
@@ -99,11 +101,17 @@ def _aggregate_daily_data(dated_positions: List[Tuple[MatchedPosition, date]]) -
     entries_data = {}
     winrate_data = {}
     rugs_data = {}
+    pnl_pct_data = {}
 
     for (wallet, dt), positions in grouped.items():
         # PnL sum
         total_pnl = sum(float(p.pnl_sol) for p in positions)
         pnl_data[(wallet, dt)] = total_pnl
+
+        # PnL % (ROI) = total_pnl / total_deployed * 100
+        total_deployed = sum(float(p.sol_deployed) for p in positions if p.sol_deployed is not None and p.sol_deployed > 0)
+        if total_deployed > 0:
+            pnl_pct_data[(wallet, dt)] = total_pnl / total_deployed * 100
 
         # Entries count
         entries_data[(wallet, dt)] = len(positions)
@@ -129,7 +137,7 @@ def _aggregate_daily_data(dated_positions: List[Tuple[MatchedPosition, date]]) -
     all_dates = sorted(set(dt for _, dt in grouped.keys()))
     all_wallets = sorted(set(wallet for wallet, _ in grouped.keys()))
 
-    return pnl_data, entries_data, winrate_data, rugs_data, all_dates, all_wallets
+    return pnl_data, entries_data, winrate_data, rugs_data, pnl_pct_data, all_dates, all_wallets
 
 
 def _fill_zeros_for_active_range(
@@ -211,6 +219,7 @@ def _chart_daily_pnl(
     ax.xaxis.set_major_locator(mdates.DayLocator())
     plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
     ax.axhline(y=0, color='black', linewidth=0.8, linestyle='-', alpha=0.3)
+    ax.yaxis.set_major_locator(plt.MaxNLocator(nbins=10))
     ax.grid(True, alpha=0.3, axis='y')
     ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize='small')
 
@@ -220,6 +229,65 @@ def _chart_daily_pnl(
     fig.savefig(Path(output_dir) / 'daily_pnl.png', dpi=120)
     plt.close(fig)
     print("  Generated: daily_pnl.png")
+
+
+def _chart_daily_pnl_pct(
+    pnl_pct_data: Dict[Tuple[str, date], float],
+    dates: List[date],
+    wallets: List[str],
+    wallet_colors: Dict[str, str],
+    output_dir: str
+) -> None:
+    """
+    Generate daily PnL % (ROI) line chart.
+
+    Each wallet is represented by a colored line.
+    Includes mean line. No total (aggregating percentages is meaningless).
+    """
+    fig, ax = plt.subplots(figsize=(12, 6))
+
+    # Plot each wallet as a line
+    for wallet in wallets:
+        values = [pnl_pct_data.get((wallet, d)) for d in dates]
+
+        ax.plot(
+            dates,
+            values,
+            marker='o',
+            markersize=4,
+            linewidth=2,
+            linestyle='-',
+            label=_short_wallet(wallet),
+            color=wallet_colors[wallet]
+        )
+
+    # Mean line
+    means = []
+    for d in dates:
+        day_values = [pnl_pct_data.get((w, d)) for w in wallets if (w, d) in pnl_pct_data]
+        if day_values:
+            means.append(sum(day_values) / len(day_values))
+        else:
+            means.append(None)
+    ax.plot(dates, means, 'k--', linewidth=1.5, label='Mean')
+
+    # Formatting
+    ax.set_title('Daily PnL % per Wallet (ROI)', fontsize=14, fontweight='bold')
+    ax.set_ylabel('%', fontsize=11)
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%m-%d'))
+    ax.xaxis.set_major_locator(mdates.DayLocator())
+    plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
+    ax.axhline(y=0, color='black', linewidth=0.8, linestyle='-', alpha=0.3)
+    ax.yaxis.set_major_locator(plt.MaxNLocator(nbins=10))
+    ax.grid(True, alpha=0.3, axis='y')
+    ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize='small')
+
+    fig.tight_layout()
+
+    from pathlib import Path
+    fig.savefig(Path(output_dir) / 'daily_pnl_pct.png', dpi=120)
+    plt.close(fig)
+    print("  Generated: daily_pnl_pct.png")
 
 
 def _chart_daily_entries(
@@ -448,8 +516,9 @@ def generate_charts(positions: List[MatchedPosition], output_dir: str) -> None:
     """
     Generate PNG chart files from position data.
 
-    Creates 4 line charts:
+    Creates 5 line charts:
     - daily_pnl.png: Daily PnL per wallet
+    - daily_pnl_pct.png: Daily PnL % per wallet (ROI)
     - daily_entries.png: Daily positions opened per wallet
     - daily_winrate.png: Daily win rate per wallet
     - daily_rugs.png: Daily rug count per wallet
@@ -477,7 +546,7 @@ def generate_charts(positions: List[MatchedPosition], output_dir: str) -> None:
         return
 
     # Aggregate data
-    pnl_data, entries_data, winrate_data, rugs_data, dates, wallets = _aggregate_daily_data(dated)
+    pnl_data, entries_data, winrate_data, rugs_data, pnl_pct_data, dates, wallets = _aggregate_daily_data(dated)
 
     if not dates or not wallets:
         print("  No date/wallet data for charts")
@@ -485,7 +554,7 @@ def generate_charts(positions: List[MatchedPosition], output_dir: str) -> None:
 
     # Apply wallet retirement filter (7-day gap)
     _apply_wallet_retirement(
-        [pnl_data, entries_data, winrate_data, rugs_data],
+        [pnl_data, entries_data, winrate_data, rugs_data, pnl_pct_data],
         dates,
         wallets,
         gap_days=7
@@ -494,12 +563,14 @@ def generate_charts(positions: List[MatchedPosition], output_dir: str) -> None:
     # Fill zeros for active wallet ranges on PnL and entries charts
     _fill_zeros_for_active_range(pnl_data, dates, wallets)
     _fill_zeros_for_active_range(entries_data, dates, wallets)
+    _fill_zeros_for_active_range(pnl_pct_data, dates, wallets)
 
     # Assign consistent wallet colors
     wallet_colors = _get_wallet_colors(wallets)
 
-    # Generate all 4 charts
+    # Generate all 5 charts
     _chart_daily_pnl(pnl_data, dates, wallets, wallet_colors, output_dir)
+    _chart_daily_pnl_pct(pnl_pct_data, dates, wallets, wallet_colors, output_dir)
     _chart_daily_entries(entries_data, dates, wallets, wallet_colors, output_dir)
     _chart_daily_winrate(winrate_data, dates, wallets, wallet_colors, output_dir)
     _chart_daily_rugs(rugs_data, dates, wallets, wallet_colors, output_dir)
