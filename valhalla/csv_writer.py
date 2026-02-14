@@ -124,6 +124,7 @@ class CsvWriter:
             'total_sol_deployed': Decimal('0'),
             'min_date': None,
             'max_date': None,
+            'max_datetime_open': '',
             'mc_values': [],
             'jup_scores': [],
             'age_days_values': [],
@@ -154,6 +155,10 @@ class CsvWriter:
             stats['total_pnl_sol'] += pos.pnl_sol
             if pos.sol_deployed is not None:
                 stats['total_sol_deployed'] += pos.sol_deployed
+
+            # Track latest datetime_open for this wallet
+            if pos.datetime_open and pos.datetime_open > stats['max_datetime_open']:
+                stats['max_datetime_open'] = pos.datetime_open
 
             # Collect token metrics (skip 0/None values)
             if pos.mc_at_open and pos.mc_at_open > 0:
@@ -192,6 +197,13 @@ class CsvWriter:
         for skip_event in skip_events:
             skip_counts[skip_event.target] += 1
 
+        # Sort wallets by most recent activity (newest first)
+        sorted_targets = sorted(
+            target_stats.items(),
+            key=lambda item: item[1]['max_datetime_open'],
+            reverse=True
+        )
+
         # Write summary
         with open(output_path, 'w', newline='', encoding='utf-8') as f:
             writer = csv.writer(f)
@@ -205,7 +217,7 @@ class CsvWriter:
                 'avg_positions_per_day', 'date_range'
             ])
 
-            for target, stats in target_stats.items():
+            for target, stats in sorted_targets:
                 total_pos = stats['total_positions']
                 wins = stats['wins']
                 total_pnl = stats['total_pnl_sol']
