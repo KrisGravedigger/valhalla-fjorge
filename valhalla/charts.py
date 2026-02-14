@@ -362,6 +362,55 @@ def _chart_daily_rugs(
     print("  Generated: daily_rugs.png")
 
 
+def _apply_wallet_retirement(
+    data_dicts: List[Dict[Tuple[str, date], any]],
+    dates: List[date],
+    wallets: List[str],
+    gap_days: int = 7
+) -> None:
+    """
+    Apply wallet retirement filter: mark wallets as retired if they have a gap
+    longer than gap_days between their last active date and timeline end.
+
+    When a wallet is retired, all data points after its last active date are
+    set to None (removed from the data dicts).
+
+    Args:
+        data_dicts: List of data dictionaries to modify in place
+        dates: List of all dates in timeline
+        wallets: List of all wallets
+        gap_days: Minimum gap (in days) to trigger retirement
+    """
+    if not dates:
+        return
+
+    timeline_end = max(dates)
+
+    # Find last active date for each wallet across all data dicts
+    last_active = {}
+    for wallet in wallets:
+        wallet_dates = []
+        for data_dict in data_dicts:
+            for (w, d) in data_dict.keys():
+                if w == wallet:
+                    wallet_dates.append(d)
+        if wallet_dates:
+            last_active[wallet] = max(wallet_dates)
+
+    # Apply retirement: remove data for dates after last_active if gap > gap_days
+    for wallet, last_date in last_active.items():
+        gap = (timeline_end - last_date).days
+        if gap > gap_days:
+            # Wallet is retired - remove all data points after last_date
+            for data_dict in data_dicts:
+                keys_to_remove = [
+                    (w, d) for (w, d) in data_dict.keys()
+                    if w == wallet and d > last_date
+                ]
+                for key in keys_to_remove:
+                    del data_dict[key]
+
+
 def generate_charts(positions: List[MatchedPosition], output_dir: str) -> None:
     """
     Generate PNG chart files from position data.
@@ -400,6 +449,14 @@ def generate_charts(positions: List[MatchedPosition], output_dir: str) -> None:
     if not dates or not wallets:
         print("  No date/wallet data for charts")
         return
+
+    # Apply wallet retirement filter (7-day gap)
+    _apply_wallet_retirement(
+        [pnl_data, entries_data, winrate_data, rugs_data],
+        dates,
+        wallets,
+        gap_days=7
+    )
 
     # Assign consistent wallet colors
     wallet_colors = _get_wallet_colors(wallets)
