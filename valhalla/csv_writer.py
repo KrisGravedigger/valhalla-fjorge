@@ -21,7 +21,6 @@ class CsvWriter:
         with open(output_path, 'w', newline='', encoding='utf-8') as f:
             writer = csv.writer(f)
             writer.writerow([
-                'timestamp_open', 'date_open', 'timestamp_close', 'date_close',
                 'datetime_open', 'datetime_close',
                 'target_wallet', 'token', 'position_type',
                 'sol_deployed', 'sol_received', 'pnl_sol', 'pnl_pct', 'close_reason',
@@ -32,15 +31,7 @@ class CsvWriter:
             ])
 
             for pos in matched_positions:
-                # Extract dates from datetime fields
-                date_open = pos.datetime_open.split('T')[0] if pos.datetime_open and 'T' in pos.datetime_open else ""
-                date_close = pos.datetime_close.split('T')[0] if pos.datetime_close and 'T' in pos.datetime_close else ""
-
                 writer.writerow([
-                    pos.timestamp_open,
-                    date_open,
-                    pos.timestamp_close,
-                    date_close,
                     pos.datetime_open,
                     pos.datetime_close,
                     pos.target_wallet,
@@ -69,14 +60,9 @@ class CsvWriter:
             # Add still-open positions
             for open_event in unmatched_opens:
                 datetime_open = make_iso_datetime(open_event.date, open_event.timestamp)
-                date_open = datetime_open.split('T')[0] if datetime_open and 'T' in datetime_open else ""
                 age_days, age_hours = normalize_token_age(open_event.token_age)
 
                 writer.writerow([
-                    open_event.timestamp,
-                    date_open,
-                    "",  # No close timestamp
-                    "",  # No date_close
                     datetime_open,
                     "",  # No datetime_close
                     open_event.target,

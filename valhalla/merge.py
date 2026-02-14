@@ -81,8 +81,6 @@ def merge_with_existing_csv(
             continue
 
         existing_pos = MatchedPosition(
-            timestamp_open=row.get('timestamp_open', ''),
-            timestamp_close=row.get('timestamp_close', ''),
             target_wallet=row.get('target_wallet', ''),
             token=row.get('token', ''),
             position_type=row.get('position_type', ''),
@@ -124,7 +122,6 @@ def merge_with_existing_csv(
     # Helper: merge open data from new into existing (keep existing Meteora PnL)
     def enrich_existing_with_open(existing: MatchedPosition, new_pos: MatchedPosition) -> MatchedPosition:
         """Take open-side data from new_pos, keep close+Meteora data from existing."""
-        existing.timestamp_open = new_pos.timestamp_open or existing.timestamp_open
         existing.datetime_open = new_pos.datetime_open or existing.datetime_open
         if new_pos.token and new_pos.token != 'unknown':
             existing.token = new_pos.token
@@ -170,7 +167,7 @@ def merge_with_existing_csv(
         # Rule 2: Has Meteora PnL but missing open data (unknown_open)
         # -> enrich with open data from new run if available
         if existing_pos.pnl_source == "meteora" and existing_pos.close_reason in ("unknown_open", "rug_unknown_open"):
-            if new_matched_pos and new_matched_pos.timestamp_open:
+            if new_matched_pos and new_matched_pos.datetime_open:
                 enriched = enrich_existing_with_open(existing_pos, new_matched_pos)
                 merged_matched.append(enriched)
                 enriched_count += 1
@@ -178,8 +175,6 @@ def merge_with_existing_csv(
                 # Open data came as still_open (new file only had the open, not the close)
                 # Build a temporary MatchedPosition from the OpenEvent to use enrich helper
                 open_as_matched = MatchedPosition(
-                    timestamp_open=new_still_open_event.timestamp,
-                    timestamp_close='',
                     target_wallet=new_still_open_event.target,
                     token=new_still_open_event.token_name,
                     position_type=new_still_open_event.position_type,
@@ -227,7 +222,7 @@ def merge_with_existing_csv(
             # No new data - keep existing
             if existing_pos.close_reason == 'still_open':
                 open_event = OpenEvent(
-                    timestamp=existing_pos.timestamp_open,
+                    timestamp=f"[{existing_pos.datetime_open.split('T')[1][:5]}]" if existing_pos.datetime_open and 'T' in existing_pos.datetime_open else '',
                     position_type=existing_pos.position_type,
                     token_name=existing_pos.token,
                     token_pair=f"{existing_pos.token}-SOL",
@@ -352,8 +347,6 @@ def merge_positions_csvs(csv_paths: List[str], output_dir: str) -> None:
             return float(val)
 
         matched_positions.append(MatchedPosition(
-            timestamp_open=row.get('timestamp_open', ''),
-            timestamp_close=row.get('timestamp_close', ''),
             target_wallet=row.get('target_wallet', ''),
             token=row.get('token', ''),
             position_type=row.get('position_type', ''),
@@ -389,7 +382,6 @@ def merge_positions_csvs(csv_paths: List[str], output_dir: str) -> None:
     # Write positions CSV (write all deduplicated rows, including still_open)
     with open(positions_csv, 'w', newline='', encoding='utf-8') as f:
         writer = csv.DictWriter(f, fieldnames=[
-            'timestamp_open', 'date_open', 'timestamp_close', 'date_close',
             'datetime_open', 'datetime_close',
             'target_wallet', 'token', 'position_type',
             'sol_deployed', 'sol_received', 'pnl_sol', 'pnl_pct', 'close_reason',
