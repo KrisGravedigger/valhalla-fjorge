@@ -26,6 +26,24 @@ $out = $reA.Replace($frag, {
   if ([string]::IsNullOrWhiteSpace($t)) { "[$u]" } else { "$t [$u]" }
 })
 
+# Convert <time datetime="2026-02-14T20:02:53.534Z">21:02</time> to [YYYY-MM-DDTHH:MM]
+# Must happen BEFORE stripping HTML tags. Converts UTC to local timezone.
+$out = [regex]::Replace($out, '<time[^>]*datetime="([^"]+)"[^>]*>[^<]*</time>', {
+  param($m)
+  $utcStr = $m.Groups[1].Value
+  $utcDt = [DateTimeOffset]::Parse($utcStr)
+  $localDt = $utcDt.ToLocalTime()
+  "[" + $localDt.ToString("yyyy-MM-ddTHH:mm") + "]"
+})
+
+# Extract date from first <time> tag for filename (already converted above, so parse from text)
+$firstTimeMatch = [regex]::Match($out, '\[(\d{4})-(\d{2})-(\d{2})T\d{2}:\d{2}\]')
+if ($firstTimeMatch.Success) {
+  $userDate = $firstTimeMatch.Groups[1].Value + $firstTimeMatch.Groups[2].Value + $firstTimeMatch.Groups[3].Value
+} else {
+  $userDate = Get-Date -Format "yyyyMMdd"
+}
+
 # HTML decode + minimal block-level tag replacements to newlines, strip other tags
 Add-Type -AssemblyName System.Web
 $out = [System.Web.HttpUtility]::HtmlDecode($out)  # decodes &amp;, etc.
@@ -39,20 +57,6 @@ $out = $out -replace "[ \t]{2,}", " "          # collapse multiple spaces to 1 (
 $out = $out -replace "(\r?\n){3,}", "`r`n`r`n" # max 1 blank line
 $out = $out.Trim()
 
-# Prompt user for date (default: today)
-$defaultDate = Get-Date -Format "yyyyMMdd"
-Write-Host "Enter date for the file (YYYYMMDD) or press Enter for today [$defaultDate]:" -ForegroundColor Cyan
-$userDate = Read-Host
-if ([string]::IsNullOrWhiteSpace($userDate)) {
-  $userDate = $defaultDate
-}
-
-# Validate date format
-if ($userDate -notmatch '^\d{8}$') {
-  Write-Host "Invalid date format. Using today's date: $defaultDate" -ForegroundColor Yellow
-  $userDate = $defaultDate
-}
-
 # Create input/ directory if it doesn't exist
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $inputDir = Join-Path $scriptDir "input"
@@ -60,8 +64,9 @@ if (-not (Test-Path $inputDir)) {
   New-Item -ItemType Directory -Path $inputDir | Out-Null
 }
 
-# Generate filename
-$filename = "${userDate}_discord.txt"
+# Generate filename with timestamp for uniqueness
+$timeStamp = Get-Date -Format "HHmmss"
+$filename = "${userDate}_${timeStamp}_discord.txt"
 $filepath = Join-Path $inputDir $filename
 
 # Save to file
