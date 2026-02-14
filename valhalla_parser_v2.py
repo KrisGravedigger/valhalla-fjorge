@@ -11,6 +11,7 @@ import time
 import argparse
 import urllib.request
 import html
+import shutil
 from dataclasses import dataclass, field
 from decimal import Decimal
 from typing import List, Dict, Optional, Tuple
@@ -2265,12 +2266,13 @@ def main():
     parser = argparse.ArgumentParser(
         description='Parse Valhalla Bot Discord DM logs and generate PnL analysis with Meteora API.'
     )
-    parser.add_argument('input_files', nargs='*', help='Path(s) to Discord DM log file(s) (plain text or HTML)')
-    parser.add_argument('--output-dir', default='.', help='Output directory for CSV files (default: current directory)')
+    parser.add_argument('input_files', nargs='*', help='Path(s) to Discord DM log file(s) (default: all files in input/ folder)')
+    parser.add_argument('--output-dir', default='output', help='Output directory for CSV files (default: output/)')
     parser.add_argument('--rpc-url', default='https://api.mainnet-beta.solana.com',
                        help='Solana RPC URL (default: public mainnet)')
-    parser.add_argument('--skip-rpc', action='store_true', help='Skip Solana RPC resolution, use cache only')
-    parser.add_argument('--skip-meteora', action='store_true', help='Skip Meteora API, use Discord PnL only')
+    parser.add_argument('--skip-rpc', action='store_true', help=argparse.SUPPRESS)  # Hidden dev flag
+    parser.add_argument('--skip-meteora', action='store_true', help=argparse.SUPPRESS)  # Hidden dev flag
+    parser.add_argument('--no-archive', action='store_true', help='Skip moving processed files to archive/')
     parser.add_argument('--cache-file', help='Address cache JSON file (default: address_cache.json in output-dir)')
     parser.add_argument('--date', help='Date for logs in YYYY-MM-DD format (optional, will try to detect from filename)')
     parser.add_argument('--input-format', choices=['auto', 'text', 'html'], default='auto',
@@ -2294,9 +2296,19 @@ def main():
         merge_positions_csvs(args.merge, str(output_dir))
         return
 
-    # Validate input_files for normal parse mode
+    # Get input files - either from args or all files in input/ folder
     if not args.input_files:
-        parser.error("input_files are required when not using --merge mode")
+        input_dir = Path('input')
+        if input_dir.exists() and input_dir.is_dir():
+            # Get all .txt and .html files in input/
+            input_files = [str(f) for f in input_dir.iterdir() if f.is_file() and f.suffix in ['.txt', '.html']]
+            if not input_files:
+                parser.error("No .txt or .html files found in input/ folder")
+            print(f"Processing all files in input/ folder: {len(input_files)} file(s)")
+        else:
+            parser.error("No input files specified and input/ folder not found")
+    else:
+        input_files = args.input_files
 
     # Determine cache file path
     cache_file = args.cache_file if args.cache_file else str(output_dir / 'address_cache.json')
@@ -2304,8 +2316,9 @@ def main():
     # Step 1: Read and parse all input files
     all_messages = []
     event_parser = EventParser()  # Will initialize per-file
+    processed_files = []  # Track successfully processed files for archiving
 
-    for input_file in args.input_files:
+    for input_file in input_files:
         # Detect format and create appropriate reader
         print(f"\nReading Discord logs: {input_file}")
 
@@ -2323,27 +2336,39 @@ def main():
         print(f"  Found {len(messages)} Valhalla messages")
 
         # Determine date for this file - priority order:
-        # 1. In-file date header (highest priority)
-        # 2. CLI --date argument
-        # 3. Filename detection
+        # 1. Filename prefix (YYYYMMDD_*.txt)
+        # 2. In-file date header (first line)
+        # 3. User prompt if neither found
         file_date = None
         date_source = None
 
-        if reader.header_date:
+        # Try filename first
+        file_date = extract_date_from_filename(input_file)
+        if file_date:
+            date_source = "filename"
+        # Then try in-file header
+        elif reader.header_date:
             file_date = reader.header_date
             date_source = "in-file header"
-        elif args.date:
-            file_date = args.date
-            date_source = "CLI argument"
+        # Finally, prompt user
         else:
-            file_date = extract_date_from_filename(input_file)
-            if file_date:
-                date_source = "filename"
+            print(f"  No date found in filename or file header")
+            user_input = input(f"  Enter date for {Path(input_file).name} (YYYYMMDD): ").strip()
+            if user_input and len(user_input) == 8 and user_input.isdigit():
+                try:
+                    year = int(user_input[0:4])
+                    month = int(user_input[4:6])
+                    day = int(user_input[6:8])
+                    datetime(year, month, day)
+                    file_date = f"{year:04d}-{month:02d}-{day:02d}"
+                    date_source = "user input"
+                except ValueError:
+                    print(f"  Invalid date format, continuing without date")
 
         if file_date:
             print(f"  Date detected from {date_source}: {file_date}")
         else:
-            print(f"  No date detected (use --date to specify)")
+            print(f"  No date available")
 
         # Parse events with date context
         print(f"Parsing events (date: {file_date or 'none'})...")
@@ -2359,8 +2384,11 @@ def main():
         event_parser.failsafe_events.extend(file_parser.failsafe_events)
         event_parser.add_liquidity_events.extend(file_parser.add_liquidity_events)
 
+        # Track for archiving
+        processed_files.append((input_file, file_date))
+
     # Step 2: Print aggregated event counts
-    print(f"\nTotal parsed events across {len(args.input_files)} file(s):")
+    print(f"\nTotal parsed events across {len(input_files)} file(s):")
 
     print(f"  Open positions: {len(event_parser.open_events)}")
     print(f"  Close events: {len(event_parser.close_events)}")
@@ -2469,6 +2497,32 @@ def main():
     if args.export_json:
         print(f"\nExporting to JSON...")
         export_to_json(matched_positions, unmatched_opens, event_parser.skip_events, args.export_json)
+
+    # Step 6.7: Archive processed files
+    if not args.no_archive and processed_files:
+        print(f"\nArchiving processed files...")
+        archive_dir = Path('archive')
+        archive_dir.mkdir(parents=True, exist_ok=True)
+
+        for input_file, file_date in processed_files:
+            input_path = Path(input_file)
+            base_name = input_path.name
+
+            # Determine archived filename - prepend date if not already present
+            if file_date and not re.match(r'^\d{8}', base_name):
+                # Prepend date to filename
+                date_compact = file_date.replace('-', '')
+                archive_name = f"{date_compact}_{base_name}"
+            else:
+                archive_name = base_name
+
+            archive_path = archive_dir / archive_name
+
+            try:
+                shutil.move(str(input_path), str(archive_path))
+                print(f"  Archived: {archive_path}")
+            except Exception as e:
+                print(f"  Failed to archive {input_path}: {e}")
 
     # Step 7: Print summary stats
     print(f"\n{'='*60}")
