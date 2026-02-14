@@ -201,6 +201,7 @@ class SkipEvent:
 class FailsafeEvent:
     timestamp: str
     position_id: str
+    tx_signatures: List[str] = field(default_factory=list)
     date: str = ""          # "YYYY-MM-DD" format
 
 

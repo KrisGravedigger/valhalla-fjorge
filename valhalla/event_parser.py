@@ -130,7 +130,7 @@ class EventParser:
                 self.close_events.append(event)
 
         elif "Failsafe Activated (DLMM)" in message:
-            event = self._parse_failsafe_event(timestamp, message)
+            event = self._parse_failsafe_event(timestamp, message, tx_signatures)
             if event:
                 event.date = self.current_date or ""
                 self.failsafe_events.append(event)
@@ -248,7 +248,7 @@ class EventParser:
             print(f"Warning: Failed to parse close event: {e}")
             return None
 
-    def _parse_failsafe_event(self, timestamp: str, message: str) -> Optional[FailsafeEvent]:
+    def _parse_failsafe_event(self, timestamp: str, message: str, tx_signatures: List[str]) -> Optional[FailsafeEvent]:
         """Parse a failsafe activation event"""
         try:
             position_id_match = re.search(self.FAILSAFE_POSITION_ID_PATTERN, message)
@@ -260,7 +260,8 @@ class EventParser:
 
             return FailsafeEvent(
                 timestamp=timestamp,
-                position_id=position_id
+                position_id=position_id,
+                tx_signatures=tx_signatures
             )
         except (ValueError, AttributeError) as e:
             print(f"Warning: Failed to parse failsafe event: {e}")
