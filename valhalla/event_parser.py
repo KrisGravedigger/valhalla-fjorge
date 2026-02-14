@@ -16,7 +16,7 @@ class EventParser:
     """Parse events from Discord message text"""
 
     # Regex patterns (from v1)
-    TIMESTAMP_PATTERN = r'\[(\d{2}:\d{2})\]'
+    TIMESTAMP_PATTERN = r'\[((?:\d{4}-\d{2}-\d{2}T)?\d{2}:\d{2})\]'
     TARGET_PATTERN = r'Target:\s*(\S+)'
     POSITION_TYPE_PATTERN = r'(Spot|BidAsk)\s+1-Sided Position\s*\|\s*(\S+)-SOL'
     MARKET_CAP_PATTERN = r'MC:\s*\$([\d,]+\.?\d*)'
@@ -79,8 +79,13 @@ class EventParser:
             # Strip non-ASCII characters (emoji) before regex matching
             clean_text = re.sub(r'[^\x00-\x7F]+', '', text)
 
-            # Detect midnight rollover if we have a base date
-            if self.base_date:
+            # Check if timestamp contains a full date [YYYY-MM-DDTHH:MM]
+            full_dt_match = re.search(r'\[(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})\]', timestamp)
+            if full_dt_match:
+                # Date is embedded in timestamp — use it directly
+                self.current_date = full_dt_match.group(1)
+            elif self.base_date:
+                # Old [HH:MM] format — use midnight rollover detection
                 time_match = re.search(r'\[(\d{2}):(\d{2})\]', timestamp)
                 if time_match:
                     hour = int(time_match.group(1))
