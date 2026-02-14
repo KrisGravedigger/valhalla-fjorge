@@ -207,7 +207,7 @@ def main():
         # Collect all events with position IDs and tx signatures
         seen_pids = set()
         events_to_resolve = []
-        for event in event_parser.open_events + event_parser.close_events:
+        for event in event_parser.open_events + event_parser.close_events + event_parser.failsafe_events:
             if event.tx_signatures and event.position_id not in seen_pids:
                 seen_pids.add(event.position_id)
                 events_to_resolve.append((event.position_id, event.tx_signatures))
@@ -227,7 +227,7 @@ def main():
     else:
         print(f"\nSkipping RPC resolution (--skip-rpc)")
         # Load from cache only
-        for event in event_parser.open_events + event_parser.close_events:
+        for event in event_parser.open_events + event_parser.close_events + event_parser.failsafe_events:
             cached = cache.get(event.position_id)
             if cached:
                 resolved_addresses[event.position_id] = cached
