@@ -8,3 +8,4 @@ test_output/
 *.png
 .env
 *.valhalla.json
+*.txt

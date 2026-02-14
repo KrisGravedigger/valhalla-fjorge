@@ -11,6 +11,7 @@ import time
 import argparse
 import urllib.request
 import html
+import shutil
 from dataclasses import dataclass, field
 from decimal import Decimal
 from typing import List, Dict, Optional, Tuple
@@ -272,9 +273,9 @@ def generate_charts(positions: List['MatchedPosition'], output_dir: str) -> None
         print("  matplotlib not installed, skipping charts")
         return
 
-    # Filter positions with valid datetime_close
+    # Filter positions with valid datetime_close and non-None pnl_sol
     dated = [(p, parse_iso_datetime(p.datetime_close)) for p in positions]
-    dated = [(p, dt) for p, dt in dated if dt is not None]
+    dated = [(p, dt) for p, dt in dated if dt is not None and p.pnl_sol is not None]
 
     if len(dated) < 2:
         print("  Not enough dated positions for charts (need 2+)")
@@ -379,10 +380,10 @@ class MatchedPosition:
     target_wallet: str
     token: str
     position_type: str
-    sol_deployed: Decimal
-    sol_received: Decimal
-    pnl_sol: Decimal
-    pnl_pct: Decimal
+    sol_deployed: Optional[Decimal]
+    sol_received: Optional[Decimal]
+    pnl_sol: Optional[Decimal]
+    pnl_pct: Optional[Decimal]
     close_reason: str
     mc_at_open: float
     jup_score: int
@@ -392,7 +393,7 @@ class MatchedPosition:
     price_drop_pct: Optional[float] = None
     position_id: str = ""
     full_address: str = ""
-    pnl_source: str = "discord"
+    pnl_source: str = "pending"
     meteora_deposited: Optional[Decimal] = None
     meteora_withdrawn: Optional[Decimal] = None
     meteora_fees: Optional[Decimal] = None
@@ -690,8 +691,9 @@ class EventParser:
                 if time_match:
                     hour = int(time_match.group(1))
 
-                    # If time decreases (e.g., 23:50 -> 00:10), we crossed midnight
-                    if prev_hour is not None and hour < prev_hour:
+                    # If time drops significantly (e.g., 23:50 -> 00:10), we crossed midnight
+                    # Require >6h drop to avoid false triggers from out-of-order messages
+                    if prev_hour is not None and (prev_hour - hour) > 6:
                         # Increment the current date by 1 day
                         current_dt = datetime.strptime(self.current_date, "%Y-%m-%d")
                         next_dt = current_dt + timedelta(days=1)
@@ -1339,10 +1341,16 @@ class PositionMatcher:
         self.parser = parser
 
     def match_positions(self, meteora_results: Dict[str, MeteoraPnlResult],
-                       resolved_addresses: Dict[str, str]) -> Tuple[List[MatchedPosition], List[OpenEvent]]:
+                       resolved_addresses: Dict[str, str],
+                       use_discord_pnl: bool = False) -> Tuple[List[MatchedPosition], List[OpenEvent]]:
         """
         Match open events with close/rug events using position_id lookup.
         Returns (matched_positions, unmatched_opens)
+
+        Args:
+            meteora_results: Dict of position_id -> MeteoraPnlResult
+            resolved_addresses: Dict of position_id -> full address
+            use_discord_pnl: If True, use Discord PnL when Meteora unavailable. Otherwise leave as None.
         """
         matched_positions: List[MatchedPosition] = []
 
@@ -1420,8 +1428,8 @@ class PositionMatcher:
                         datetime_open=make_iso_datetime(open_event.date, open_event.timestamp),
                         datetime_close=make_iso_datetime(close_event.date, close_event.timestamp)
                     ))
-                else:
-                    # Use Discord PnL
+                elif use_discord_pnl:
+                    # Use Discord PnL (only if flag enabled)
                     matched_positions.append(MatchedPosition(
                         timestamp_open=open_event.timestamp,
                         timestamp_close=close_event.timestamp,
@@ -1445,33 +1453,121 @@ class PositionMatcher:
                         datetime_open=make_iso_datetime(open_event.date, open_event.timestamp),
                         datetime_close=make_iso_datetime(close_event.date, close_event.timestamp)
                     ))
+                else:
+                    # Meteora not available and Discord PnL not enabled - leave PnL as None
+                    matched_positions.append(MatchedPosition(
+                        timestamp_open=open_event.timestamp,
+                        timestamp_close=close_event.timestamp,
+                        target_wallet=close_event.target,
+                        token=open_event.token_name,
+                        position_type=open_event.position_type,
+                        sol_deployed=None,
+                        sol_received=None,
+                        pnl_sol=None,
+                        pnl_pct=None,
+                        close_reason=close_reason,
+                        mc_at_open=open_event.market_cap,
+                        jup_score=open_event.jup_score,
+                        token_age=open_event.token_age,
+                        token_age_days=normalize_token_age(open_event.token_age)[0],
+                        token_age_hours=normalize_token_age(open_event.token_age)[1],
+                        price_drop_pct=None,
+                        position_id=pid,
+                        full_address=full_addr,
+                        pnl_source="pending",
+                        datetime_open=make_iso_datetime(open_event.date, open_event.timestamp),
+                        datetime_close=make_iso_datetime(close_event.date, close_event.timestamp)
+                    ))
             else:
                 # Close without matching open (pre-existing position)
-                sol_received = Decimal(str(close_event.ending_sol)) - Decimal(str(close_event.starting_sol))
+                # Check if we have Meteora data for this position
                 full_addr = resolved_addresses.get(pid, "")
+                meteora_result = meteora_results.get(pid)
 
-                matched_positions.append(MatchedPosition(
-                    timestamp_open="",
-                    timestamp_close=close_event.timestamp,
-                    target_wallet=close_event.target,
-                    token="unknown",
-                    position_type="unknown",
-                    sol_deployed=Decimal('0'),
-                    sol_received=sol_received,
-                    pnl_sol=Decimal('0'),
-                    pnl_pct=Decimal('0'),
-                    close_reason="unknown_open",
-                    mc_at_open=0.0,
-                    jup_score=0,
-                    token_age="",
-                    token_age_days=None,
-                    token_age_hours=None,
-                    price_drop_pct=None,
-                    position_id=pid,
-                    full_address=full_addr,
-                    datetime_open="",
-                    datetime_close=make_iso_datetime(close_event.date, close_event.timestamp)
-                ))
+                if meteora_result:
+                    # Use Meteora PnL even for unknown_open (Meteora gives us full position data)
+                    meteora_pnl = meteora_result.pnl_sol
+                    meteora_pnl_pct = (meteora_pnl / meteora_result.deposited_sol * Decimal('100')) if meteora_result.deposited_sol > 0 else Decimal('0')
+
+                    matched_positions.append(MatchedPosition(
+                        timestamp_open="",
+                        timestamp_close=close_event.timestamp,
+                        target_wallet=close_event.target,
+                        token="unknown",
+                        position_type="unknown",
+                        sol_deployed=meteora_result.deposited_sol,
+                        sol_received=meteora_result.withdrawn_sol,
+                        pnl_sol=meteora_pnl,
+                        pnl_pct=meteora_pnl_pct,
+                        close_reason="unknown_open",
+                        mc_at_open=0.0,
+                        jup_score=0,
+                        token_age="",
+                        token_age_days=None,
+                        token_age_hours=None,
+                        price_drop_pct=None,
+                        position_id=pid,
+                        full_address=full_addr,
+                        pnl_source="meteora",
+                        meteora_deposited=meteora_result.deposited_sol,
+                        meteora_withdrawn=meteora_result.withdrawn_sol,
+                        meteora_fees=meteora_result.fees_sol,
+                        meteora_pnl=meteora_pnl,
+                        datetime_open="",
+                        datetime_close=make_iso_datetime(close_event.date, close_event.timestamp)
+                    ))
+                elif use_discord_pnl:
+                    # Use Discord PnL (only if flag enabled)
+                    sol_received = Decimal(str(close_event.ending_sol)) - Decimal(str(close_event.starting_sol))
+
+                    matched_positions.append(MatchedPosition(
+                        timestamp_open="",
+                        timestamp_close=close_event.timestamp,
+                        target_wallet=close_event.target,
+                        token="unknown",
+                        position_type="unknown",
+                        sol_deployed=Decimal('0'),
+                        sol_received=sol_received,
+                        pnl_sol=sol_received,  # For unknown_open, all received is PnL
+                        pnl_pct=Decimal('0'),  # Can't calculate % without deployed
+                        close_reason="unknown_open",
+                        mc_at_open=0.0,
+                        jup_score=0,
+                        token_age="",
+                        token_age_days=None,
+                        token_age_hours=None,
+                        price_drop_pct=None,
+                        position_id=pid,
+                        full_address=full_addr,
+                        pnl_source="discord",
+                        datetime_open="",
+                        datetime_close=make_iso_datetime(close_event.date, close_event.timestamp)
+                    ))
+                else:
+                    # No Meteora and Discord PnL not enabled - leave as None
+                    matched_positions.append(MatchedPosition(
+                        timestamp_open="",
+                        timestamp_close=close_event.timestamp,
+                        target_wallet=close_event.target,
+                        token="unknown",
+                        position_type="unknown",
+                        sol_deployed=None,
+                        sol_received=None,
+                        pnl_sol=None,
+                        pnl_pct=None,
+                        close_reason="unknown_open",
+                        mc_at_open=0.0,
+                        jup_score=0,
+                        token_age="",
+                        token_age_days=None,
+                        token_age_hours=None,
+                        price_drop_pct=None,
+                        position_id=pid,
+                        full_address=full_addr,
+                        pnl_source="pending",
+                        datetime_open="",
+                        datetime_close=make_iso_datetime(close_event.date, close_event.timestamp)
+                    ))
 
         # Handle rug events (match by position_id if available)
         for rug_event in self.parser.rug_events:
@@ -1491,36 +1587,185 @@ class PositionMatcher:
                     for liq in liquidity_by_id.get(pid, []):
                         sol_deployed += Decimal(str(liq.amount_sol))
 
-                    estimated_loss = sol_deployed * Decimal(str(rug_event.price_drop)) / Decimal('100')
-                    pnl_sol = -estimated_loss
-                    pnl_pct = -Decimal(str(rug_event.price_drop))
-
                     full_addr = resolved_addresses.get(pid, "")
+                    meteora_result = meteora_results.get(pid)
 
-                    matched_positions.append(MatchedPosition(
-                        timestamp_open=open_event.timestamp,
-                        timestamp_close=rug_event.timestamp,
-                        target_wallet=rug_event.target,
-                        token=open_event.token_name,
-                        position_type=open_event.position_type,
-                        sol_deployed=sol_deployed,
-                        sol_received=Decimal('0'),
-                        pnl_sol=pnl_sol,
-                        pnl_pct=pnl_pct,
-                        close_reason="rug",
-                        mc_at_open=open_event.market_cap,
-                        jup_score=open_event.jup_score,
-                        token_age=open_event.token_age,
-                        token_age_days=normalize_token_age(open_event.token_age)[0],
-                        token_age_hours=normalize_token_age(open_event.token_age)[1],
-                        price_drop_pct=rug_event.price_drop,
-                        position_id=pid,
-                        full_address=full_addr,
-                        datetime_open=make_iso_datetime(open_event.date, open_event.timestamp),
-                        datetime_close=make_iso_datetime(rug_event.date, rug_event.timestamp)
-                    ))
+                    if meteora_result:
+                        # Use Meteora PnL even for rug events
+                        meteora_pnl = meteora_result.pnl_sol
+                        meteora_pnl_pct = (meteora_pnl / meteora_result.deposited_sol * Decimal('100')) if meteora_result.deposited_sol > 0 else Decimal('0')
+
+                        matched_positions.append(MatchedPosition(
+                            timestamp_open=open_event.timestamp,
+                            timestamp_close=rug_event.timestamp,
+                            target_wallet=rug_event.target,
+                            token=open_event.token_name,
+                            position_type=open_event.position_type,
+                            sol_deployed=meteora_result.deposited_sol,
+                            sol_received=meteora_result.withdrawn_sol,
+                            pnl_sol=meteora_pnl,
+                            pnl_pct=meteora_pnl_pct,
+                            close_reason="rug",
+                            mc_at_open=open_event.market_cap,
+                            jup_score=open_event.jup_score,
+                            token_age=open_event.token_age,
+                            token_age_days=normalize_token_age(open_event.token_age)[0],
+                            token_age_hours=normalize_token_age(open_event.token_age)[1],
+                            price_drop_pct=rug_event.price_drop,
+                            position_id=pid,
+                            full_address=full_addr,
+                            pnl_source="meteora",
+                            meteora_deposited=meteora_result.deposited_sol,
+                            meteora_withdrawn=meteora_result.withdrawn_sol,
+                            meteora_fees=meteora_result.fees_sol,
+                            meteora_pnl=meteora_pnl,
+                            datetime_open=make_iso_datetime(open_event.date, open_event.timestamp),
+                            datetime_close=make_iso_datetime(rug_event.date, rug_event.timestamp)
+                        ))
+                    elif use_discord_pnl:
+                        # Use Discord PnL estimate (price drop based)
+                        estimated_loss = sol_deployed * Decimal(str(rug_event.price_drop)) / Decimal('100')
+                        pnl_sol = -estimated_loss
+                        pnl_pct = -Decimal(str(rug_event.price_drop))
+
+                        matched_positions.append(MatchedPosition(
+                            timestamp_open=open_event.timestamp,
+                            timestamp_close=rug_event.timestamp,
+                            target_wallet=rug_event.target,
+                            token=open_event.token_name,
+                            position_type=open_event.position_type,
+                            sol_deployed=sol_deployed,
+                            sol_received=Decimal('0'),
+                            pnl_sol=pnl_sol,
+                            pnl_pct=pnl_pct,
+                            close_reason="rug",
+                            mc_at_open=open_event.market_cap,
+                            jup_score=open_event.jup_score,
+                            token_age=open_event.token_age,
+                            token_age_days=normalize_token_age(open_event.token_age)[0],
+                            token_age_hours=normalize_token_age(open_event.token_age)[1],
+                            price_drop_pct=rug_event.price_drop,
+                            position_id=pid,
+                            full_address=full_addr,
+                            pnl_source="discord",
+                            datetime_open=make_iso_datetime(open_event.date, open_event.timestamp),
+                            datetime_close=make_iso_datetime(rug_event.date, rug_event.timestamp)
+                        ))
+                    else:
+                        # No Meteora and Discord PnL not enabled - leave as None
+                        matched_positions.append(MatchedPosition(
+                            timestamp_open=open_event.timestamp,
+                            timestamp_close=rug_event.timestamp,
+                            target_wallet=rug_event.target,
+                            token=open_event.token_name,
+                            position_type=open_event.position_type,
+                            sol_deployed=None,
+                            sol_received=None,
+                            pnl_sol=None,
+                            pnl_pct=None,
+                            close_reason="rug",
+                            mc_at_open=open_event.market_cap,
+                            jup_score=open_event.jup_score,
+                            token_age=open_event.token_age,
+                            token_age_days=normalize_token_age(open_event.token_age)[0],
+                            token_age_hours=normalize_token_age(open_event.token_age)[1],
+                            price_drop_pct=rug_event.price_drop,
+                            position_id=pid,
+                            full_address=full_addr,
+                            pnl_source="pending",
+                            datetime_open=make_iso_datetime(open_event.date, open_event.timestamp),
+                            datetime_close=make_iso_datetime(rug_event.date, rug_event.timestamp)
+                        ))
                 else:
+                    # Rug event without matching open
                     full_addr = resolved_addresses.get(pid, "")
+                    meteora_result = meteora_results.get(pid)
+
+                    if meteora_result:
+                        # Use Meteora PnL
+                        meteora_pnl = meteora_result.pnl_sol
+                        meteora_pnl_pct = (meteora_pnl / meteora_result.deposited_sol * Decimal('100')) if meteora_result.deposited_sol > 0 else Decimal('0')
+
+                        matched_positions.append(MatchedPosition(
+                            timestamp_open="",
+                            timestamp_close=rug_event.timestamp,
+                            target_wallet=rug_event.target,
+                            token="unknown",
+                            position_type="unknown",
+                            sol_deployed=meteora_result.deposited_sol,
+                            sol_received=meteora_result.withdrawn_sol,
+                            pnl_sol=meteora_pnl,
+                            pnl_pct=meteora_pnl_pct,
+                            close_reason="rug_unknown_open",
+                            mc_at_open=0.0,
+                            jup_score=0,
+                            token_age="",
+                            token_age_days=None,
+                            token_age_hours=None,
+                            price_drop_pct=rug_event.price_drop,
+                            position_id=pid,
+                            full_address=full_addr,
+                            pnl_source="meteora",
+                            meteora_deposited=meteora_result.deposited_sol,
+                            meteora_withdrawn=meteora_result.withdrawn_sol,
+                            meteora_fees=meteora_result.fees_sol,
+                            meteora_pnl=meteora_pnl,
+                            datetime_open="",
+                            datetime_close=make_iso_datetime(rug_event.date, rug_event.timestamp)
+                        ))
+                    elif use_discord_pnl:
+                        # Use Discord PnL (can't estimate without deployed amount)
+                        matched_positions.append(MatchedPosition(
+                            timestamp_open="",
+                            timestamp_close=rug_event.timestamp,
+                            target_wallet=rug_event.target,
+                            token="unknown",
+                            position_type="unknown",
+                            sol_deployed=Decimal('0'),
+                            sol_received=Decimal('0'),
+                            pnl_sol=Decimal('0'),
+                            pnl_pct=Decimal('0'),
+                            close_reason="rug_unknown_open",
+                            mc_at_open=0.0,
+                            jup_score=0,
+                            token_age="",
+                            token_age_days=None,
+                            token_age_hours=None,
+                            price_drop_pct=rug_event.price_drop,
+                            position_id=pid,
+                            full_address=full_addr,
+                            pnl_source="discord",
+                            datetime_open="",
+                            datetime_close=make_iso_datetime(rug_event.date, rug_event.timestamp)
+                        ))
+                    else:
+                        # No Meteora and Discord PnL not enabled
+                        matched_positions.append(MatchedPosition(
+                            timestamp_open="",
+                            timestamp_close=rug_event.timestamp,
+                            target_wallet=rug_event.target,
+                            token="unknown",
+                            position_type="unknown",
+                            sol_deployed=None,
+                            sol_received=None,
+                            pnl_sol=None,
+                            pnl_pct=None,
+                            close_reason="rug_unknown_open",
+                            mc_at_open=0.0,
+                            jup_score=0,
+                            token_age="",
+                            token_age_days=None,
+                            token_age_hours=None,
+                            price_drop_pct=rug_event.price_drop,
+                            position_id=pid,
+                            full_address=full_addr,
+                            pnl_source="pending",
+                            datetime_open="",
+                            datetime_close=make_iso_datetime(rug_event.date, rug_event.timestamp)
+                        ))
+            else:
+                # Rug event without position_id - can't match or get Meteora data
+                if use_discord_pnl:
                     matched_positions.append(MatchedPosition(
                         timestamp_open="",
                         timestamp_close=rug_event.timestamp,
@@ -1538,34 +1783,34 @@ class PositionMatcher:
                         token_age_days=None,
                         token_age_hours=None,
                         price_drop_pct=rug_event.price_drop,
-                        position_id=pid,
-                        full_address=full_addr,
+                        position_id="",
+                        pnl_source="discord",
                         datetime_open="",
                         datetime_close=make_iso_datetime(rug_event.date, rug_event.timestamp)
                     ))
-            else:
-                # Rug event without position_id - can't match properly
-                matched_positions.append(MatchedPosition(
-                    timestamp_open="",
-                    timestamp_close=rug_event.timestamp,
-                    target_wallet=rug_event.target,
-                    token="unknown",
-                    position_type="unknown",
-                    sol_deployed=Decimal('0'),
-                    sol_received=Decimal('0'),
-                    pnl_sol=Decimal('0'),
-                    pnl_pct=Decimal('0'),
-                    close_reason="rug_unknown_open",
-                    mc_at_open=0.0,
-                    jup_score=0,
-                    token_age="",
-                    token_age_days=None,
-                    token_age_hours=None,
-                    price_drop_pct=rug_event.price_drop,
-                    position_id="",
-                    datetime_open="",
-                    datetime_close=make_iso_datetime(rug_event.date, rug_event.timestamp)
-                ))
+                else:
+                    matched_positions.append(MatchedPosition(
+                        timestamp_open="",
+                        timestamp_close=rug_event.timestamp,
+                        target_wallet=rug_event.target,
+                        token="unknown",
+                        position_type="unknown",
+                        sol_deployed=None,
+                        sol_received=None,
+                        pnl_sol=None,
+                        pnl_pct=None,
+                        close_reason="rug_unknown_open",
+                        mc_at_open=0.0,
+                        jup_score=0,
+                        token_age="",
+                        token_age_days=None,
+                        token_age_hours=None,
+                        price_drop_pct=rug_event.price_drop,
+                        position_id="",
+                        pnl_source="pending",
+                        datetime_open="",
+                        datetime_close=make_iso_datetime(rug_event.date, rug_event.timestamp)
+                    ))
 
         # Unmatched opens = opens whose position_id was never closed
         unmatched_opens = [o for o in self.parser.open_events if o.position_id not in matched_ids]
@@ -1612,10 +1857,10 @@ class CsvWriter:
                     pos.target_wallet,
                     pos.token,
                     pos.position_type,
-                    f"{pos.sol_deployed:.4f}",
-                    f"{pos.sol_received:.4f}",
-                    f"{pos.pnl_sol:.4f}",
-                    f"{pos.pnl_pct:.2f}",
+                    f"{pos.sol_deployed:.4f}" if pos.sol_deployed is not None else "",
+                    f"{pos.sol_received:.4f}" if pos.sol_received is not None else "",
+                    f"{pos.pnl_sol:.4f}" if pos.pnl_sol is not None else "",
+                    f"{pos.pnl_pct:.2f}" if pos.pnl_pct is not None else "",
                     pos.close_reason,
                     f"{pos.mc_at_open:.2f}",
                     pos.jup_score,
@@ -1701,6 +1946,11 @@ class CsvWriter:
 
         for pos in matched_positions:
             stats = target_stats[pos.target_wallet]
+
+            # Skip positions with no PnL data from counting
+            if pos.pnl_sol is None:
+                continue
+
             stats['total_positions'] += 1
 
             if pos.close_reason in ("rug", "rug_unknown_open"):
@@ -1714,7 +1964,8 @@ class CsvWriter:
                 stats['losses'] += 1
 
             stats['total_pnl_sol'] += pos.pnl_sol
-            stats['total_sol_deployed'] += pos.sol_deployed
+            if pos.sol_deployed is not None:
+                stats['total_sol_deployed'] += pos.sol_deployed
 
             # Collect token metrics (skip 0/None values)
             if pos.mc_at_open and pos.mc_at_open > 0:
@@ -1796,10 +2047,15 @@ class CsvWriter:
                     if not positions:
                         return 0, Decimal('0'), Decimal('0'), 0
 
-                    count = len(positions)
-                    pnl = sum(p.pnl_sol for p in positions)
-                    wins_in_window = sum(1 for p in positions if p.pnl_sol > 0 and p.close_reason not in ("rug", "rug_unknown_open", "unknown_open"))
-                    rugs = sum(1 for p in positions if p.close_reason in ("rug", "rug_unknown_open"))
+                    # Filter out positions with no PnL data
+                    positions_with_pnl = [p for p in positions if p.pnl_sol is not None]
+                    if not positions_with_pnl:
+                        return 0, Decimal('0'), Decimal('0'), 0
+
+                    count = len(positions_with_pnl)
+                    pnl = sum(p.pnl_sol for p in positions_with_pnl)
+                    wins_in_window = sum(1 for p in positions_with_pnl if p.pnl_sol > 0 and p.close_reason not in ("rug", "rug_unknown_open", "unknown_open"))
+                    rugs = sum(1 for p in positions_with_pnl if p.close_reason in ("rug", "rug_unknown_open"))
                     win_rate = Decimal(wins_in_window) / Decimal(count) * Decimal('100') if count > 0 else Decimal('0')
 
                     return count, pnl, win_rate, rugs
@@ -1878,10 +2134,10 @@ def export_to_json(positions: List[MatchedPosition], unmatched_opens: List[OpenE
             "timestamp_close": pos.timestamp_close,
             "datetime_open": pos.datetime_open,
             "datetime_close": pos.datetime_close,
-            "sol_deployed": str(pos.sol_deployed),
-            "sol_received": str(pos.sol_received),
-            "pnl_sol": str(pos.pnl_sol),
-            "pnl_pct": str(pos.pnl_pct),
+            "sol_deployed": str(pos.sol_deployed) if pos.sol_deployed is not None else None,
+            "sol_received": str(pos.sol_received) if pos.sol_received is not None else None,
+            "pnl_sol": str(pos.pnl_sol) if pos.pnl_sol is not None else None,
+            "pnl_pct": str(pos.pnl_pct) if pos.pnl_pct is not None else None,
             "close_reason": pos.close_reason,
             "mc_at_open": pos.mc_at_open,
             "jup_score": pos.jup_score,
@@ -1992,10 +2248,10 @@ def import_from_json(json_path: str) -> Tuple[List[MatchedPosition], List[dict]]
             target_wallet=pos_dict.get('target_wallet', ''),
             token=pos_dict.get('token', ''),
             position_type=pos_dict.get('position_type', ''),
-            sol_deployed=Decimal(str(pos_dict.get('sol_deployed', '0'))),
-            sol_received=Decimal(str(pos_dict.get('sol_received', '0'))),
-            pnl_sol=Decimal(str(pos_dict.get('pnl_sol', '0'))),
-            pnl_pct=Decimal(str(pos_dict.get('pnl_pct', '0'))),
+            sol_deployed=parse_optional_decimal(pos_dict.get('sol_deployed')),
+            sol_received=parse_optional_decimal(pos_dict.get('sol_received')),
+            pnl_sol=parse_optional_decimal(pos_dict.get('pnl_sol')),
+            pnl_pct=parse_optional_decimal(pos_dict.get('pnl_pct')),
             close_reason=pos_dict.get('close_reason', ''),
             mc_at_open=float(pos_dict.get('mc_at_open', 0.0)),
             jup_score=int(pos_dict.get('jup_score', 0)),
@@ -2005,7 +2261,7 @@ def import_from_json(json_path: str) -> Tuple[List[MatchedPosition], List[dict]]
             price_drop_pct=pos_dict.get('price_drop_pct'),
             position_id=pos_dict.get('position_id', ''),
             full_address=pos_dict.get('full_address', ''),
-            pnl_source=pos_dict.get('pnl_source', 'discord'),
+            pnl_source=pos_dict.get('pnl_source', 'pending'),
             meteora_deposited=parse_optional_decimal(pos_dict.get('meteora_deposited')),
             meteora_withdrawn=parse_optional_decimal(pos_dict.get('meteora_withdrawn')),
             meteora_fees=parse_optional_decimal(pos_dict.get('meteora_fees')),
@@ -2102,6 +2358,264 @@ def merge_with_imported(new_positions: List[MatchedPosition],
 # Merge Functions
 # ============================================================================
 
+def merge_with_existing_csv(
+    new_matched: List[MatchedPosition],
+    new_still_open: List[OpenEvent],
+    existing_csv_path: str
+) -> Tuple[List[MatchedPosition], List[OpenEvent]]:
+    """
+    Merge newly parsed positions with existing output CSV.
+
+    Merge rules:
+    - Positions with pnl_source="meteora" in existing CSV are NEVER overwritten (fully populated)
+    - New positions are added
+    - Positions with pnl_source="pending" or "discord" can be upgraded with new data
+    - Still-open positions can be upgraded (e.g., if we now have close data)
+    - Existing positions not in new run are preserved
+
+    Args:
+        new_matched: Newly parsed matched positions (closed)
+        new_still_open: Newly parsed still-open positions (OpenEvent objects)
+        existing_csv_path: Path to existing positions.csv
+
+    Returns:
+        Tuple of (merged_matched, merged_still_open) where still_open are OpenEvent objects
+    """
+    print(f"  Reading existing CSV: {existing_csv_path}")
+
+    # Read existing CSV rows
+    existing_rows = []
+    with open(existing_csv_path, 'r', encoding='utf-8') as f:
+        reader = csv.DictReader(f)
+        existing_rows = list(reader)
+
+    print(f"  Existing positions: {len(existing_rows)}")
+
+    # Helper functions for parsing CSV values
+    def parse_optional_decimal(val: str) -> Optional[Decimal]:
+        if not val or val.strip() == '':
+            return None
+        return Decimal(val)
+
+    def parse_int(val: str) -> int:
+        if not val or val.strip() == '':
+            return 0
+        return int(val)
+
+    def parse_optional_int(val: str) -> Optional[int]:
+        if not val or val.strip() == '':
+            return None
+        return int(val)
+
+    def parse_float(val: str) -> float:
+        if not val or val.strip() == '':
+            return 0.0
+        return float(val)
+
+    def parse_optional_float(val: str) -> Optional[float]:
+        if not val or val.strip() == '':
+            return None
+        return float(val)
+
+    # Convert existing rows to MatchedPosition objects, indexed by position_id
+    existing_by_id = {}
+
+    for row in existing_rows:
+        position_id = row.get('position_id', '').strip()
+
+        # Skip rows without position_id (shouldn't happen, but be safe)
+        if not position_id:
+            continue
+
+        existing_pos = MatchedPosition(
+            timestamp_open=row.get('timestamp_open', ''),
+            timestamp_close=row.get('timestamp_close', ''),
+            target_wallet=row.get('target_wallet', ''),
+            token=row.get('token', ''),
+            position_type=row.get('position_type', ''),
+            sol_deployed=parse_optional_decimal(row.get('sol_deployed', '')),
+            sol_received=parse_optional_decimal(row.get('sol_received', '')),
+            pnl_sol=parse_optional_decimal(row.get('pnl_sol', '')),
+            pnl_pct=parse_optional_decimal(row.get('pnl_pct', '')),
+            close_reason=row.get('close_reason', ''),
+            mc_at_open=parse_float(row.get('mc_at_open', '0')),
+            jup_score=parse_int(row.get('jup_score', '0')),
+            token_age=row.get('token_age', ''),
+            token_age_days=parse_optional_int(row.get('token_age_days', '')),
+            token_age_hours=parse_optional_int(row.get('token_age_hours', '')),
+            price_drop_pct=parse_optional_float(row.get('price_drop_pct', '')),
+            position_id=position_id,
+            full_address=row.get('full_address', ''),
+            pnl_source=row.get('pnl_source', 'pending'),
+            meteora_deposited=parse_optional_decimal(row.get('meteora_deposited', '')),
+            meteora_withdrawn=parse_optional_decimal(row.get('meteora_withdrawn', '')),
+            meteora_fees=parse_optional_decimal(row.get('meteora_fees', '')),
+            meteora_pnl=parse_optional_decimal(row.get('meteora_pnl', '')),
+            datetime_open=row.get('datetime_open', ''),
+            datetime_close=row.get('datetime_close', '')
+        )
+
+        existing_by_id[position_id] = existing_pos
+
+    # Index new positions by position_id
+    new_matched_by_id = {p.position_id: p for p in new_matched if p.position_id}
+    new_still_open_by_id = {e.position_id: e for e in new_still_open if e.position_id}
+
+    # Helper: check if position is fully complete (has open + close + meteora PnL)
+    def is_fully_complete(pos: MatchedPosition) -> bool:
+        has_open = pos.close_reason not in ("unknown_open", "rug_unknown_open")
+        has_close = pos.close_reason != "still_open"
+        has_meteora = pos.pnl_source == "meteora"
+        return has_open and has_close and has_meteora
+
+    # Helper: merge open data from new into existing (keep existing Meteora PnL)
+    def enrich_existing_with_open(existing: MatchedPosition, new_pos: MatchedPosition) -> MatchedPosition:
+        """Take open-side data from new_pos, keep close+Meteora data from existing."""
+        existing.timestamp_open = new_pos.timestamp_open or existing.timestamp_open
+        existing.datetime_open = new_pos.datetime_open or existing.datetime_open
+        if new_pos.token and new_pos.token != 'unknown':
+            existing.token = new_pos.token
+        if new_pos.position_type and new_pos.position_type != 'unknown':
+            existing.position_type = new_pos.position_type
+        if new_pos.mc_at_open and new_pos.mc_at_open > 0:
+            existing.mc_at_open = new_pos.mc_at_open
+        if new_pos.jup_score and new_pos.jup_score > 0:
+            existing.jup_score = new_pos.jup_score
+        if new_pos.token_age:
+            existing.token_age = new_pos.token_age
+            existing.token_age_days = new_pos.token_age_days
+            existing.token_age_hours = new_pos.token_age_hours
+        if existing.close_reason in ("unknown_open", "rug_unknown_open"):
+            # Upgrade close_reason: rug_unknown_open -> rug, unknown_open -> normal
+            if existing.close_reason == "rug_unknown_open":
+                existing.close_reason = "rug"
+            else:
+                existing.close_reason = "normal"
+        return existing
+
+    # Merge logic
+    merged_matched = []
+    merged_still_open = []
+
+    kept_complete_count = 0
+    enriched_count = 0
+    upgraded_count = 0
+    new_count = 0
+    kept_from_existing_count = 0
+
+    # Process existing positions
+    for position_id, existing_pos in existing_by_id.items():
+        new_matched_pos = new_matched_by_id.get(position_id)
+        new_still_open_event = new_still_open_by_id.get(position_id)
+
+        # Rule 1: Fully complete (open + close + meteora) - keep as-is
+        if is_fully_complete(existing_pos):
+            merged_matched.append(existing_pos)
+            kept_complete_count += 1
+            continue
+
+        # Rule 2: Has Meteora PnL but missing open data (unknown_open)
+        # -> enrich with open data from new run if available
+        if existing_pos.pnl_source == "meteora" and existing_pos.close_reason in ("unknown_open", "rug_unknown_open"):
+            if new_matched_pos and new_matched_pos.timestamp_open:
+                enriched = enrich_existing_with_open(existing_pos, new_matched_pos)
+                merged_matched.append(enriched)
+                enriched_count += 1
+            elif new_still_open_event:
+                # Open data came as still_open (new file only had the open, not the close)
+                # Build a temporary MatchedPosition from the OpenEvent to use enrich helper
+                open_as_matched = MatchedPosition(
+                    timestamp_open=new_still_open_event.timestamp,
+                    timestamp_close='',
+                    target_wallet=new_still_open_event.target,
+                    token=new_still_open_event.token_name,
+                    position_type=new_still_open_event.position_type,
+                    sol_deployed=Decimal(str(new_still_open_event.your_sol)) if new_still_open_event.your_sol else None,
+                    sol_received=None, pnl_sol=None, pnl_pct=None,
+                    close_reason='', mc_at_open=new_still_open_event.market_cap,
+                    jup_score=new_still_open_event.jup_score,
+                    token_age=new_still_open_event.token_age,
+                    token_age_days=None, token_age_hours=None,
+                    price_drop_pct=None, position_id=position_id,
+                    full_address='', pnl_source='',
+                    meteora_deposited=None, meteora_withdrawn=None,
+                    meteora_fees=None, meteora_pnl=None,
+                    datetime_open=f"{new_still_open_event.date}T{new_still_open_event.timestamp.strip('[]')}:00" if new_still_open_event.date and new_still_open_event.timestamp else '',
+                    datetime_close=''
+                )
+                # Normalize token_age
+                if new_still_open_event.token_age:
+                    days, hours = normalize_token_age(new_still_open_event.token_age)
+                    open_as_matched.token_age_days = days
+                    open_as_matched.token_age_hours = hours
+                enriched = enrich_existing_with_open(existing_pos, open_as_matched)
+                merged_matched.append(enriched)
+                enriched_count += 1
+            else:
+                # No new open data - keep as-is
+                merged_matched.append(existing_pos)
+                kept_from_existing_count += 1
+            continue
+
+        # Rule 3: Has Meteora PnL but still some edge case -> keep
+        if existing_pos.pnl_source == "meteora":
+            merged_matched.append(existing_pos)
+            kept_complete_count += 1
+            continue
+
+        # Rule 4: No Meteora PnL (pending/discord) - upgrade if we have better data
+        if new_matched_pos:
+            merged_matched.append(new_matched_pos)
+            upgraded_count += 1
+        elif new_still_open_event:
+            merged_still_open.append(new_still_open_event)
+            upgraded_count += 1
+        else:
+            # No new data - keep existing
+            if existing_pos.close_reason == 'still_open':
+                open_event = OpenEvent(
+                    timestamp=existing_pos.timestamp_open,
+                    position_type=existing_pos.position_type,
+                    token_name=existing_pos.token,
+                    token_pair=f"{existing_pos.token}-SOL",
+                    target=existing_pos.target_wallet,
+                    market_cap=existing_pos.mc_at_open,
+                    token_age=existing_pos.token_age,
+                    jup_score=existing_pos.jup_score,
+                    target_sol=float(existing_pos.sol_deployed) if existing_pos.sol_deployed else 0.0,
+                    your_sol=float(existing_pos.sol_deployed) if existing_pos.sol_deployed else 0.0,
+                    position_id=position_id,
+                    tx_signatures=[],
+                    date=existing_pos.datetime_open.split('T')[0] if existing_pos.datetime_open and 'T' in existing_pos.datetime_open else ''
+                )
+                merged_still_open.append(open_event)
+            else:
+                merged_matched.append(existing_pos)
+            kept_from_existing_count += 1
+
+    # Add truly new positions (not in existing CSV)
+    for position_id, new_pos in new_matched_by_id.items():
+        if position_id not in existing_by_id:
+            merged_matched.append(new_pos)
+            new_count += 1
+
+    for position_id, new_event in new_still_open_by_id.items():
+        if position_id not in existing_by_id:
+            merged_still_open.append(new_event)
+            new_count += 1
+
+    # Print merge stats
+    print(f"  Merge results:")
+    print(f"    - Kept complete (open+close+meteora): {kept_complete_count}")
+    print(f"    - Enriched (added open data to meteora positions): {enriched_count}")
+    print(f"    - Upgraded (pending/discord -> better data): {upgraded_count}")
+    print(f"    - New positions: {new_count}")
+    print(f"    - Kept from existing (no new data): {kept_from_existing_count}")
+    print(f"    - Total merged: {len(merged_matched)} matched, {len(merged_still_open)} still open")
+
+    return merged_matched, merged_still_open
+
+
 def merge_positions_csvs(csv_paths: List[str], output_dir: str) -> None:
     """
     Merge multiple positions.csv files, deduplicating by position_id.
@@ -2190,10 +2704,10 @@ def merge_positions_csvs(csv_paths: List[str], output_dir: str) -> None:
             target_wallet=row.get('target_wallet', ''),
             token=row.get('token', ''),
             position_type=row.get('position_type', ''),
-            sol_deployed=parse_decimal(row.get('sol_deployed', '0')),
-            sol_received=parse_decimal(row.get('sol_received', '0')),
-            pnl_sol=parse_decimal(row.get('pnl_sol', '0')),
-            pnl_pct=parse_decimal(row.get('pnl_pct', '0')),
+            sol_deployed=parse_optional_decimal(row.get('sol_deployed', '')),
+            sol_received=parse_optional_decimal(row.get('sol_received', '')),
+            pnl_sol=parse_optional_decimal(row.get('pnl_sol', '')),
+            pnl_pct=parse_optional_decimal(row.get('pnl_pct', '')),
             close_reason=row.get('close_reason', ''),
             mc_at_open=parse_float(row.get('mc_at_open', '0')),
             jup_score=parse_int(row.get('jup_score', '0')),
@@ -2203,7 +2717,7 @@ def merge_positions_csvs(csv_paths: List[str], output_dir: str) -> None:
             price_drop_pct=parse_optional_float(row.get('price_drop_pct', '')),
             position_id=row.get('position_id', ''),
             full_address=row.get('full_address', ''),
-            pnl_source=row.get('pnl_source', 'discord'),
+            pnl_source=row.get('pnl_source', 'pending'),
             meteora_deposited=parse_optional_decimal(row.get('meteora_deposited', '')),
             meteora_withdrawn=parse_optional_decimal(row.get('meteora_withdrawn', '')),
             meteora_fees=parse_optional_decimal(row.get('meteora_fees', '')),
@@ -2251,7 +2765,7 @@ def merge_positions_csvs(csv_paths: List[str], output_dir: str) -> None:
     print(f"Still open positions: {len(deduplicated_rows) - len(matched_positions)}")
 
     if matched_positions:
-        total_pnl = sum(p.pnl_sol for p in matched_positions)
+        total_pnl = sum(p.pnl_sol for p in matched_positions if p.pnl_sol is not None)
         print(f"Total PnL: {total_pnl:.4f} SOL")
 
     print(f"\nDone!")
@@ -2265,12 +2779,14 @@ def main():
     parser = argparse.ArgumentParser(
         description='Parse Valhalla Bot Discord DM logs and generate PnL analysis with Meteora API.'
     )
-    parser.add_argument('input_files', nargs='*', help='Path(s) to Discord DM log file(s) (plain text or HTML)')
-    parser.add_argument('--output-dir', default='.', help='Output directory for CSV files (default: current directory)')
+    parser.add_argument('input_files', nargs='*', help='Path(s) to Discord DM log file(s) (default: all files in input/ folder)')
+    parser.add_argument('--output-dir', default='output', help='Output directory for CSV files (default: output/)')
     parser.add_argument('--rpc-url', default='https://api.mainnet-beta.solana.com',
                        help='Solana RPC URL (default: public mainnet)')
-    parser.add_argument('--skip-rpc', action='store_true', help='Skip Solana RPC resolution, use cache only')
-    parser.add_argument('--skip-meteora', action='store_true', help='Skip Meteora API, use Discord PnL only')
+    parser.add_argument('--skip-rpc', action='store_true', help=argparse.SUPPRESS)  # Hidden dev flag
+    parser.add_argument('--skip-meteora', action='store_true', help=argparse.SUPPRESS)  # Hidden dev flag
+    parser.add_argument('--use-discord-pnl', action='store_true', help=argparse.SUPPRESS)  # Hidden dev flag
+    parser.add_argument('--no-archive', action='store_true', help='Skip moving processed files to archive/')
     parser.add_argument('--cache-file', help='Address cache JSON file (default: address_cache.json in output-dir)')
     parser.add_argument('--date', help='Date for logs in YYYY-MM-DD format (optional, will try to detect from filename)')
     parser.add_argument('--input-format', choices=['auto', 'text', 'html'], default='auto',
@@ -2294,9 +2810,19 @@ def main():
         merge_positions_csvs(args.merge, str(output_dir))
         return
 
-    # Validate input_files for normal parse mode
+    # Get input files - either from args or all files in input/ folder
     if not args.input_files:
-        parser.error("input_files are required when not using --merge mode")
+        input_dir = Path('input')
+        if input_dir.exists() and input_dir.is_dir():
+            # Get all .txt and .html files in input/
+            input_files = [str(f) for f in input_dir.iterdir() if f.is_file() and f.suffix in ['.txt', '.html']]
+            if not input_files:
+                parser.error("No .txt or .html files found in input/ folder")
+            print(f"Processing all files in input/ folder: {len(input_files)} file(s)")
+        else:
+            parser.error("No input files specified and input/ folder not found")
+    else:
+        input_files = args.input_files
 
     # Determine cache file path
     cache_file = args.cache_file if args.cache_file else str(output_dir / 'address_cache.json')
@@ -2304,8 +2830,9 @@ def main():
     # Step 1: Read and parse all input files
     all_messages = []
     event_parser = EventParser()  # Will initialize per-file
+    processed_files = []  # Track successfully processed files for archiving
 
-    for input_file in args.input_files:
+    for input_file in input_files:
         # Detect format and create appropriate reader
         print(f"\nReading Discord logs: {input_file}")
 
@@ -2323,27 +2850,39 @@ def main():
         print(f"  Found {len(messages)} Valhalla messages")
 
         # Determine date for this file - priority order:
-        # 1. In-file date header (highest priority)
-        # 2. CLI --date argument
-        # 3. Filename detection
+        # 1. Filename prefix (YYYYMMDD_*.txt)
+        # 2. In-file date header (first line)
+        # 3. User prompt if neither found
         file_date = None
         date_source = None
 
-        if reader.header_date:
+        # Try filename first
+        file_date = extract_date_from_filename(input_file)
+        if file_date:
+            date_source = "filename"
+        # Then try in-file header
+        elif reader.header_date:
             file_date = reader.header_date
             date_source = "in-file header"
-        elif args.date:
-            file_date = args.date
-            date_source = "CLI argument"
+        # Finally, prompt user
         else:
-            file_date = extract_date_from_filename(input_file)
-            if file_date:
-                date_source = "filename"
+            print(f"  No date found in filename or file header")
+            user_input = input(f"  Enter date for {Path(input_file).name} (YYYYMMDD): ").strip()
+            if user_input and len(user_input) == 8 and user_input.isdigit():
+                try:
+                    year = int(user_input[0:4])
+                    month = int(user_input[4:6])
+                    day = int(user_input[6:8])
+                    datetime(year, month, day)
+                    file_date = f"{year:04d}-{month:02d}-{day:02d}"
+                    date_source = "user input"
+                except ValueError:
+                    print(f"  Invalid date format, continuing without date")
 
         if file_date:
             print(f"  Date detected from {date_source}: {file_date}")
         else:
-            print(f"  No date detected (use --date to specify)")
+            print(f"  No date available")
 
         # Parse events with date context
         print(f"Parsing events (date: {file_date or 'none'})...")
@@ -2359,8 +2898,11 @@ def main():
         event_parser.failsafe_events.extend(file_parser.failsafe_events)
         event_parser.add_liquidity_events.extend(file_parser.add_liquidity_events)
 
+        # Track for archiving
+        processed_files.append((input_file, file_date))
+
     # Step 2: Print aggregated event counts
-    print(f"\nTotal parsed events across {len(args.input_files)} file(s):")
+    print(f"\nTotal parsed events across {len(input_files)} file(s):")
 
     print(f"  Open positions: {len(event_parser.open_events)}")
     print(f"  Close events: {len(event_parser.close_events)}")
@@ -2434,7 +2976,9 @@ def main():
     # Step 5: Match positions
     print(f"\nMatching positions...")
     matcher = PositionMatcher(event_parser)
-    matched_positions, unmatched_opens = matcher.match_positions(meteora_results, resolved_addresses)
+    matched_positions, unmatched_opens = matcher.match_positions(
+        meteora_results, resolved_addresses, use_discord_pnl=args.use_discord_pnl
+    )
     print(f"  Matched positions: {len(matched_positions)}")
     print(f"  Still open: {len(unmatched_opens)}")
 
@@ -2448,9 +2992,17 @@ def main():
             unmatched_opens, imported_still_open
         )
 
-    # Step 6: Generate CSVs
+    # Step 5.6: Merge with existing output if present
     positions_csv = output_dir / 'positions.csv'
     summary_csv = output_dir / 'summary.csv'
+
+    if positions_csv.exists():
+        print(f"\nMerging with existing output...")
+        matched_positions, unmatched_opens = merge_with_existing_csv(
+            matched_positions, unmatched_opens, str(positions_csv)
+        )
+
+    # Step 6: Generate CSVs
 
     print(f"\nGenerating CSV files...")
     csv_writer = CsvWriter()
@@ -2470,18 +3022,47 @@ def main():
         print(f"\nExporting to JSON...")
         export_to_json(matched_positions, unmatched_opens, event_parser.skip_events, args.export_json)
 
+    # Step 6.7: Archive processed files
+    if not args.no_archive and processed_files:
+        print(f"\nArchiving processed files...")
+        archive_dir = Path('archive')
+        archive_dir.mkdir(parents=True, exist_ok=True)
+
+        for input_file, file_date in processed_files:
+            input_path = Path(input_file)
+            base_name = input_path.name
+
+            # Determine archived filename - prepend date if not already present
+            if file_date and not re.match(r'^\d{8}', base_name):
+                # Prepend date to filename
+                date_compact = file_date.replace('-', '')
+                archive_name = f"{date_compact}_{base_name}"
+            else:
+                archive_name = base_name
+
+            archive_path = archive_dir / archive_name
+
+            try:
+                shutil.move(str(input_path), str(archive_path))
+                print(f"  Archived: {archive_path}")
+            except Exception as e:
+                print(f"  Failed to archive {input_path}: {e}")
+
     # Step 7: Print summary stats
     print(f"\n{'='*60}")
     print(f"Summary Statistics")
     print(f"{'='*60}")
 
-    total_pnl = sum(p.pnl_sol for p in matched_positions)
+    total_pnl = sum(p.pnl_sol for p in matched_positions if p.pnl_sol is not None)
     meteora_count = sum(1 for p in matched_positions if p.pnl_source == 'meteora')
-    discord_count = len(matched_positions) - meteora_count
+    pending_count = sum(1 for p in matched_positions if p.pnl_source == 'pending')
+    discord_count = sum(1 for p in matched_positions if p.pnl_source == 'discord')
 
     print(f"Total matched positions: {len(matched_positions)}")
-    print(f"  - Using Meteora PnL: {meteora_count}")
-    print(f"  - Using Discord PnL: {discord_count}")
+    print(f"  - Meteora PnL: {meteora_count}")
+    print(f"  - Pending PnL: {pending_count}")
+    if discord_count:
+        print(f"  - Discord PnL: {discord_count}")
     print(f"Still open positions: {len(unmatched_opens)}")
     print(f"Total PnL: {total_pnl:.4f} SOL")
     print(f"\nDone!")
