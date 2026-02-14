@@ -7,7 +7,7 @@ from decimal import Decimal
 from datetime import date
 from collections import defaultdict
 
-from .models import MatchedPosition, parse_iso_datetime
+from .models import MatchedPosition, InsufficientBalanceEvent, parse_iso_datetime, make_iso_datetime
 
 # Optional matplotlib for chart generation
 try:
@@ -503,3 +503,45 @@ def generate_charts(positions: List[MatchedPosition], output_dir: str) -> None:
     _chart_daily_entries(entries_data, dates, wallets, wallet_colors, output_dir)
     _chart_daily_winrate(winrate_data, dates, wallets, wallet_colors, output_dir)
     _chart_daily_rugs(rugs_data, dates, wallets, wallet_colors, output_dir)
+
+
+def generate_insufficient_balance_chart(events: List[InsufficientBalanceEvent], output_dir: str) -> None:
+    """Generate a daily bar chart of insufficient balance event counts."""
+    if not HAS_MATPLOTLIB:
+        print("  matplotlib not installed, skipping insufficient balance chart")
+        return
+
+    if not events:
+        return
+
+    # Count events per day
+    daily_counts: Dict[date, int] = defaultdict(int)
+    for event in events:
+        dt_str = make_iso_datetime(event.date, event.timestamp)
+        dt = parse_iso_datetime(dt_str)
+        if dt:
+            daily_counts[dt.date()] += 1
+
+    if not daily_counts:
+        return
+
+    sorted_dates = sorted(daily_counts.keys())
+    counts = [daily_counts[d] for d in sorted_dates]
+
+    fig, ax = plt.subplots(figsize=(12, 6))
+    ax.bar(sorted_dates, counts, color='#e74c3c', alpha=0.8, width=0.6)
+
+    ax.set_title('Daily Insufficient Balance Events', fontsize=14, fontweight='bold')
+    ax.set_ylabel('Count', fontsize=11)
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%m-%d'))
+    ax.xaxis.set_major_locator(mdates.DayLocator())
+    plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
+    ax.grid(True, alpha=0.3, axis='y')
+    ax.yaxis.get_major_locator().set_params(integer=True)
+
+    fig.tight_layout()
+
+    from pathlib import Path
+    fig.savefig(Path(output_dir) / 'daily_insufficient_balance.png', dpi=120)
+    plt.close(fig)
+    print("  Generated: daily_insufficient_balance.png")
