@@ -18,6 +18,19 @@ class CsvWriter:
                                unmatched_opens: List[OpenEvent],
                                output_path: str) -> None:
         """Generate positions.csv with all matched positions"""
+        # Sort: newest datetime_open first, positions without datetime at the end
+        def _sort_key(pos):
+            return pos.datetime_open if pos.datetime_open and pos.datetime_open[0].isdigit() else ""
+
+        sorted_positions = sorted(matched_positions, key=_sort_key, reverse=True)
+
+        # Sort still-open by datetime_open too (newest first)
+        def _sort_key_open(ev):
+            dt = make_iso_datetime(ev.date, ev.timestamp)
+            return dt if dt and dt[0].isdigit() else ""
+
+        sorted_opens = sorted(unmatched_opens, key=_sort_key_open, reverse=True)
+
         with open(output_path, 'w', newline='', encoding='utf-8') as f:
             writer = csv.writer(f)
             writer.writerow([
@@ -30,7 +43,7 @@ class CsvWriter:
                 'meteora_fees', 'meteora_pnl'
             ])
 
-            for pos in matched_positions:
+            for pos in sorted_positions:
                 writer.writerow([
                     pos.datetime_open,
                     pos.datetime_close,
@@ -58,7 +71,7 @@ class CsvWriter:
                 ])
 
             # Add still-open positions
-            for open_event in unmatched_opens:
+            for open_event in sorted_opens:
                 datetime_open = make_iso_datetime(open_event.date, open_event.timestamp)
                 age_days, age_hours = normalize_token_age(open_event.token_age)
 
