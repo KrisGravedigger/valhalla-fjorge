@@ -9,20 +9,15 @@ from collections import defaultdict
 
 from .models import MatchedPosition, parse_iso_datetime
 
-# Optional matplotlib and numpy for chart generation
+# Optional matplotlib for chart generation
 try:
     import matplotlib
     matplotlib.use('Agg')  # Non-interactive backend
     import matplotlib.pyplot as plt
+    import matplotlib.dates as mdates
     HAS_MATPLOTLIB = True
 except ImportError:
     HAS_MATPLOTLIB = False
-
-try:
-    import numpy as np
-    HAS_NUMPY = True
-except ImportError:
-    HAS_NUMPY = False
 
 
 def _short_wallet(wallet: str) -> str:
@@ -145,47 +140,43 @@ def _chart_daily_pnl(
     output_dir: str
 ) -> None:
     """
-    Generate daily PnL grouped bar chart.
+    Generate daily PnL line chart.
 
-    Bars are colored green/red based on positive/negative PnL,
-    with edge color matching wallet color.
+    Each wallet is represented by a colored line.
     """
     fig, ax = plt.subplots(figsize=(12, 6))
 
-    x = np.arange(len(dates))
-    n_wallets = len(wallets)
-    bar_width = 0.8 / max(n_wallets, 1)
+    # Plot each wallet as a line
+    for wallet in wallets:
+        values = [pnl_data.get((wallet, d)) for d in dates]
 
-    for i, wallet in enumerate(wallets):
-        offset = (i - n_wallets / 2 + 0.5) * bar_width
-        values = [pnl_data.get((wallet, d), 0) for d in dates]
-
-        # Individual bar colors: green if positive, red if negative
-        bar_colors = ['#4CAF50' if v >= 0 else '#F44336' for v in values]
-        edge_color = wallet_colors[wallet]
-
-        ax.bar(
-            x + offset,
+        ax.plot(
+            dates,
             values,
-            bar_width,
+            marker='o',
+            markersize=4,
+            linewidth=2,
+            linestyle='-',
             label=_short_wallet(wallet),
-            color=bar_colors,
-            edgecolor=edge_color,
-            linewidth=1.5
+            color=wallet_colors[wallet]
         )
 
-    # Mean line
-    means = [
-        np.mean([pnl_data.get((w, d), 0) for w in wallets])
-        for d in dates
-    ]
-    ax.plot(x, means, 'k--', linewidth=1.5, label='Mean')
+    # Mean line - compute mean only across wallets with data for each day
+    means = []
+    for d in dates:
+        day_values = [pnl_data.get((w, d)) for w in wallets if (w, d) in pnl_data]
+        if day_values:
+            means.append(sum(day_values) / len(day_values))
+        else:
+            means.append(None)
+    ax.plot(dates, means, 'k--', linewidth=1.5, label='Mean')
 
     # Formatting
     ax.set_title('Daily PnL per Wallet (SOL)', fontsize=14, fontweight='bold')
     ax.set_ylabel('SOL', fontsize=11)
-    ax.set_xticks(x)
-    ax.set_xticklabels([d.strftime('%m-%d') for d in dates], rotation=45, ha='right')
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%m-%d'))
+    ax.xaxis.set_major_locator(mdates.AutoDateLocator())
+    plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
     ax.axhline(y=0, color='black', linewidth=0.8, linestyle='-', alpha=0.3)
     ax.grid(True, alpha=0.3, axis='y')
     ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize='small')
@@ -206,40 +197,43 @@ def _chart_daily_entries(
     output_dir: str
 ) -> None:
     """
-    Generate daily positions opened grouped bar chart.
+    Generate daily positions opened line chart.
 
-    Bars are colored by wallet color.
+    Each wallet is represented by a colored line.
     """
     fig, ax = plt.subplots(figsize=(12, 6))
 
-    x = np.arange(len(dates))
-    n_wallets = len(wallets)
-    bar_width = 0.8 / max(n_wallets, 1)
+    # Plot each wallet as a line
+    for wallet in wallets:
+        values = [entries_data.get((wallet, d)) for d in dates]
 
-    for i, wallet in enumerate(wallets):
-        offset = (i - n_wallets / 2 + 0.5) * bar_width
-        values = [entries_data.get((wallet, d), 0) for d in dates]
-
-        ax.bar(
-            x + offset,
+        ax.plot(
+            dates,
             values,
-            bar_width,
+            marker='o',
+            markersize=4,
+            linewidth=2,
+            linestyle='-',
             label=_short_wallet(wallet),
             color=wallet_colors[wallet]
         )
 
-    # Mean line
-    means = [
-        np.mean([entries_data.get((w, d), 0) for w in wallets])
-        for d in dates
-    ]
-    ax.plot(x, means, 'k--', linewidth=1.5, label='Mean')
+    # Mean line - compute mean only across wallets with data for each day
+    means = []
+    for d in dates:
+        day_values = [entries_data.get((w, d)) for w in wallets if (w, d) in entries_data]
+        if day_values:
+            means.append(sum(day_values) / len(day_values))
+        else:
+            means.append(None)
+    ax.plot(dates, means, 'k--', linewidth=1.5, label='Mean')
 
     # Formatting
     ax.set_title('Daily Positions Opened per Wallet', fontsize=14, fontweight='bold')
     ax.set_ylabel('Count', fontsize=11)
-    ax.set_xticks(x)
-    ax.set_xticklabels([d.strftime('%m-%d') for d in dates], rotation=45, ha='right')
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%m-%d'))
+    ax.xaxis.set_major_locator(mdates.AutoDateLocator())
+    plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
     ax.grid(True, alpha=0.3, axis='y')
     ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize='small')
 
@@ -259,35 +253,37 @@ def _chart_daily_winrate(
     output_dir: str
 ) -> None:
     """
-    Generate daily win rate grouped bar chart.
+    Generate daily win rate line chart.
 
-    Bars are colored by wallet color.
+    Each wallet is represented by a colored line.
     Includes 50% threshold line.
     """
     fig, ax = plt.subplots(figsize=(12, 6))
 
-    x = np.arange(len(dates))
-    n_wallets = len(wallets)
-    bar_width = 0.8 / max(n_wallets, 1)
+    # Plot each wallet as a line
+    for wallet in wallets:
+        values = [winrate_data.get((wallet, d)) for d in dates]
 
-    for i, wallet in enumerate(wallets):
-        offset = (i - n_wallets / 2 + 0.5) * bar_width
-        values = [winrate_data.get((wallet, d), 0) for d in dates]
-
-        ax.bar(
-            x + offset,
+        ax.plot(
+            dates,
             values,
-            bar_width,
+            marker='o',
+            markersize=4,
+            linewidth=2,
+            linestyle='-',
             label=_short_wallet(wallet),
             color=wallet_colors[wallet]
         )
 
-    # Mean line
-    means = [
-        np.mean([winrate_data.get((w, d), 0) for w in wallets])
-        for d in dates
-    ]
-    ax.plot(x, means, 'k--', linewidth=1.5, label='Mean')
+    # Mean line - compute mean only across wallets with data for each day
+    means = []
+    for d in dates:
+        day_values = [winrate_data.get((w, d)) for w in wallets if (w, d) in winrate_data]
+        if day_values:
+            means.append(sum(day_values) / len(day_values))
+        else:
+            means.append(None)
+    ax.plot(dates, means, 'k--', linewidth=1.5, label='Mean')
 
     # 50% threshold line
     ax.axhline(y=50, color='gray', linewidth=1, linestyle='--', alpha=0.6)
@@ -296,8 +292,9 @@ def _chart_daily_winrate(
     ax.set_title('Daily Win Rate per Wallet (%)', fontsize=14, fontweight='bold')
     ax.set_ylabel('Win Rate (%)', fontsize=11)
     ax.set_ylim(0, 100)
-    ax.set_xticks(x)
-    ax.set_xticklabels([d.strftime('%m-%d') for d in dates], rotation=45, ha='right')
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%m-%d'))
+    ax.xaxis.set_major_locator(mdates.AutoDateLocator())
+    plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
     ax.grid(True, alpha=0.3, axis='y')
     ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize='small')
 
@@ -317,40 +314,43 @@ def _chart_daily_rugs(
     output_dir: str
 ) -> None:
     """
-    Generate daily rug count grouped bar chart.
+    Generate daily rug count line chart.
 
-    Bars are colored by wallet color.
+    Each wallet is represented by a colored line.
     """
     fig, ax = plt.subplots(figsize=(12, 6))
 
-    x = np.arange(len(dates))
-    n_wallets = len(wallets)
-    bar_width = 0.8 / max(n_wallets, 1)
+    # Plot each wallet as a line
+    for wallet in wallets:
+        values = [rugs_data.get((wallet, d)) for d in dates]
 
-    for i, wallet in enumerate(wallets):
-        offset = (i - n_wallets / 2 + 0.5) * bar_width
-        values = [rugs_data.get((wallet, d), 0) for d in dates]
-
-        ax.bar(
-            x + offset,
+        ax.plot(
+            dates,
             values,
-            bar_width,
+            marker='o',
+            markersize=4,
+            linewidth=2,
+            linestyle='-',
             label=_short_wallet(wallet),
             color=wallet_colors[wallet]
         )
 
-    # Mean line
-    means = [
-        np.mean([rugs_data.get((w, d), 0) for w in wallets])
-        for d in dates
-    ]
-    ax.plot(x, means, 'k--', linewidth=1.5, label='Mean')
+    # Mean line - compute mean only across wallets with data for each day
+    means = []
+    for d in dates:
+        day_values = [rugs_data.get((w, d)) for w in wallets if (w, d) in rugs_data]
+        if day_values:
+            means.append(sum(day_values) / len(day_values))
+        else:
+            means.append(None)
+    ax.plot(dates, means, 'k--', linewidth=1.5, label='Mean')
 
     # Formatting
     ax.set_title('Daily Rug Count per Wallet', fontsize=14, fontweight='bold')
     ax.set_ylabel('Count', fontsize=11)
-    ax.set_xticks(x)
-    ax.set_xticklabels([d.strftime('%m-%d') for d in dates], rotation=45, ha='right')
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%m-%d'))
+    ax.xaxis.set_major_locator(mdates.AutoDateLocator())
+    plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
     ax.grid(True, alpha=0.3, axis='y')
     ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize='small')
 
@@ -366,7 +366,7 @@ def generate_charts(positions: List[MatchedPosition], output_dir: str) -> None:
     """
     Generate PNG chart files from position data.
 
-    Creates 4 grouped bar charts:
+    Creates 4 line charts:
     - daily_pnl.png: Daily PnL per wallet
     - daily_entries.png: Daily positions opened per wallet
     - daily_winrate.png: Daily win rate per wallet
@@ -378,10 +378,6 @@ def generate_charts(positions: List[MatchedPosition], output_dir: str) -> None:
     """
     if not HAS_MATPLOTLIB:
         print("  matplotlib not installed, skipping charts")
-        return
-
-    if not HAS_NUMPY:
-        print("  numpy not installed, skipping charts")
         return
 
     # Filter positions: must have valid datetime_close and non-None pnl_sol
