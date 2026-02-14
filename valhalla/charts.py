@@ -132,6 +132,28 @@ def _aggregate_daily_data(dated_positions: List[Tuple[MatchedPosition, date]]) -
     return pnl_data, entries_data, winrate_data, rugs_data, all_dates, all_wallets
 
 
+def _fill_zeros_for_active_range(
+    data_dict: Dict[Tuple[str, date], any],
+    dates: List[date],
+    wallets: List[str]
+) -> None:
+    """
+    Fill 0 for active wallets on days with no trades.
+
+    For each wallet, finds its first and last active date in data_dict.
+    For all dates in between that have no entry, sets value to 0.
+    """
+    for wallet in wallets:
+        wallet_dates = [d for (w, d) in data_dict if w == wallet]
+        if not wallet_dates:
+            continue
+        first = min(wallet_dates)
+        last = max(wallet_dates)
+        for d in dates:
+            if first <= d <= last and (wallet, d) not in data_dict:
+                data_dict[(wallet, d)] = 0
+
+
 def _chart_daily_pnl(
     pnl_data: Dict[Tuple[str, date], float],
     dates: List[date],
@@ -143,6 +165,7 @@ def _chart_daily_pnl(
     Generate daily PnL line chart.
 
     Each wallet is represented by a colored line.
+    Includes mean and total portfolio lines.
     """
     fig, ax = plt.subplots(figsize=(12, 6))
 
@@ -171,11 +194,21 @@ def _chart_daily_pnl(
             means.append(None)
     ax.plot(dates, means, 'k--', linewidth=1.5, label='Mean')
 
+    # Total portfolio line - sum of all wallets per day
+    totals = []
+    for d in dates:
+        day_values = [pnl_data.get((w, d)) for w in wallets if (w, d) in pnl_data]
+        if day_values:
+            totals.append(sum(day_values))
+        else:
+            totals.append(None)
+    ax.plot(dates, totals, color='black', linewidth=2.5, linestyle='-', label='Total', alpha=0.7)
+
     # Formatting
     ax.set_title('Daily PnL per Wallet (SOL)', fontsize=14, fontweight='bold')
     ax.set_ylabel('SOL', fontsize=11)
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%m-%d'))
-    ax.xaxis.set_major_locator(mdates.AutoDateLocator())
+    ax.xaxis.set_major_locator(mdates.DayLocator())
     plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
     ax.axhline(y=0, color='black', linewidth=0.8, linestyle='-', alpha=0.3)
     ax.grid(True, alpha=0.3, axis='y')
@@ -232,7 +265,7 @@ def _chart_daily_entries(
     ax.set_title('Daily Positions Opened per Wallet', fontsize=14, fontweight='bold')
     ax.set_ylabel('Count', fontsize=11)
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%m-%d'))
-    ax.xaxis.set_major_locator(mdates.AutoDateLocator())
+    ax.xaxis.set_major_locator(mdates.DayLocator())
     plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
     ax.grid(True, alpha=0.3, axis='y')
     ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize='small')
@@ -293,7 +326,7 @@ def _chart_daily_winrate(
     ax.set_ylabel('Win Rate (%)', fontsize=11)
     ax.set_ylim(0, 100)
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%m-%d'))
-    ax.xaxis.set_major_locator(mdates.AutoDateLocator())
+    ax.xaxis.set_major_locator(mdates.DayLocator())
     plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
     ax.grid(True, alpha=0.3, axis='y')
     ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize='small')
@@ -349,7 +382,7 @@ def _chart_daily_rugs(
     ax.set_title('Daily Rug Count per Wallet', fontsize=14, fontweight='bold')
     ax.set_ylabel('Count', fontsize=11)
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%m-%d'))
-    ax.xaxis.set_major_locator(mdates.AutoDateLocator())
+    ax.xaxis.set_major_locator(mdates.DayLocator())
     plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
     ax.grid(True, alpha=0.3, axis='y')
     ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize='small')
@@ -457,6 +490,10 @@ def generate_charts(positions: List[MatchedPosition], output_dir: str) -> None:
         wallets,
         gap_days=7
     )
+
+    # Fill zeros for active wallet ranges on PnL and entries charts
+    _fill_zeros_for_active_range(pnl_data, dates, wallets)
+    _fill_zeros_for_active_range(entries_data, dates, wallets)
 
     # Assign consistent wallet colors
     wallet_colors = _get_wallet_colors(wallets)
