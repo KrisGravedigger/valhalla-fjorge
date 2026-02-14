@@ -69,12 +69,18 @@ def make_iso_datetime(date_str: str, time_str: str) -> str:
 
     Args:
         date_str: "YYYY-MM-DD" or empty string
-        time_str: "[HH:MM]" format
+        time_str: "[HH:MM]" or "[YYYY-MM-DDTHH:MM]" format
 
     Returns:
         ISO datetime string: "2026-02-12T15:08:00" or "T15:08:00" if no date
     """
-    # Extract HH:MM from [HH:MM]
+    # Check for full datetime format [YYYY-MM-DDTHH:MM] first
+    full_match = re.search(r'\[(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})\]', time_str)
+    if full_match:
+        date_part, hour, minute = full_match.groups()
+        return f"{date_part}T{hour}:{minute}:00"
+
+    # Fall back to [HH:MM] format
     time_match = re.search(r'\[(\d{2}):(\d{2})\]', time_str)
     if not time_match:
         return ""

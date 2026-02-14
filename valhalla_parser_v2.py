@@ -119,39 +119,51 @@ def main():
         print(f"  Found {len(messages)} Valhalla messages")
 
         # Determine date for this file - priority order:
-        # 1. Filename prefix (YYYYMMDD_*.txt)
-        # 2. In-file date header (first line)
-        # 3. User prompt if neither found
+        # 1. Embedded in timestamps ([YYYY-MM-DDTHH:MM] format) — no base_date needed
+        # 2. Filename prefix (YYYYMMDD_*.txt)
+        # 3. In-file date header (first line)
+        # 4. User prompt if neither found
         file_date = None
         date_source = None
 
-        # Try filename first
-        file_date = extract_date_from_filename(input_file)
-        if file_date:
-            date_source = "filename"
-        # Then try in-file header
-        elif reader.header_date:
-            file_date = reader.header_date
-            date_source = "in-file header"
-        # Finally, prompt user
-        else:
-            print(f"  No date found in filename or file header")
-            user_input = input(f"  Enter date for {Path(input_file).name} (YYYYMMDD): ").strip()
-            if user_input and len(user_input) == 8 and user_input.isdigit():
-                try:
-                    year = int(user_input[0:4])
-                    month = int(user_input[4:6])
-                    day = int(user_input[6:8])
-                    datetime(year, month, day)
-                    file_date = f"{year:04d}-{month:02d}-{day:02d}"
-                    date_source = "user input"
-                except ValueError:
-                    print(f"  Invalid date format, continuing without date")
+        # Check if messages contain full datetime timestamps
+        has_full_timestamps = any(
+            '[' in ts and 'T' in ts and len(ts) > 7
+            for ts, _, _ in messages
+        )
 
-        if file_date:
-            print(f"  Date detected from {date_source}: {file_date}")
+        if has_full_timestamps:
+            # Dates are embedded in timestamps — no base_date needed
+            date_source = "embedded timestamps"
+            print(f"  Dates embedded in timestamps (no base date needed)")
         else:
-            print(f"  No date available")
+            # Try filename first
+            file_date = extract_date_from_filename(input_file)
+            if file_date:
+                date_source = "filename"
+            # Then try in-file header
+            elif reader.header_date:
+                file_date = reader.header_date
+                date_source = "in-file header"
+            # Finally, prompt user
+            else:
+                print(f"  No date found in filename or file header")
+                user_input = input(f"  Enter date for {Path(input_file).name} (YYYYMMDD): ").strip()
+                if user_input and len(user_input) == 8 and user_input.isdigit():
+                    try:
+                        year = int(user_input[0:4])
+                        month = int(user_input[4:6])
+                        day = int(user_input[6:8])
+                        datetime(year, month, day)
+                        file_date = f"{year:04d}-{month:02d}-{day:02d}"
+                        date_source = "user input"
+                    except ValueError:
+                        print(f"  Invalid date format, continuing without date")
+
+            if file_date:
+                print(f"  Date detected from {date_source}: {file_date}")
+            elif not has_full_timestamps:
+                print(f"  No date available")
 
         # Parse events with date context
         print(f"Parsing events (date: {file_date or 'none'})...")

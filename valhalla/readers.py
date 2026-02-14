@@ -11,10 +11,10 @@ from datetime import datetime
 class PlainTextReader:
     """Parse plain text Discord DM logs with [HH:MM] Author: format"""
 
-    # Pattern to split messages: [HH:MM] at start of line
-    MESSAGE_SPLIT = re.compile(r'^(?=\[\d{2}:\d{2}\])', flags=re.MULTILINE)
-    # Pattern to extract author from first line
-    AUTHOR_PATTERN = re.compile(r'^\[(\d{2}:\d{2})\]\s*(.+?):\s*\n', flags=re.MULTILINE)
+    # Pattern to split messages: [HH:MM] or [YYYY-MM-DDTHH:MM] at start of line
+    MESSAGE_SPLIT = re.compile(r'^(?=\[(?:\d{4}-\d{2}-\d{2}T)?\d{2}:\d{2}\])', flags=re.MULTILINE)
+    # Pattern to extract author from first line (supports both timestamp formats)
+    AUTHOR_PATTERN = re.compile(r'^\[((?:\d{4}-\d{2}-\d{2}T)?\d{2}:\d{2})\]\s*(.+?):\s*\n', flags=re.MULTILINE)
     # Solscan TX signature from [https://solscan.io/tx/SIG]
     SOLSCAN_TX_PATTERN = re.compile(r'\[https://solscan\.io/tx/([A-Za-z0-9]+)\]')
     # Any URL in square brackets (for stripping)
