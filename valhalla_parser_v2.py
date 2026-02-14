@@ -7,6 +7,8 @@ Parses Discord DM plain text logs and calculates per-position PnL using Meteora 
 import re
 import argparse
 import shutil
+import subprocess
+import sys
 from pathlib import Path
 from typing import Dict
 from datetime import datetime
@@ -47,8 +49,26 @@ def main():
     parser.add_argument('--import-json', metavar='FILE',
                        help='Import previous .valhalla.json to merge with new data')
     parser.add_argument('--skip-charts', action='store_true', help='Skip chart generation')
+    parser.add_argument('--no-clipboard', action='store_true', help='Skip auto-running save_clipboard.ps1')
 
     args = parser.parse_args()
+
+    # Auto-run save_clipboard.ps1 (skip in merge mode)
+    if not args.merge and not args.no_clipboard:
+        clipboard_script = Path('save_clipboard.ps1')
+        if clipboard_script.exists():
+            print("Running save_clipboard.ps1...")
+            try:
+                result = subprocess.run(
+                    ['powershell', '-File', str(clipboard_script)],
+                    stdin=sys.stdin
+                )
+                if result.returncode != 0:
+                    print(f"  Warning: save_clipboard.ps1 exited with code {result.returncode}")
+            except Exception as e:
+                print(f"  Warning: Could not run save_clipboard.ps1: {e}")
+        else:
+            print("  save_clipboard.ps1 not found, skipping clipboard import")
 
     # Create output directory if needed
     output_dir = Path(args.output_dir)
@@ -277,18 +297,28 @@ def main():
         archive_dir = Path('archive')
         archive_dir.mkdir(parents=True, exist_ok=True)
 
+        # Compute datetime range from all matched positions for archive naming
+        def _format_archive_dt(iso_str: str) -> str:
+            """Convert '2026-02-13T15:08:00' to '20260213T1508'"""
+            return iso_str.replace('-', '').replace(':', '')[:13]
+
+        archive_datetimes = []
+        for pos in matched_positions:
+            if pos.datetime_open and pos.datetime_open[0].isdigit():
+                archive_datetimes.append(pos.datetime_open)
+            if pos.datetime_close and pos.datetime_close[0].isdigit():
+                archive_datetimes.append(pos.datetime_close)
+
+        if archive_datetimes:
+            min_dt = _format_archive_dt(min(archive_datetimes))
+            max_dt = _format_archive_dt(max(archive_datetimes))
+            dt_prefix = f"{min_dt}-{max_dt}_"
+        else:
+            dt_prefix = ""
+
         for input_file, file_date in processed_files:
             input_path = Path(input_file)
-            base_name = input_path.name
-
-            # Determine archived filename - prepend date if not already present
-            if file_date and not re.match(r'^\d{8}', base_name):
-                # Prepend date to filename
-                date_compact = file_date.replace('-', '')
-                archive_name = f"{date_compact}_{base_name}"
-            else:
-                archive_name = base_name
-
+            archive_name = f"{dt_prefix}{input_path.name}"
             archive_path = archive_dir / archive_name
 
             try:

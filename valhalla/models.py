@@ -219,8 +219,6 @@ class SwapEvent:
 @dataclass
 class MatchedPosition:
     """A matched open/close position with PnL calculation"""
-    timestamp_open: str
-    timestamp_close: str
     target_wallet: str
     token: str
     position_type: str

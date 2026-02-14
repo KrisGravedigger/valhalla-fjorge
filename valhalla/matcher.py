@@ -81,8 +81,6 @@ class PositionMatcher:
                     meteora_pnl_pct = (meteora_pnl / meteora_result.deposited_sol * Decimal('100')) if meteora_result.deposited_sol > 0 else Decimal('0')
 
                     matched_positions.append(MatchedPosition(
-                        timestamp_open=open_event.timestamp,
-                        timestamp_close=close_event.timestamp,
                         target_wallet=close_event.target,
                         token=open_event.token_name,
                         position_type=open_event.position_type,
@@ -110,8 +108,6 @@ class PositionMatcher:
                 elif use_discord_pnl:
                     # Use Discord PnL (only if flag enabled)
                     matched_positions.append(MatchedPosition(
-                        timestamp_open=open_event.timestamp,
-                        timestamp_close=close_event.timestamp,
                         target_wallet=close_event.target,
                         token=open_event.token_name,
                         position_type=open_event.position_type,
@@ -135,8 +131,6 @@ class PositionMatcher:
                 else:
                     # Meteora not available and Discord PnL not enabled - leave PnL as None
                     matched_positions.append(MatchedPosition(
-                        timestamp_open=open_event.timestamp,
-                        timestamp_close=close_event.timestamp,
                         target_wallet=close_event.target,
                         token=open_event.token_name,
                         position_type=open_event.position_type,
@@ -169,8 +163,6 @@ class PositionMatcher:
                     meteora_pnl_pct = (meteora_pnl / meteora_result.deposited_sol * Decimal('100')) if meteora_result.deposited_sol > 0 else Decimal('0')
 
                     matched_positions.append(MatchedPosition(
-                        timestamp_open="",
-                        timestamp_close=close_event.timestamp,
                         target_wallet=close_event.target,
                         token="unknown",
                         position_type="unknown",
@@ -200,8 +192,6 @@ class PositionMatcher:
                     sol_received = Decimal(str(close_event.ending_sol)) - Decimal(str(close_event.starting_sol))
 
                     matched_positions.append(MatchedPosition(
-                        timestamp_open="",
-                        timestamp_close=close_event.timestamp,
                         target_wallet=close_event.target,
                         token="unknown",
                         position_type="unknown",
@@ -225,8 +215,6 @@ class PositionMatcher:
                 else:
                     # No Meteora and Discord PnL not enabled - leave as None
                     matched_positions.append(MatchedPosition(
-                        timestamp_open="",
-                        timestamp_close=close_event.timestamp,
                         target_wallet=close_event.target,
                         token="unknown",
                         position_type="unknown",
@@ -275,8 +263,6 @@ class PositionMatcher:
                         meteora_pnl_pct = (meteora_pnl / meteora_result.deposited_sol * Decimal('100')) if meteora_result.deposited_sol > 0 else Decimal('0')
 
                         matched_positions.append(MatchedPosition(
-                            timestamp_open=open_event.timestamp,
-                            timestamp_close=rug_event.timestamp,
                             target_wallet=rug_event.target,
                             token=open_event.token_name,
                             position_type=open_event.position_type,
@@ -308,8 +294,6 @@ class PositionMatcher:
                         pnl_pct = -Decimal(str(rug_event.price_drop))
 
                         matched_positions.append(MatchedPosition(
-                            timestamp_open=open_event.timestamp,
-                            timestamp_close=rug_event.timestamp,
                             target_wallet=rug_event.target,
                             token=open_event.token_name,
                             position_type=open_event.position_type,
@@ -333,8 +317,6 @@ class PositionMatcher:
                     else:
                         # No Meteora and Discord PnL not enabled - leave as None
                         matched_positions.append(MatchedPosition(
-                            timestamp_open=open_event.timestamp,
-                            timestamp_close=rug_event.timestamp,
                             target_wallet=rug_event.target,
                             token=open_event.token_name,
                             position_type=open_event.position_type,
@@ -366,8 +348,6 @@ class PositionMatcher:
                         meteora_pnl_pct = (meteora_pnl / meteora_result.deposited_sol * Decimal('100')) if meteora_result.deposited_sol > 0 else Decimal('0')
 
                         matched_positions.append(MatchedPosition(
-                            timestamp_open="",
-                            timestamp_close=rug_event.timestamp,
                             target_wallet=rug_event.target,
                             token="unknown",
                             position_type="unknown",
@@ -395,8 +375,6 @@ class PositionMatcher:
                     elif use_discord_pnl:
                         # Use Discord PnL (can't estimate without deployed amount)
                         matched_positions.append(MatchedPosition(
-                            timestamp_open="",
-                            timestamp_close=rug_event.timestamp,
                             target_wallet=rug_event.target,
                             token="unknown",
                             position_type="unknown",
@@ -420,8 +398,6 @@ class PositionMatcher:
                     else:
                         # No Meteora and Discord PnL not enabled
                         matched_positions.append(MatchedPosition(
-                            timestamp_open="",
-                            timestamp_close=rug_event.timestamp,
                             target_wallet=rug_event.target,
                             token="unknown",
                             position_type="unknown",
@@ -446,8 +422,6 @@ class PositionMatcher:
                 # Rug event without position_id - can't match or get Meteora data
                 if use_discord_pnl:
                     matched_positions.append(MatchedPosition(
-                        timestamp_open="",
-                        timestamp_close=rug_event.timestamp,
                         target_wallet=rug_event.target,
                         token="unknown",
                         position_type="unknown",
@@ -469,8 +443,6 @@ class PositionMatcher:
                     ))
                 else:
                     matched_positions.append(MatchedPosition(
-                        timestamp_open="",
-                        timestamp_close=rug_event.timestamp,
                         target_wallet=rug_event.target,
                         token="unknown",
                         position_type="unknown",

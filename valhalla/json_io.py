@@ -29,8 +29,6 @@ def export_to_json(positions: List[MatchedPosition], unmatched_opens: List[OpenE
             "token": pos.token,
             "target_wallet": pos.target_wallet,
             "position_type": pos.position_type,
-            "timestamp_open": pos.timestamp_open,
-            "timestamp_close": pos.timestamp_close,
             "datetime_open": pos.datetime_open,
             "datetime_close": pos.datetime_close,
             "sol_deployed": str(pos.sol_deployed) if pos.sol_deployed is not None else None,
@@ -64,7 +62,6 @@ def export_to_json(positions: List[MatchedPosition], unmatched_opens: List[OpenE
             "token": open_event.token_name,
             "target_wallet": open_event.target,
             "position_type": open_event.position_type,
-            "timestamp_open": open_event.timestamp,
             "datetime_open": datetime_open,
             "sol_deployed": str(Decimal(str(open_event.your_sol))),
             "mc_at_open": open_event.market_cap,
@@ -142,8 +139,6 @@ def import_from_json(json_path: str) -> Tuple[List[MatchedPosition], List[dict]]
             return Decimal(str(val))
 
         positions.append(MatchedPosition(
-            timestamp_open=pos_dict.get('timestamp_open', ''),
-            timestamp_close=pos_dict.get('timestamp_close', ''),
             target_wallet=pos_dict.get('target_wallet', ''),
             token=pos_dict.get('token', ''),
             position_type=pos_dict.get('position_type', ''),
@@ -219,8 +214,12 @@ def merge_with_imported(new_positions: List[MatchedPosition],
             continue
 
         # Convert to OpenEvent
+        # Extract timestamp from datetime_open
+        datetime_open_str = open_dict.get('datetime_open', '')
+        timestamp = f"[{datetime_open_str.split('T')[1][:5]}]" if datetime_open_str and 'T' in datetime_open_str else ''
+
         still_open_events.append(OpenEvent(
-            timestamp=open_dict.get('timestamp_open', ''),
+            timestamp=timestamp,
             position_type=open_dict.get('position_type', ''),
             token_name=open_dict.get('token', ''),
             token_pair=f"{open_dict.get('token', '')}-SOL",
