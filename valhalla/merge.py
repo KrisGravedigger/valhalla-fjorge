@@ -114,7 +114,7 @@ def merge_with_existing_csv(
 
     # Helper: check if position is fully complete (has open + close + meteora PnL)
     def is_fully_complete(pos: MatchedPosition) -> bool:
-        has_open = pos.close_reason not in ("unknown_open", "rug_unknown_open")
+        has_open = pos.close_reason not in ("unknown_open", "rug_unknown_open", "failsafe_unknown_open")
         has_close = pos.close_reason != "still_open"
         has_meteora = pos.pnl_source == "meteora"
         return has_open and has_close and has_meteora
@@ -135,10 +135,11 @@ def merge_with_existing_csv(
             existing.token_age = new_pos.token_age
             existing.token_age_days = new_pos.token_age_days
             existing.token_age_hours = new_pos.token_age_hours
-        if existing.close_reason in ("unknown_open", "rug_unknown_open"):
-            # Upgrade close_reason: rug_unknown_open -> rug, unknown_open -> normal
+        if existing.close_reason in ("unknown_open", "rug_unknown_open", "failsafe_unknown_open"):
             if existing.close_reason == "rug_unknown_open":
                 existing.close_reason = "rug"
+            elif existing.close_reason == "failsafe_unknown_open":
+                existing.close_reason = "failsafe"
             else:
                 existing.close_reason = "normal"
         return existing
@@ -166,7 +167,7 @@ def merge_with_existing_csv(
 
         # Rule 2: Has Meteora PnL but missing open data (unknown_open)
         # -> enrich with open data from new run if available
-        if existing_pos.pnl_source == "meteora" and existing_pos.close_reason in ("unknown_open", "rug_unknown_open"):
+        if existing_pos.pnl_source == "meteora" and existing_pos.close_reason in ("unknown_open", "rug_unknown_open", "failsafe_unknown_open"):
             if new_matched_pos and new_matched_pos.datetime_open:
                 enriched = enrich_existing_with_open(existing_pos, new_matched_pos)
                 merged_matched.append(enriched)

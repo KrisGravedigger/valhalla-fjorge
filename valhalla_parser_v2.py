@@ -6,12 +6,14 @@ Parses Discord DM plain text logs and calculates per-position PnL using Meteora 
 
 import re
 import argparse
+import csv
 import shutil
 import subprocess
 import sys
 from pathlib import Path
 from typing import Dict
 from datetime import datetime
+from decimal import Decimal
 
 # Import from valhalla package
 from valhalla.models import extract_date_from_filename, MeteoraPnlResult
@@ -195,6 +197,19 @@ def main():
     print(f"  Swap events: {len(event_parser.swap_events)}")
     print(f"  Insufficient balance events: {len(event_parser.insufficient_balance_events)}")
 
+    # Load already-complete position IDs from existing CSV
+    positions_csv = output_dir / 'positions.csv'
+    already_complete_ids = set()
+    if positions_csv.exists():
+        with open(positions_csv, 'r', encoding='utf-8') as f:
+            for row in csv.DictReader(f):
+                if row.get('pnl_source') == 'meteora':
+                    pid = row.get('position_id', '').strip()
+                    if pid:
+                        already_complete_ids.add(pid)
+        if already_complete_ids:
+            print(f"  Skipping {len(already_complete_ids)} already-complete positions")
+
     # Step 3: Resolve addresses
     resolved_addresses: Dict[str, str] = {}
     cache = AddressCache(cache_file)
@@ -209,8 +224,9 @@ def main():
         events_to_resolve = []
         for event in event_parser.open_events + event_parser.close_events + event_parser.failsafe_events:
             if event.tx_signatures and event.position_id not in seen_pids:
-                seen_pids.add(event.position_id)
-                events_to_resolve.append((event.position_id, event.tx_signatures))
+                if event.position_id not in already_complete_ids:
+                    seen_pids.add(event.position_id)
+                    events_to_resolve.append((event.position_id, event.tx_signatures))
 
         total = len(events_to_resolve)
         for i, (pid, sigs) in enumerate(events_to_resolve, 1):
@@ -240,13 +256,31 @@ def main():
         print(f"\nFetching Meteora PnL data...")
         meteora_calc = MeteoraPnlCalculator()
 
-        total = len(resolved_addresses)
-        for i, (pid, full_addr) in enumerate(resolved_addresses.items(), 1):
+        # Build closeable_ids set (only positions that will be used)
+        closeable_ids = set()
+        for e in event_parser.close_events:
+            closeable_ids.add(e.position_id)
+        for e in event_parser.rug_events:
+            if e.position_id:
+                closeable_ids.add(e.position_id)
+        for e in event_parser.failsafe_events:
+            closeable_ids.add(e.position_id)
+
+        # Filter to only fetch closeable positions that aren't already complete
+        addresses_to_fetch = {pid: addr for pid, addr in resolved_addresses.items()
+                              if pid in closeable_ids and pid not in already_complete_ids}
+
+        total = len(addresses_to_fetch)
+        for i, (pid, full_addr) in enumerate(addresses_to_fetch.items(), 1):
             print(f"  Fetching {i}/{total}: {pid}...", end='', flush=True)
             result = meteora_calc.calculate_pnl(full_addr)
             if result:
-                meteora_results[pid] = result
-                print(f" PnL: {result.pnl_sol:.4f} SOL (${result.pnl_usd:.2f})")
+                recovered = result.withdrawn_sol + result.fees_sol
+                if recovered < Decimal('0.001'):
+                    print(f" PnL: unknown (recovered {recovered:.4f} SOL ≈ total loss, unreliable)")
+                else:
+                    meteora_results[pid] = result
+                    print(f" PnL: {result.pnl_sol:.4f} SOL (${result.pnl_usd:.2f})")
             else:
                 print(f" FAILED")
 
@@ -276,7 +310,6 @@ def main():
         )
 
     # Step 5.6: Merge with existing output if present
-    positions_csv = output_dir / 'positions.csv'
     summary_csv = output_dir / 'summary.csv'
 
     if positions_csv.exists():
