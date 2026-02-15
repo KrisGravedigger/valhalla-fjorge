@@ -103,6 +103,12 @@ def main():
     event_parser = EventParser()  # Will initialize per-file
     processed_files = []  # Track successfully processed files for archiving
 
+    # Dedup: same position_id across files = same Discord message, keep first seen
+    seen_open_ids = set()
+    seen_close_ids = set()
+    seen_failsafe_ids = set()
+    seen_rug_ids = set()
+
     for input_file in input_files:
         # Detect format and create appropriate reader
         print(f"\nReading Discord logs: {input_file}")
@@ -172,15 +178,40 @@ def main():
         file_parser = EventParser(base_date=file_date)
         file_parser.parse_messages(messages)
 
-        # Merge events into main parser
-        event_parser.open_events.extend(file_parser.open_events)
-        event_parser.close_events.extend(file_parser.close_events)
-        event_parser.rug_events.extend(file_parser.rug_events)
+        # Merge events into main parser (deduplicate by position_id across files)
+        dedup_count = 0
+        for e in file_parser.open_events:
+            if e.position_id not in seen_open_ids:
+                seen_open_ids.add(e.position_id)
+                event_parser.open_events.append(e)
+            else:
+                dedup_count += 1
+        for e in file_parser.close_events:
+            if e.position_id not in seen_close_ids:
+                seen_close_ids.add(e.position_id)
+                event_parser.close_events.append(e)
+            else:
+                dedup_count += 1
+        for e in file_parser.failsafe_events:
+            if e.position_id not in seen_failsafe_ids:
+                seen_failsafe_ids.add(e.position_id)
+                event_parser.failsafe_events.append(e)
+            else:
+                dedup_count += 1
+        for e in file_parser.rug_events:
+            pid = e.position_id or id(e)  # rug events may lack position_id
+            if pid not in seen_rug_ids:
+                seen_rug_ids.add(pid)
+                event_parser.rug_events.append(e)
+            else:
+                dedup_count += 1
+        # Non-position events: no dedup needed
         event_parser.skip_events.extend(file_parser.skip_events)
         event_parser.swap_events.extend(file_parser.swap_events)
-        event_parser.failsafe_events.extend(file_parser.failsafe_events)
         event_parser.add_liquidity_events.extend(file_parser.add_liquidity_events)
         event_parser.insufficient_balance_events.extend(file_parser.insufficient_balance_events)
+        if dedup_count:
+            print(f"  Skipped {dedup_count} duplicate events (already seen in earlier file)")
 
         # Collect per-file datetime range for archive naming
         file_datetimes = []
