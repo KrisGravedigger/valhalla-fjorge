@@ -16,6 +16,10 @@ if ($start -ge 0 -and $end -gt $start) {
   $frag = $html
 }
 
+# Save HTML dump for debugging
+$scriptDir_early = Split-Path -Parent $MyInvocation.MyCommand.Path
+$html | Out-File -FilePath (Join-Path $scriptDir_early "clipboard_html_dump.txt") -Encoding utf8 -NoNewline
+
 # Replace links: <a href="URL">TEXT</a> => TEXT [URL]
 $reA = [regex]::new('<a\b[^>]*href\s*=\s*("(?<u>[^"]+)|''(?<u>[^'']+)''|(?<u>[^\s>]+))[^>]*>(?<t>.*?)</a>', 'IgnoreCase,Singleline')
 $out = $reA.Replace($frag, {
@@ -41,7 +45,27 @@ $firstTimeMatch = [regex]::Match($out, '\[(\d{4})-(\d{2})-(\d{2})T\d{2}:\d{2}\]'
 if ($firstTimeMatch.Success) {
   $userDate = $firstTimeMatch.Groups[1].Value + $firstTimeMatch.Groups[2].Value + $firstTimeMatch.Groups[3].Value
 } else {
-  $userDate = Get-Date -Format "yyyyMMdd"
+  # Fallback: extract date from Discord snowflake message ID
+  $snowflakeMatch = [regex]::Match($frag, 'chat-messages-\d+-(\d{17,20})')
+  if ($snowflakeMatch.Success) {
+    $snowflakeId = [long]$snowflakeMatch.Groups[1].Value
+    $discordEpoch = 1420070400000
+    $unixMs = ($snowflakeId -shr 22) + $discordEpoch
+    $baseDt = [DateTimeOffset]::FromUnixTimeMilliseconds($unixMs).ToLocalTime()
+    $userDate = $baseDt.ToString("yyyyMMdd")
+    $baseDate = $baseDt.ToString("yyyy-MM-dd")
+    Write-Host "Date from Discord message ID: $baseDate" -ForegroundColor Cyan
+
+    # Inject full datetime into time-only markers [HH:MM] -> [YYYY-MM-DDTHH:MM]
+    $out = [regex]::Replace($out, '\[(\d{2}:\d{2})\]', "[$baseDate" + 'T$1]')
+  } else {
+    # Last resort: ask user
+    $defaultDate = Get-Date -Format "yyyyMMdd"
+    Write-Host "Could not detect date. Enter date (YYYYMMDD) [$defaultDate]:" -ForegroundColor Yellow
+    $input = Read-Host
+    if ([string]::IsNullOrWhiteSpace($input)) { $userDate = $defaultDate }
+    else { $userDate = $input }
+  }
 }
 
 # HTML decode + minimal block-level tag replacements to newlines, strip other tags
