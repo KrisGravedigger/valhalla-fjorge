@@ -26,7 +26,7 @@ class PlainTextReader:
 
     def read(self) -> List[Tuple[str, str, List[str]]]:
         """Returns list of (timestamp, clean_text, tx_signatures) tuples"""
-        with open(self.file_path, 'r', encoding='utf-8') as f:
+        with open(self.file_path, 'r', encoding='utf-8-sig') as f:
             content = f.read()
 
         # Check for date header (YYYYMMDD) at the top of the file
@@ -129,7 +129,7 @@ class HtmlReader(PlainTextReader):
 
     def read(self) -> List[Tuple[str, str, List[str]]]:
         """Convert HTML to text, then use PlainTextReader logic"""
-        with open(self.file_path, 'r', encoding='utf-8', errors='ignore') as f:
+        with open(self.file_path, 'r', encoding='utf-8-sig', errors='ignore') as f:
             raw_html = f.read()
 
         # Check for date header before HTML content

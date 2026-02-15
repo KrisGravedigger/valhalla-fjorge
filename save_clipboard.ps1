@@ -32,7 +32,7 @@ $out = $reA.Replace($frag, {
 
 # Convert <time datetime="2026-02-14T20:02:53.534Z">21:02</time> to [YYYY-MM-DDTHH:MM]
 # Must happen BEFORE stripping HTML tags. Converts UTC to local timezone.
-$out = [regex]::Replace($out, '<time[^>]*datetime="([^"]+)"[^>]*>[^<]*</time>', {
+$out = [regex]::Replace($out, '(?s)<time[^>]*datetime="([^"]+)"[^>]*>.*?</time>', {
   param($m)
   $utcStr = $m.Groups[1].Value
   $utcDt = [DateTimeOffset]::Parse($utcStr)
