@@ -166,12 +166,19 @@ def merge_with_existing_csv(
             continue
 
         # Rule 2: Has Meteora PnL but missing open data (unknown_open)
-        # -> enrich with open data from new run if available
+        # -> enrich with open/close data from new run if available
         if existing_pos.pnl_source == "meteora" and existing_pos.close_reason in ("unknown_open", "rug_unknown_open", "failsafe_unknown_open"):
+            enriched_this = False
+
+            # Update close datetime from new data if available
+            if new_matched_pos and new_matched_pos.datetime_close:
+                existing_pos.datetime_close = new_matched_pos.datetime_close
+
             if new_matched_pos and new_matched_pos.datetime_open:
                 enriched = enrich_existing_with_open(existing_pos, new_matched_pos)
                 merged_matched.append(enriched)
                 enriched_count += 1
+                enriched_this = True
             elif new_still_open_event:
                 # Open data came as still_open (new file only had the open, not the close)
                 # Build a temporary MatchedPosition from the OpenEvent to use enrich helper
@@ -200,8 +207,10 @@ def merge_with_existing_csv(
                 enriched = enrich_existing_with_open(existing_pos, open_as_matched)
                 merged_matched.append(enriched)
                 enriched_count += 1
-            else:
-                # No new open data - keep as-is
+                enriched_this = True
+
+            if not enriched_this:
+                # No new open data - keep as-is (but datetime_close may have been updated above)
                 merged_matched.append(existing_pos)
                 kept_from_existing_count += 1
             continue
@@ -213,7 +222,33 @@ def merge_with_existing_csv(
             continue
 
         # Rule 4: No Meteora PnL (pending/discord) - upgrade if we have better data
+        # Merge: keep open-side data from existing, take close-side from new
         if new_matched_pos:
+            # Preserve existing open data if new doesn't have it
+            if not new_matched_pos.datetime_open and existing_pos.datetime_open:
+                new_matched_pos.datetime_open = existing_pos.datetime_open
+            if (not new_matched_pos.token or new_matched_pos.token == 'unknown') and existing_pos.token and existing_pos.token != 'unknown':
+                new_matched_pos.token = existing_pos.token
+            if (not new_matched_pos.position_type or new_matched_pos.position_type == 'unknown') and existing_pos.position_type and existing_pos.position_type != 'unknown':
+                new_matched_pos.position_type = existing_pos.position_type
+            if (not new_matched_pos.mc_at_open or new_matched_pos.mc_at_open == 0) and existing_pos.mc_at_open:
+                new_matched_pos.mc_at_open = existing_pos.mc_at_open
+            if (not new_matched_pos.jup_score or new_matched_pos.jup_score == 0) and existing_pos.jup_score:
+                new_matched_pos.jup_score = existing_pos.jup_score
+            if not new_matched_pos.token_age and existing_pos.token_age:
+                new_matched_pos.token_age = existing_pos.token_age
+                new_matched_pos.token_age_days = existing_pos.token_age_days
+                new_matched_pos.token_age_hours = existing_pos.token_age_hours
+            if not new_matched_pos.target_wallet and existing_pos.target_wallet:
+                new_matched_pos.target_wallet = existing_pos.target_wallet
+            # Fix close_reason if we now have open data
+            if new_matched_pos.datetime_open and new_matched_pos.close_reason in ("unknown_open", "rug_unknown_open", "failsafe_unknown_open"):
+                if new_matched_pos.close_reason == "rug_unknown_open":
+                    new_matched_pos.close_reason = "rug"
+                elif new_matched_pos.close_reason == "failsafe_unknown_open":
+                    new_matched_pos.close_reason = "failsafe"
+                else:
+                    new_matched_pos.close_reason = "normal"
             merged_matched.append(new_matched_pos)
             upgraded_count += 1
         elif new_still_open_event:
