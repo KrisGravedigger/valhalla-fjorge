@@ -15,6 +15,7 @@ try:
     matplotlib.use('Agg')  # Non-interactive backend
     import matplotlib.pyplot as plt
     import matplotlib.dates as mdates
+    from matplotlib.ticker import AutoMinorLocator
     HAS_MATPLOTLIB = True
 except ImportError:
     HAS_MATPLOTLIB = False
@@ -148,17 +149,23 @@ def _fill_zeros_for_active_range(
     """
     Fill 0 for active wallets on days with no trades.
 
-    For each wallet, finds its first and last active date in data_dict.
-    For all dates in between that have no entry, sets value to 0.
+    For each wallet that has any data, fills 0 for all dates in the global
+    range from the wallet's first active date to the timeline end.
+    This ensures single-day wallets also show 0 on subsequent days.
     """
+    if not dates:
+        return
+
+    global_last = max(dates)
+
     for wallet in wallets:
         wallet_dates = [d for (w, d) in data_dict if w == wallet]
         if not wallet_dates:
             continue
         first = min(wallet_dates)
-        last = max(wallet_dates)
+        # Use global last instead of wallet's last to fill zeros for single-day wallets
         for d in dates:
-            if first <= d <= last and (wallet, d) not in data_dict:
+            if first <= d <= global_last and (wallet, d) not in data_dict:
                 data_dict[(wallet, d)] = 0
 
 
@@ -219,8 +226,11 @@ def _chart_daily_pnl(
     ax.xaxis.set_major_locator(mdates.DayLocator())
     plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
     ax.axhline(y=0, color='black', linewidth=0.8, linestyle='-', alpha=0.3)
-    ax.yaxis.set_major_locator(plt.MaxNLocator(nbins=10))
-    ax.grid(True, alpha=0.3, axis='y')
+    # Improved Y-axis: more ticks and finer grid for better resolution near zero
+    ax.yaxis.set_major_locator(plt.MaxNLocator(nbins=20))
+    ax.yaxis.set_minor_locator(AutoMinorLocator(2))
+    ax.grid(True, alpha=0.3, axis='y', which='major')
+    ax.grid(True, alpha=0.15, axis='y', which='minor')
     ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize='small')
 
     fig.tight_layout()
@@ -278,8 +288,11 @@ def _chart_daily_pnl_pct(
     ax.xaxis.set_major_locator(mdates.DayLocator())
     plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
     ax.axhline(y=0, color='black', linewidth=0.8, linestyle='-', alpha=0.3)
-    ax.yaxis.set_major_locator(plt.MaxNLocator(nbins=10))
-    ax.grid(True, alpha=0.3, axis='y')
+    # Improved Y-axis: more ticks and finer grid for better resolution near zero
+    ax.yaxis.set_major_locator(plt.MaxNLocator(nbins=20))
+    ax.yaxis.set_minor_locator(AutoMinorLocator(2))
+    ax.grid(True, alpha=0.3, axis='y', which='major')
+    ax.grid(True, alpha=0.15, axis='y', which='minor')
     ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize='small')
 
     fig.tight_layout()
@@ -545,8 +558,25 @@ def generate_charts(positions: List[MatchedPosition], output_dir: str) -> None:
         print("  Not enough dated positions for charts (need 1+)")
         return
 
-    # Aggregate data
-    pnl_data, entries_data, winrate_data, rugs_data, pnl_pct_data, dates, wallets = _aggregate_daily_data(dated)
+    # Aggregate data (uses close dates for PnL, winrate, rugs)
+    pnl_data, entries_data_close, winrate_data, rugs_data, pnl_pct_data, dates, wallets = _aggregate_daily_data(dated)
+
+    # Build separate entries data based on OPEN dates (not close dates)
+    entries_data = {}
+    all_open_dates = set()
+    for p in positions:
+        if p.pnl_sol is None:
+            continue
+        dt_open = parse_iso_datetime(p.datetime_open)
+        if dt_open is None:
+            continue
+        open_date = dt_open.date()
+        all_open_dates.add(open_date)
+        key = (p.target_wallet, open_date)
+        entries_data[key] = entries_data.get(key, 0) + 1
+
+    # Merge open dates into the global dates list
+    dates = sorted(set(dates) | all_open_dates)
 
     if not dates or not wallets:
         print("  No date/wallet data for charts")
