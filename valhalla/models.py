@@ -34,20 +34,20 @@ def extract_date_from_filename(filename: str) -> Optional[str]:
     Extract date from filename patterns like:
     - logs_20260212.txt -> 2026-02-12
     - logs_2026-02-12.txt -> 2026-02-12
+    - 20260211T0156-..._20260213_discord1.txt -> 2026-02-13 (last match wins)
     - sample_logs_3.txt -> None
 
     Returns YYYY-MM-DD string or None if not found.
+    Uses the LAST match to handle archived filenames with datetime prefixes.
     """
-    # Pattern 1: YYYYMMDD
-    match = re.search(r'(\d{4})(\d{2})(\d{2})', filename)
-    if match:
-        year, month, day = match.groups()
+    # Pattern 1: YYYYMMDD (take last valid match to skip archive prefixes)
+    matches = re.findall(r'(\d{4})(\d{2})(\d{2})', filename)
+    for year, month, day in reversed(matches):
         try:
-            # Validate date
             datetime(int(year), int(month), int(day))
             return f"{year}-{month}-{day}"
         except ValueError:
-            pass
+            continue
 
     # Pattern 2: YYYY-MM-DD
     match = re.search(r'(\d{4})-(\d{2})-(\d{2})', filename)
