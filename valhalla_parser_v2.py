@@ -182,8 +182,18 @@ def main():
         event_parser.add_liquidity_events.extend(file_parser.add_liquidity_events)
         event_parser.insufficient_balance_events.extend(file_parser.insufficient_balance_events)
 
+        # Collect per-file datetime range for archive naming
+        file_datetimes = []
+        for evt in (file_parser.open_events + file_parser.close_events +
+                    file_parser.failsafe_events + file_parser.rug_events):
+            ts = evt.timestamp  # "[HH:MM]" or "[YYYY-MM-DDTHH:MM]"
+            if ts and 'T' in ts:
+                # Extract "YYYY-MM-DDTHH:MM" from "[YYYY-MM-DDTHH:MM]"
+                dt_str = ts.strip('[]')
+                file_datetimes.append(dt_str)
+
         # Track for archiving
-        processed_files.append((input_file, file_date))
+        processed_files.append((input_file, file_date, file_datetimes))
 
     # Step 2: Print aggregated event counts
     print(f"\nTotal parsed events across {len(input_files)} file(s):")
@@ -356,27 +366,20 @@ def main():
         archive_dir = Path('archive')
         archive_dir.mkdir(parents=True, exist_ok=True)
 
-        # Compute datetime range from all matched positions for archive naming
         def _format_archive_dt(iso_str: str) -> str:
-            """Convert '2026-02-13T15:08:00' to '20260213T1508'"""
+            """Convert '2026-02-13T15:08' to '20260213T1508'"""
             return iso_str.replace('-', '').replace(':', '')[:13]
 
-        archive_datetimes = []
-        for pos in matched_positions:
-            if pos.datetime_open and pos.datetime_open[0].isdigit():
-                archive_datetimes.append(pos.datetime_open)
-            if pos.datetime_close and pos.datetime_close[0].isdigit():
-                archive_datetimes.append(pos.datetime_close)
-
-        if archive_datetimes:
-            min_dt = _format_archive_dt(min(archive_datetimes))
-            max_dt = _format_archive_dt(max(archive_datetimes))
-            dt_prefix = f"{min_dt}-{max_dt}_"
-        else:
-            dt_prefix = ""
-
-        for input_file, file_date in processed_files:
+        for input_file, file_date, file_datetimes in processed_files:
             input_path = Path(input_file)
+
+            if file_datetimes:
+                min_dt = _format_archive_dt(min(file_datetimes))
+                max_dt = _format_archive_dt(max(file_datetimes))
+                dt_prefix = f"{min_dt}-{max_dt}_"
+            else:
+                dt_prefix = ""
+
             archive_name = f"{dt_prefix}{input_path.name}"
             archive_path = archive_dir / archive_name
 
