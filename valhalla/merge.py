@@ -7,7 +7,7 @@ from pathlib import Path
 from decimal import Decimal
 from typing import Dict, List, Optional, Tuple
 
-from .models import MatchedPosition, OpenEvent, normalize_token_age
+from .models import MatchedPosition, OpenEvent, normalize_token_age, make_iso_datetime
 from .csv_writer import CsvWriter
 
 
@@ -196,7 +196,7 @@ def merge_with_existing_csv(
                     full_address='', pnl_source='',
                     meteora_deposited=None, meteora_withdrawn=None,
                     meteora_fees=None, meteora_pnl=None,
-                    datetime_open=f"{new_still_open_event.date}T{new_still_open_event.timestamp.strip('[]')}:00" if new_still_open_event.date and new_still_open_event.timestamp else '',
+                    datetime_open=make_iso_datetime(new_still_open_event.date, new_still_open_event.timestamp) if new_still_open_event.timestamp else '',
                     datetime_close=''
                 )
                 # Normalize token_age

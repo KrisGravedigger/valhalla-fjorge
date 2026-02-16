@@ -239,12 +239,16 @@ def main():
     print(f"  Insufficient balance events: {len(event_parser.insufficient_balance_events)}")
 
     # Load already-complete position IDs from existing CSV
+    # Only skip positions that have meteora PnL AND both open+close dates
     positions_csv = output_dir / 'positions.csv'
     already_complete_ids = set()
     if positions_csv.exists():
         with open(positions_csv, 'r', encoding='utf-8') as f:
             for row in csv.DictReader(f):
-                if row.get('pnl_source') == 'meteora':
+                if (row.get('pnl_source') == 'meteora'
+                        and row.get('datetime_open')
+                        and row.get('datetime_close')
+                        and row.get('close_reason') not in ('unknown_open', 'rug_unknown_open', 'failsafe_unknown_open', 'still_open')):
                     pid = row.get('position_id', '').strip()
                     if pid:
                         already_complete_ids.add(pid)
