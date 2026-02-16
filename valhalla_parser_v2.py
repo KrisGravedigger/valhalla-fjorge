@@ -85,8 +85,8 @@ def _detect_coverage_gaps(positions_csv_path):
     gap_values = [g[0] for g in gaps]
     median_gap = statistics.median(gap_values)
 
-    # Dynamic threshold: max(90, min(median * 20, 360))
-    threshold_minutes = max(90, min(median_gap * 20, 360))
+    # Dynamic threshold: max(180, min(median * 20, 360))
+    threshold_minutes = max(180, min(median_gap * 20, 360))
 
     # Filter gaps above threshold
     significant_gaps = [(gap_min, start, end) for gap_min, start, end in gaps if gap_min > threshold_minutes]
@@ -119,22 +119,27 @@ def _detect_coverage_gaps(positions_csv_path):
         # Sort chronologically (oldest first)
         significant_gaps.sort(key=lambda x: x[1])
 
-        new_gaps = 0
-        print(f"\nCoverage Gaps (threshold: {threshold_str}, median: {median_str})")
+        new_gaps = []
+        allowed_count = 0
         for gap_min, start, end in significant_gaps:
-            gap_str = format_time(gap_min)
             start_str = start.strftime('%m-%d %H:%M')
             end_str = end.strftime('%m-%d %H:%M')
             range_key = f"{start_str} -> {end_str}"
             if range_key in allowlist:
-                print(f"    {gap_str} gap: {start_str} -> {end_str}  (allowed)")
+                allowed_count += 1
             else:
-                print(f"  ! {gap_str} gap: {start_str} -> {end_str}")
-                new_gaps += 1
+                new_gaps.append((gap_min, start_str, end_str))
+
         if new_gaps:
-            print(f"  {new_gaps} potential gap(s) detected")
-        else:
-            print(f"  All gaps allowed")
+            print(f"\nCoverage Gaps (threshold: {threshold_str}, median: {median_str})")
+            for gap_min, start_str, end_str in new_gaps:
+                gap_str = format_time(gap_min)
+                print(f"  ! {gap_str} gap: {start_str} -> {end_str}")
+            if allowed_count:
+                print(f"  ({allowed_count} allowed gap(s) hidden - see gap_allowlist.txt)")
+            print(f"  {len(new_gaps)} potential gap(s) detected")
+        elif allowed_count:
+            print(f"\nNo new coverage gaps (threshold: {threshold_str}, {allowed_count} allowed gap(s) hidden)")
     else:
         print(f"\nNo coverage gaps detected (threshold: {threshold_str}, median: {median_str})")
 
