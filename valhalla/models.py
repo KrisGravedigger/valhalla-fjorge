@@ -89,7 +89,9 @@ def make_iso_datetime(date_str: str, time_str: str) -> str:
     time_part = f"{hour}:{minute}:00"
 
     if date_str:
-        return f"{date_str}T{time_part}"
+        # Guard: strip to date-only if date_str accidentally contains full ISO datetime
+        date_only = date_str.split('T')[0] if 'T' in date_str else date_str
+        return f"{date_only}T{time_part}"
     else:
         return f"T{time_part}"
 

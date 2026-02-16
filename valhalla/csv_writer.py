@@ -311,20 +311,50 @@ class CsvWriter:
 
     def generate_insufficient_balance_csv(self, events: List[InsufficientBalanceEvent],
                                           output_path: str) -> None:
-        """Generate insufficient_balance.csv"""
+        """Generate insufficient_balance.csv, merging with existing data."""
+        from pathlib import Path
+
+        # Read existing rows
+        existing_rows = []
+        if Path(output_path).exists():
+            with open(output_path, 'r', newline='', encoding='utf-8') as f:
+                reader = csv.reader(f)
+                next(reader, None)  # skip header
+                for row in reader:
+                    if row:
+                        existing_rows.append(tuple(row))
+
+        # Convert new events to rows
+        new_rows = set()
+        for event in events:
+            dt = make_iso_datetime(event.date, event.timestamp)
+            row = (
+                dt,
+                event.target,
+                f"{event.sol_balance:.4f}",
+                f"{event.effective_balance:.4f}",
+                f"{event.required_amount:.4f}"
+            )
+            new_rows.add(row)
+
+        # Deduplicate by (datetime, target_wallet, required_amount)
+        seen = set()
+        all_rows = []
+        for row in list(existing_rows) + list(new_rows):
+            key = (row[0], row[1], row[4])  # datetime, target_wallet, required_amount
+            if key not in seen:
+                seen.add(key)
+                all_rows.append(row)
+
+        # Sort by datetime
+        all_rows.sort(key=lambda r: r[0] if r[0] else '')
+
+        # Write
         with open(output_path, 'w', newline='', encoding='utf-8') as f:
             writer = csv.writer(f)
             writer.writerow([
                 'datetime', 'target_wallet', 'sol_balance',
                 'effective_balance', 'required_amount'
             ])
-
-            for event in events:
-                dt = make_iso_datetime(event.date, event.timestamp)
-                writer.writerow([
-                    dt,
-                    event.target,
-                    f"{event.sol_balance:.4f}",
-                    f"{event.effective_balance:.4f}",
-                    f"{event.required_amount:.4f}"
-                ])
+            for row in all_rows:
+                writer.writerow(row)

@@ -4,10 +4,10 @@ Chart generation module for Valhalla parser.
 
 from typing import List, Dict, Tuple
 from decimal import Decimal
-from datetime import date
+from datetime import date, timedelta
 from collections import defaultdict
 
-from .models import MatchedPosition, InsufficientBalanceEvent, parse_iso_datetime, make_iso_datetime
+from .models import MatchedPosition, parse_iso_datetime
 
 # Optional matplotlib for chart generation
 try:
@@ -182,7 +182,7 @@ def _chart_daily_pnl(
     Each wallet is represented by a colored line.
     Includes mean and total portfolio lines.
     """
-    fig, ax = plt.subplots(figsize=(12, 6))
+    fig, ax = plt.subplots(figsize=(12, 10))
 
     # Plot each wallet as a line
     for wallet in wallets:
@@ -254,7 +254,7 @@ def _chart_daily_pnl_pct(
     Each wallet is represented by a colored line.
     Includes mean line. No total (aggregating percentages is meaningless).
     """
-    fig, ax = plt.subplots(figsize=(12, 6))
+    fig, ax = plt.subplots(figsize=(12, 10))
 
     # Plot each wallet as a line
     for wallet in wallets:
@@ -431,11 +431,29 @@ def _chart_daily_rugs(
     Generate daily rug count line chart.
 
     Each wallet is represented by a colored line.
+    Only includes wallets with at least one rug in the last 7 days.
     """
+    # Filter wallets: only include those with any rug count > 0 in the last 7 days
+    cutoff_date = max(dates) - timedelta(days=7)
+    active_wallets = []
+    for wallet in wallets:
+        has_recent_rug = any(
+            rugs_data.get((wallet, d), 0) > 0
+            for d in dates
+            if d >= cutoff_date
+        )
+        if has_recent_rug:
+            active_wallets.append(wallet)
+
+    # Skip chart generation if no recent rugs
+    if not active_wallets:
+        print("  Skipping daily_rugs.png (no rugs in last 7 days)")
+        return
+
     fig, ax = plt.subplots(figsize=(12, 6))
 
-    # Plot each wallet as a line
-    for wallet in wallets:
+    # Plot each active wallet as a line
+    for wallet in active_wallets:
         values = [rugs_data.get((wallet, d)) for d in dates]
 
         ax.plot(
@@ -449,16 +467,6 @@ def _chart_daily_rugs(
             color=wallet_colors[wallet]
         )
 
-    # Mean line - compute mean only across wallets with data for each day
-    means = []
-    for d in dates:
-        day_values = [rugs_data.get((w, d)) for w in wallets if (w, d) in rugs_data]
-        if day_values:
-            means.append(sum(day_values) / len(day_values))
-        else:
-            means.append(None)
-    ax.plot(dates, means, 'k--', linewidth=1.5, label='Mean')
-
     # Formatting
     ax.set_title('Daily Rug Count per Wallet', fontsize=14, fontweight='bold')
     ax.set_ylabel('Count', fontsize=11)
@@ -466,6 +474,7 @@ def _chart_daily_rugs(
     ax.xaxis.set_major_locator(mdates.DayLocator())
     plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
     ax.grid(True, alpha=0.3, axis='y')
+    ax.yaxis.get_major_locator().set_params(integer=True)
     ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize='small')
 
     fig.tight_layout()
@@ -598,30 +607,116 @@ def generate_charts(positions: List[MatchedPosition], output_dir: str) -> None:
     # Assign consistent wallet colors
     wallet_colors = _get_wallet_colors(wallets)
 
-    # Generate all 5 charts
+    # Generate all charts
     _chart_daily_pnl(pnl_data, dates, wallets, wallet_colors, output_dir)
     _chart_daily_pnl_pct(pnl_pct_data, dates, wallets, wallet_colors, output_dir)
     _chart_daily_entries(entries_data, dates, wallets, wallet_colors, output_dir)
     _chart_daily_winrate(winrate_data, dates, wallets, wallet_colors, output_dir)
     _chart_daily_rugs(rugs_data, dates, wallets, wallet_colors, output_dir)
+    _chart_rolling_avg_pnl(pnl_data, dates, wallets, wallet_colors, output_dir, window=3)
+    _chart_rolling_avg_pnl(pnl_data, dates, wallets, wallet_colors, output_dir, window=7)
 
 
-def generate_insufficient_balance_chart(events: List[InsufficientBalanceEvent], output_dir: str) -> None:
-    """Generate a daily bar chart of insufficient balance event counts."""
+def _chart_rolling_avg_pnl(
+    pnl_data: Dict[Tuple[str, date], float],
+    dates: List[date],
+    wallets: List[str],
+    wallet_colors: Dict[str, str],
+    output_dir: str,
+    window: int
+) -> None:
+    """
+    Generate rolling average PnL line chart.
+
+    For each wallet with >= window days of history, computes a rolling
+    window-day average of daily PnL and plots it as a line.
+    """
+    from pathlib import Path
+
+    eligible_wallets = []
+    wallet_series = {}
+
+    for wallet in wallets:
+        # Collect sorted daily PnL for this wallet (only days with data)
+        series = []
+        for d in dates:
+            val = pnl_data.get((wallet, d))
+            if val is not None:
+                series.append((d, val))
+
+        if len(series) >= window:
+            eligible_wallets.append(wallet)
+            wallet_series[wallet] = series
+
+    if not eligible_wallets:
+        print(f"  Skipping daily_pnl_rolling_{window}d.png (no wallets with {window}+ days)")
+        return
+
+    fig, ax = plt.subplots(figsize=(12, 10))
+
+    for wallet in eligible_wallets:
+        series = wallet_series[wallet]
+        roll_dates = []
+        roll_values = []
+        for i in range(window - 1, len(series)):
+            avg = sum(v for _, v in series[i - window + 1:i + 1]) / window
+            roll_dates.append(series[i][0])
+            roll_values.append(avg)
+
+        ax.plot(
+            roll_dates,
+            roll_values,
+            marker='o',
+            markersize=3,
+            linewidth=2,
+            linestyle='-',
+            label=_short_wallet(wallet),
+            color=wallet_colors[wallet]
+        )
+
+    # Formatting
+    ax.set_title(f'Daily PnL {window}-Day Rolling Average (SOL)', fontsize=14, fontweight='bold')
+    ax.set_ylabel('SOL', fontsize=11)
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%m-%d'))
+    ax.xaxis.set_major_locator(mdates.DayLocator())
+    plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
+    ax.axhline(y=0, color='black', linewidth=0.8, linestyle='-', alpha=0.3)
+    ax.yaxis.set_major_locator(plt.MaxNLocator(nbins=20))
+    ax.yaxis.set_minor_locator(AutoMinorLocator(2))
+    ax.grid(True, alpha=0.3, axis='y', which='major')
+    ax.grid(True, alpha=0.15, axis='y', which='minor')
+    ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize='small')
+
+    fig.tight_layout()
+
+    fig.savefig(Path(output_dir) / f'daily_pnl_rolling_{window}d.png', dpi=120)
+    plt.close(fig)
+    print(f"  Generated: daily_pnl_rolling_{window}d.png")
+
+
+def generate_insufficient_balance_chart(csv_path: str, output_dir: str) -> None:
+    """Generate a daily line chart of insufficient balance event counts from CSV."""
     if not HAS_MATPLOTLIB:
         print("  matplotlib not installed, skipping insufficient balance chart")
         return
 
-    if not events:
+    from pathlib import Path
+    import csv as csv_module
+
+    csv_file = Path(csv_path)
+    if not csv_file.exists():
         return
 
-    # Count events per day
+    # Read daily counts from CSV
     daily_counts: Dict[date, int] = defaultdict(int)
-    for event in events:
-        dt_str = make_iso_datetime(event.date, event.timestamp)
-        dt = parse_iso_datetime(dt_str)
-        if dt:
-            daily_counts[dt.date()] += 1
+    with open(csv_file, 'r', newline='', encoding='utf-8') as f:
+        reader = csv_module.DictReader(f)
+        for row in reader:
+            dt_str = row.get('datetime', '').strip()
+            if dt_str:
+                dt = parse_iso_datetime(dt_str)
+                if dt:
+                    daily_counts[dt.date()] += 1
 
     if not daily_counts:
         return
@@ -630,7 +725,8 @@ def generate_insufficient_balance_chart(events: List[InsufficientBalanceEvent], 
     counts = [daily_counts[d] for d in sorted_dates]
 
     fig, ax = plt.subplots(figsize=(12, 6))
-    ax.bar(sorted_dates, counts, color='#e74c3c', alpha=0.8, width=0.6)
+    ax.plot(sorted_dates, counts, marker='o', markersize=5, linewidth=2,
+            linestyle='-', color='#e74c3c')
 
     ax.set_title('Daily Insufficient Balance Events', fontsize=14, fontweight='bold')
     ax.set_ylabel('Count', fontsize=11)
@@ -642,7 +738,6 @@ def generate_insufficient_balance_chart(events: List[InsufficientBalanceEvent], 
 
     fig.tight_layout()
 
-    from pathlib import Path
     fig.savefig(Path(output_dir) / 'daily_insufficient_balance.png', dpi=120)
     plt.close(fig)
     print("  Generated: daily_insufficient_balance.png")

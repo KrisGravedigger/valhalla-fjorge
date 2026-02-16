@@ -144,6 +144,66 @@ def _detect_coverage_gaps(positions_csv_path):
         print(f"\nNo coverage gaps detected (threshold: {threshold_str}, median: {median_str})")
 
 
+def _recover_insufficient_balance_history(output_dir: str) -> None:
+    """Scan archive files and recover all insufficient_balance events into CSV."""
+    from valhalla.models import extract_date_from_filename
+    from valhalla.readers import PlainTextReader, HtmlReader, detect_input_format
+    from valhalla.event_parser import EventParser
+    from valhalla.csv_writer import CsvWriter
+
+    archive_dir = Path('archive')
+    if not archive_dir.exists():
+        print("No archive/ directory found")
+        return
+
+    archive_files = [f for f in archive_dir.iterdir()
+                     if f.is_file() and f.suffix in ('.txt', '.html')]
+
+    if not archive_files:
+        print("No .txt or .html files in archive/")
+        return
+
+    print(f"Scanning {len(archive_files)} archive file(s) for insufficient balance events...")
+
+    all_events = []
+    for filepath in sorted(archive_files):
+        fmt = detect_input_format(str(filepath))
+        if fmt == 'html':
+            reader = HtmlReader(str(filepath))
+        else:
+            reader = PlainTextReader(str(filepath))
+
+        messages = reader.read()
+
+        # Detect date for this file
+        file_date = extract_date_from_filename(str(filepath))
+        if not file_date and reader.header_date:
+            file_date = reader.header_date
+
+        # Check for embedded timestamps
+        has_full_timestamps = any(
+            '[' in ts and 'T' in ts and len(ts) > 7
+            for ts, _, _ in messages
+        )
+        if has_full_timestamps:
+            file_date = None  # dates embedded
+
+        file_parser = EventParser(base_date=file_date)
+        file_parser.parse_messages(messages)
+
+        if file_parser.insufficient_balance_events:
+            all_events.extend(file_parser.insufficient_balance_events)
+            print(f"  {filepath.name}: {len(file_parser.insufficient_balance_events)} event(s)")
+
+    if all_events:
+        insuf_csv = Path(output_dir) / 'insufficient_balance.csv'
+        csv_writer = CsvWriter()
+        csv_writer.generate_insufficient_balance_csv(all_events, str(insuf_csv))
+        print(f"\nRecovered {len(all_events)} insufficient balance events -> {insuf_csv}")
+    else:
+        print("No insufficient balance events found in archive files")
+
+
 def main():
     parser = argparse.ArgumentParser(
         description='Parse Valhalla Bot Discord DM logs and generate PnL analysis with Meteora API.'
@@ -168,11 +228,13 @@ def main():
                        help='Import previous .valhalla.json to merge with new data')
     parser.add_argument('--skip-charts', action='store_true', help='Skip chart generation')
     parser.add_argument('--no-clipboard', action='store_true', help='Skip auto-running save_clipboard.ps1')
+    parser.add_argument('--recover-insuf', action='store_true',
+                       help='Recover insufficient balance history from archive files')
 
     args = parser.parse_args()
 
     # Auto-run save_clipboard.ps1 (skip in merge mode)
-    if not args.merge and not args.no_clipboard:
+    if not args.merge and not args.no_clipboard and not args.recover_insuf:
         clipboard_script = Path('save_clipboard.ps1')
         if clipboard_script.exists():
             print("Running save_clipboard.ps1...")
@@ -191,6 +253,11 @@ def main():
     # Create output directory if needed
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Handle recover-insuf mode
+    if args.recover_insuf:
+        _recover_insufficient_balance_history(str(output_dir))
+        return
 
     # Handle merge mode
     if args.merge:
@@ -503,10 +570,8 @@ def main():
     if not args.skip_charts:
         print(f"\nGenerating charts...")
         generate_charts(matched_positions, str(output_dir))
-        if event_parser.insufficient_balance_events:
-            generate_insufficient_balance_chart(
-                event_parser.insufficient_balance_events, str(output_dir)
-            )
+        insuf_csv = output_dir / 'insufficient_balance.csv'
+        generate_insufficient_balance_chart(str(insuf_csv), str(output_dir))
 
     # Step 6.6: Export to JSON if requested
     if args.export_json:
