@@ -83,8 +83,8 @@ class EventParser:
         prev_hour = None
 
         for timestamp, text, tx_signatures in messages:
-            # Strip non-ASCII characters (emoji) before regex matching
-            clean_text = re.sub(r'[^\x00-\x7F]+', '', text)
+            # No need to strip non-ASCII - patterns match ASCII keywords only
+            clean_text = text
 
             # Check if timestamp contains a full date [YYYY-MM-DDTHH:MM]
             full_dt_match = re.search(r'\[(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})\]', timestamp)
