@@ -412,6 +412,7 @@ def main():
 
     # Step 4: Calculate Meteora PnL
     meteora_results: Dict[str, MeteoraPnlResult] = {}
+    meteora_failed: Dict[str, str] = {}  # pid -> full_addr for retry
 
     if not args.skip_meteora and resolved_addresses:
         print(f"\nFetching Meteora PnL data...")
@@ -444,6 +445,7 @@ def main():
                     print(f" PnL: {result.pnl_sol:.4f} SOL (${result.pnl_usd:.2f})")
             else:
                 print(f" FAILED")
+                meteora_failed[pid] = full_addr
 
         print(f"  Retrieved PnL for {len(meteora_results)} positions")
     elif args.skip_meteora:
@@ -559,6 +561,79 @@ def main():
     print(f"Total PnL: {total_pnl:.4f} SOL")
 
     _detect_coverage_gaps(str(positions_csv))
+
+    # Step 8: Retry failed Meteora API calls
+    if meteora_failed:
+        failed_ids = ', '.join(meteora_failed.keys())
+        print(f"\n{'!'*60}")
+        print(f"WARNING: {len(meteora_failed)} Meteora API error(s): {failed_ids}")
+        print(f"{'!'*60}")
+        try:
+            retry = input("Retry failed positions? [Y/n]: ").strip().lower()
+        except (EOFError, KeyboardInterrupt):
+            retry = 'n'
+
+        if retry != 'n':
+            print(f"\nRetrying {len(meteora_failed)} Meteora fetch(es)...")
+            meteora_calc = MeteoraPnlCalculator()
+            retry_ok = 0
+            still_failed = []
+            for pid, full_addr in meteora_failed.items():
+                print(f"  Retrying {pid}...", end='', flush=True)
+                result = meteora_calc.calculate_pnl(full_addr)
+                if result:
+                    recovered = result.withdrawn_sol + result.fees_sol
+                    if recovered < Decimal('0.001'):
+                        print(f" PnL: unknown (total loss, unreliable)")
+                    else:
+                        meteora_results[pid] = result
+                        retry_ok += 1
+                        print(f" PnL: {result.pnl_sol:.4f} SOL (${result.pnl_usd:.2f})")
+                else:
+                    print(f" FAILED again")
+                    still_failed.append(pid)
+
+            if retry_ok > 0:
+                print(f"\n  Recovered {retry_ok} position(s), regenerating output...")
+
+                # Redo matching
+                matcher = PositionMatcher(event_parser)
+                matched_positions, unmatched_opens = matcher.match_positions(
+                    meteora_results, resolved_addresses, use_discord_pnl=args.use_discord_pnl
+                )
+
+                # Redo import merge if applicable
+                if args.import_json:
+                    imported_positions, imported_still_open = import_from_json(args.import_json)
+                    matched_positions, unmatched_opens = merge_with_imported(
+                        matched_positions, imported_positions,
+                        unmatched_opens, imported_still_open
+                    )
+
+                # Redo CSV merge
+                if positions_csv.exists():
+                    matched_positions, unmatched_opens = merge_with_existing_csv(
+                        matched_positions, unmatched_opens, str(positions_csv)
+                    )
+
+                # Regenerate CSVs
+                csv_writer = CsvWriter()
+                csv_writer.generate_positions_csv(matched_positions, unmatched_opens, str(positions_csv))
+                csv_writer.generate_summary_csv(matched_positions, event_parser.skip_events, str(summary_csv))
+                print(f"  Updated {positions_csv}")
+
+                # Regenerate charts
+                if not args.skip_charts:
+                    generate_charts(matched_positions, str(output_dir))
+
+                # Updated summary
+                total_pnl = sum(p.pnl_sol for p in matched_positions if p.pnl_sol is not None)
+                meteora_count = sum(1 for p in matched_positions if p.pnl_source == 'meteora')
+                print(f"  Updated PnL: {total_pnl:.4f} SOL ({meteora_count} meteora)")
+
+            if still_failed:
+                print(f"\n  Still failed: {', '.join(still_failed)}")
+                print(f"  These positions will appear as 'pending' in CSV.")
 
     print(f"\nDone!")
 
