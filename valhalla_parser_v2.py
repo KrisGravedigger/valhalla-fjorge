@@ -98,21 +98,43 @@ def _detect_coverage_gaps(positions_csv_path):
         else:
             return f"{int(minutes)}m"
 
+    # Load allowlist (paste full gap lines or just "MM-DD HH:MM -> MM-DD HH:MM")
+    allowlist = set()
+    allowlist_path = csv_path.parent / 'gap_allowlist.txt'
+    if allowlist_path.exists():
+        for line in allowlist_path.read_text(encoding='utf-8').splitlines():
+            line = line.strip()
+            if not line or line.startswith('#'):
+                continue
+            # Extract date range: "MM-DD HH:MM -> MM-DD HH:MM" from anywhere in line
+            m = re.search(r'(\d{2}-\d{2} \d{2}:\d{2}) -> (\d{2}-\d{2} \d{2}:\d{2})', line)
+            if m:
+                allowlist.add(f"{m.group(1)} -> {m.group(2)}")
+
     # Print results
     threshold_str = format_time(threshold_minutes)
     median_str = format_time(median_gap)
 
     if significant_gaps:
-        # Sort by gap size descending
-        significant_gaps.sort(key=lambda x: x[0], reverse=True)
+        # Sort chronologically (oldest first)
+        significant_gaps.sort(key=lambda x: x[1])
 
+        new_gaps = 0
         print(f"\nCoverage Gaps (threshold: {threshold_str}, median: {median_str})")
         for gap_min, start, end in significant_gaps:
             gap_str = format_time(gap_min)
             start_str = start.strftime('%m-%d %H:%M')
             end_str = end.strftime('%m-%d %H:%M')
-            print(f"  ! {gap_str} gap: {start_str} -> {end_str}")
-        print(f"  {len(significant_gaps)} potential gap(s) detected")
+            range_key = f"{start_str} -> {end_str}"
+            if range_key in allowlist:
+                print(f"    {gap_str} gap: {start_str} -> {end_str}  (allowed)")
+            else:
+                print(f"  ! {gap_str} gap: {start_str} -> {end_str}")
+                new_gaps += 1
+        if new_gaps:
+            print(f"  {new_gaps} potential gap(s) detected")
+        else:
+            print(f"  All gaps allowed")
     else:
         print(f"\nNo coverage gaps detected (threshold: {threshold_str}, median: {median_str})")
 
