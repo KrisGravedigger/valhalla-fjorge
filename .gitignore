@@ -5,6 +5,10 @@ output_multifile/
 test_output/
 *.json
 !package.json
+!package-lock.json
+!tsconfig.json
+!.eslintrc.json
+!vercel.json
 *.png
 .env
 *.valhalla.json

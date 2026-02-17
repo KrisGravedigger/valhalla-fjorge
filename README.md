@@ -111,27 +111,6 @@ Discord logs don't contain dates by default. Multiple ways to provide them (in p
 
 The parser detects midnight rollover automatically when the date is set.
 
-## Incremental Workflow
-
-Build up history day by day without re-processing old data:
-
-```bash
-# Day 1
-python valhalla_parser_v2.py day1.txt --output-dir results/ \
-  --export-json history.valhalla.json
-
-# Day 2 (merge with previous)
-python valhalla_parser_v2.py day2.txt --output-dir results/ \
-  --import-json history.valhalla.json \
-  --export-json history.valhalla.json
-
-# Or merge existing CSV outputs
-python valhalla_parser_v2.py --merge results/day1/positions.csv results/day2/positions.csv \
-  --output-dir results/merged/
-```
-
-Deduplication by `position_id` ensures no double-counting. Previously open positions are automatically enriched when closed. Smart merge preserves Meteora PnL data when enriching positions.
-
 ## HTML Input
 
 You can paste Discord DMs as HTML directly. The parser auto-detects the format and extracts message timestamps:
