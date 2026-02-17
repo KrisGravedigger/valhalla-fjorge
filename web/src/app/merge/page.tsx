@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import Image from 'next/image';
 import FileUpload from '@/components/FileUpload';
 import CsvPreview from '@/components/CsvPreview';
 import DownloadButton from '@/components/DownloadButton';
+import PageLayout from '@/components/PageLayout';
 import { parseCsvString, mergeCsvRows, rowsToCsv } from '@/lib/merger';
 import type { CsvRow } from '@/lib/merger';
 import { downloadCsv } from '@/lib/csv';
@@ -76,7 +76,7 @@ export default function MergePage() {
 
   const handleDownload = useCallback(() => {
     if (mergeState?.csvString) {
-      downloadCsv(mergeState.csvString, 'positions.csv');
+      downloadCsv(mergeState.csvString, 'positions_merged.csv');
     }
   }, [mergeState]);
 
@@ -87,110 +87,101 @@ export default function MergePage() {
   }, []);
 
   return (
-    <div>
-      {/* Hero */}
-      <div className="relative h-48 sm:h-64 overflow-hidden">
-        <Image
-          src="/images/hero-merge.jpg"
-          alt="Merge CSVs"
-          fill
-          className="object-cover"
-          priority
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/50 to-black/20 flex items-center justify-center">
-          <h1 className="text-4xl font-bold text-white">Merge CSVs</h1>
-        </div>
-      </div>
+    <PageLayout
+      title="Merge CSVs"
+      heroImage="/images/hero-merge.jpg"
+      navLinks={[
+        { label: 'Parse Logs', href: '/parse' },
+        { label: 'Charts', href: '/charts' },
+      ]}
+    >
+      {/* Upload */}
+      <FileUpload
+        onFiles={handleFiles}
+        accept=".csv"
+        multiple
+        label="Drop positions.csv files here"
+        description="Upload multiple CSV files to merge and deduplicate"
+      />
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        {/* Upload */}
-        <FileUpload
-          onFiles={handleFiles}
-          accept=".csv"
-          multiple
-          label="Drop positions.csv files here"
-          description="Upload multiple CSV files to merge and deduplicate"
-        />
-
-        {/* Uploaded files list */}
-        {uploadedFiles.length > 0 && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Uploaded Files</h2>
-              <button
-                onClick={handleClear}
-                className="text-sm text-red-600 dark:text-red-400 hover:underline"
-              >
-                Clear all
-              </button>
-            </div>
-
-            <div className="space-y-2">
-              {uploadedFiles.map((file, i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 rounded-lg"
-                >
-                  <span className="font-mono text-sm">{file.name}</span>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">
-                    {file.rows.length} positions
-                  </span>
-                </div>
-              ))}
-            </div>
-
+      {/* Uploaded files list */}
+      {uploadedFiles.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Uploaded Files</h2>
             <button
-              onClick={handleMerge}
-              className="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors"
+              onClick={handleClear}
+              className="text-sm text-red-600 dark:text-red-400 hover:underline"
             >
-              Merge {uploadedFiles.length} file{uploadedFiles.length > 1 ? 's' : ''}
+              Clear all
             </button>
           </div>
-        )}
 
-        {/* Error */}
-        {error && (
-          <div className="p-4 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300">
-            {error}
+          <div className="space-y-2">
+            {uploadedFiles.map((file, i) => (
+              <div
+                key={i}
+                className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 rounded-lg"
+              >
+                <span className="font-mono text-sm">{file.name}</span>
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  {file.rows.length} positions
+                </span>
+              </div>
+            ))}
           </div>
-        )}
 
-        {/* Results */}
-        {mergeState && (
-          <div className="space-y-6">
-            {/* Stats */}
-            <div className="grid grid-cols-3 gap-4">
-              <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 text-center">
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {mergeState.stats.totalBefore}
-                </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">Total Before</div>
+          <button
+            onClick={handleMerge}
+            className="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors"
+          >
+            Merge {uploadedFiles.length} file{uploadedFiles.length > 1 ? 's' : ''}
+          </button>
+        </div>
+      )}
+
+      {/* Error */}
+      {error && (
+        <div className="p-4 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300">
+          {error}
+        </div>
+      )}
+
+      {/* Results */}
+      {mergeState && (
+        <div className="space-y-6">
+          {/* Stats */}
+          <div className="grid grid-cols-3 gap-4">
+            <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 text-center">
+              <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                {mergeState.stats.totalBefore}
               </div>
-              <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 text-center">
-                <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                  {mergeState.stats.totalAfter}
-                </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">After Merge</div>
-              </div>
-              <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 text-center">
-                <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                  {mergeState.stats.duplicatesRemoved}
-                </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">Duplicates Removed</div>
-              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">Total Before</div>
             </div>
-
-            {/* Download */}
-            <DownloadButton onClick={handleDownload} label="Download merged positions.csv" />
-
-            {/* Preview */}
-            <div>
-              <h2 className="text-lg font-semibold mb-2">Preview</h2>
-              <CsvPreview data={mergeState.mergedRows as Record<string, string>[]} />
+            <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 text-center">
+              <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                {mergeState.stats.totalAfter}
+              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">After Merge</div>
+            </div>
+            <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 text-center">
+              <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                {mergeState.stats.duplicatesRemoved}
+              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">Duplicates Removed</div>
             </div>
           </div>
-        )}
-      </div>
-    </div>
+
+          {/* Download */}
+          <DownloadButton onClick={handleDownload} label="Download positions_merged.csv" />
+
+          {/* Preview */}
+          <div>
+            <h2 className="text-lg font-semibold mb-2">Preview</h2>
+            <CsvPreview data={mergeState.mergedRows as Record<string, string>[]} />
+          </div>
+        </div>
+      )}
+    </PageLayout>
   );
 }

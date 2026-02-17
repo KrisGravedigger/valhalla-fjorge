@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import Image from 'next/image';
 import FileUpload from '@/components/FileUpload';
 import CsvPreview from '@/components/CsvPreview';
 import DownloadButton from '@/components/DownloadButton';
+import PageLayout from '@/components/PageLayout';
 import { parseContent } from '@/lib/readers';
 import { parseEvents } from '@/lib/eventParser';
 import { matchPositions } from '@/lib/matcher';
@@ -140,83 +140,74 @@ export default function ParsePage() {
   }, [parseState]);
 
   return (
-    <div>
-      {/* Hero */}
-      <div className="relative h-48 sm:h-64 overflow-hidden">
-        <Image
-          src="/images/hero-parse.jpg"
-          alt="Parse logs"
-          fill
-          className="object-cover"
-          priority
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/50 to-black/20 flex items-center justify-center">
-          <h1 className="text-4xl font-bold text-white">Parse Logs</h1>
+    <PageLayout
+      title="Parse Logs"
+      heroImage="/images/hero-parse.jpg"
+      navLinks={[
+        { label: 'Merge CSVs', href: '/merge' },
+        { label: 'Charts', href: '/charts' },
+      ]}
+    >
+      {/* Input */}
+      <FileUpload
+        onFiles={handleFiles}
+        onPaste={handlePaste}
+        showPaste
+        accept=".txt,.html,.htm"
+        label="Drop log files here"
+        description=".txt or .html files from Discord DMs"
+      />
+
+      {/* Processing indicator */}
+      {isProcessing && (
+        <div className="text-center py-4">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+          <p className="mt-2 text-gray-600 dark:text-gray-400">Parsing messages...</p>
         </div>
-      </div>
+      )}
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        {/* Input */}
-        <FileUpload
-          onFiles={handleFiles}
-          onPaste={handlePaste}
-          showPaste
-          accept=".txt,.html,.htm"
-          label="Drop log files here"
-          description=".txt or .html files from Discord DMs"
-        />
+      {/* Error */}
+      {error && (
+        <div className="p-4 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300">
+          {error}
+        </div>
+      )}
 
-        {/* Processing indicator */}
-        {isProcessing && (
-          <div className="text-center py-4">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-            <p className="mt-2 text-gray-600 dark:text-gray-400">Parsing messages...</p>
+      {/* Results */}
+      {parseState && (
+        <div className="space-y-6">
+          {/* Stats */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
+            {[
+              { label: 'Messages', value: parseState.stats.totalMessages },
+              { label: 'Opens', value: parseState.stats.openEvents },
+              { label: 'Closes', value: parseState.stats.closeEvents },
+              { label: 'Rugs', value: parseState.stats.rugEvents },
+              { label: 'Matched', value: parseState.stats.matchedPositions },
+              { label: 'Still Open', value: parseState.stats.stillOpen },
+            ].map(stat => (
+              <div key={stat.label} className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 text-center">
+                <div className="text-2xl font-bold text-gray-900 dark:text-white">{stat.value}</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">{stat.label}</div>
+              </div>
+            ))}
           </div>
-        )}
 
-        {/* Error */}
-        {error && (
-          <div className="p-4 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300">
-            {error}
+          {/* PnL source notice */}
+          <div className="p-3 bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-lg text-sm text-yellow-700 dark:text-yellow-300">
+            PnL source: <strong>discord</strong> (balance diff). For Meteora-enriched PnL, use the CLI tool.
           </div>
-        )}
 
-        {/* Results */}
-        {parseState && (
-          <div className="space-y-6">
-            {/* Stats */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
-              {[
-                { label: 'Messages', value: parseState.stats.totalMessages },
-                { label: 'Opens', value: parseState.stats.openEvents },
-                { label: 'Closes', value: parseState.stats.closeEvents },
-                { label: 'Rugs', value: parseState.stats.rugEvents },
-                { label: 'Matched', value: parseState.stats.matchedPositions },
-                { label: 'Still Open', value: parseState.stats.stillOpen },
-              ].map(stat => (
-                <div key={stat.label} className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 text-center">
-                  <div className="text-2xl font-bold text-gray-900 dark:text-white">{stat.value}</div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">{stat.label}</div>
-                </div>
-              ))}
-            </div>
+          {/* Download */}
+          <DownloadButton onClick={handleDownload} label="Download positions.csv" />
 
-            {/* PnL source notice */}
-            <div className="p-3 bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-lg text-sm text-yellow-700 dark:text-yellow-300">
-              PnL source: <strong>discord</strong> (balance diff). For Meteora-enriched PnL, use the CLI tool.
-            </div>
-
-            {/* Download */}
-            <DownloadButton onClick={handleDownload} label="Download positions.csv" />
-
-            {/* Preview table */}
-            <div>
-              <h2 className="text-lg font-semibold mb-2">Preview</h2>
-              <CsvPreview data={parseState.previewRows} />
-            </div>
+          {/* Preview table */}
+          <div>
+            <h2 className="text-lg font-semibold mb-2">Preview</h2>
+            <CsvPreview data={parseState.previewRows} />
           </div>
-        )}
-      </div>
-    </div>
+        </div>
+      )}
+    </PageLayout>
   );
 }

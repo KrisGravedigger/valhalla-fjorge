@@ -10,9 +10,10 @@ import { aggregateDailyData, getWalletColors, shortWallet } from './chartUtils';
 
 interface Props {
   positions: MatchedPosition[];
+  hideLegend?: boolean;
 }
 
-export default function DailyPnlChart({ positions }: Props) {
+export default function DailyPnlChart({ positions, hideLegend }: Props) {
   const { data, wallets } = useMemo(() => aggregateDailyData(positions, 'pnl'), [positions]);
   const colors = useMemo(() => getWalletColors(wallets), [wallets]);
 
@@ -27,7 +28,7 @@ export default function DailyPnlChart({ positions }: Props) {
           <XAxis dataKey="date" tick={{ fontSize: 11 }} angle={-45} textAnchor="end" height={60} />
           <YAxis tick={{ fontSize: 11 }} />
           <Tooltip />
-          <Legend formatter={(value) => shortWallet(value)} />
+          {!hideLegend && <Legend formatter={(value) => shortWallet(value)} />}
           <ReferenceLine y={0} stroke="#000" strokeOpacity={0.3} />
           {wallets.map(wallet => (
             <Line

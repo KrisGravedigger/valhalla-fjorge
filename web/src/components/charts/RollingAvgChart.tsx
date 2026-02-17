@@ -11,9 +11,10 @@ import { aggregateDailyData, computeRollingAvg, getWalletColors, shortWallet } f
 interface Props {
   positions: MatchedPosition[];
   window: number; // 3 or 7
+  hideLegend?: boolean;
 }
 
-export default function RollingAvgChart({ positions, window }: Props) {
+export default function RollingAvgChart({ positions, window, hideLegend }: Props) {
   const { data: rawData, wallets } = useMemo(() => aggregateDailyData(positions, 'pnl'), [positions]);
   const data = useMemo(() => computeRollingAvg(rawData, wallets, window), [rawData, wallets, window]);
   const colors = useMemo(() => getWalletColors(wallets), [wallets]);
@@ -31,7 +32,7 @@ export default function RollingAvgChart({ positions, window }: Props) {
           <XAxis dataKey="date" tick={{ fontSize: 11 }} angle={-45} textAnchor="end" height={60} />
           <YAxis tick={{ fontSize: 11 }} />
           <Tooltip />
-          <Legend formatter={(value) => shortWallet(value)} />
+          {!hideLegend && <Legend formatter={(value) => shortWallet(value)} />}
           <ReferenceLine y={0} stroke="#000" strokeOpacity={0.3} />
           {wallets.map(wallet => (
             <Line

@@ -10,9 +10,10 @@ import { aggregateDailyData, getWalletColors, shortWallet } from './chartUtils';
 
 interface Props {
   positions: MatchedPosition[];
+  hideLegend?: boolean;
 }
 
-export default function WinRateChart({ positions }: Props) {
+export default function WinRateChart({ positions, hideLegend }: Props) {
   const { data, wallets } = useMemo(() => aggregateDailyData(positions, 'winRate'), [positions]);
   const colors = useMemo(() => getWalletColors(wallets), [wallets]);
 
@@ -27,7 +28,7 @@ export default function WinRateChart({ positions }: Props) {
           <XAxis dataKey="date" tick={{ fontSize: 11 }} angle={-45} textAnchor="end" height={60} />
           <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} />
           <Tooltip formatter={(value: number) => `${value.toFixed(1)}%`} />
-          <Legend formatter={(value) => shortWallet(value)} />
+          {!hideLegend && <Legend formatter={(value) => shortWallet(value)} />}
           <ReferenceLine y={50} stroke="gray" strokeDasharray="3 3" strokeOpacity={0.6} />
           {wallets.map(wallet => (
             <Line

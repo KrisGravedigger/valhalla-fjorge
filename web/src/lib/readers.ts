@@ -37,6 +37,44 @@ export function htmlToText(rawHtml: string): string {
     }
   );
 
+  // Convert <time datetime="2026-02-14T20:02:53.534Z">21:02</time> to [YYYY-MM-DDTHH:MM]
+  // Must happen BEFORE stripping HTML tags. Converts UTC to local timezone.
+  content = content.replace(
+    /<time[^>]*datetime="([^"]+)"[^>]*>[\s\S]*?<\/time>/g,
+    (_, utcStr) => {
+      try {
+        const dt = new Date(utcStr);
+        if (isNaN(dt.getTime())) return '';
+        const y = dt.getFullYear();
+        const mo = String(dt.getMonth() + 1).padStart(2, '0');
+        const d = String(dt.getDate()).padStart(2, '0');
+        const h = String(dt.getHours()).padStart(2, '0');
+        const m = String(dt.getMinutes()).padStart(2, '0');
+        return `[${y}-${mo}-${d}T${h}:${m}]`;
+      } catch {
+        return '';
+      }
+    }
+  );
+
+  // Fallback: if no full datetime timestamps were found, try Discord snowflake IDs
+  // Snowflake format in HTML: chat-messages-CHANNELID-MESSAGEID or data-list-item-id="chat-messages__SNOWFLAKE"
+  if (!content.includes('T') || !/\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}\]/.test(content)) {
+    const snowflakeMatch = content.match(/chat-messages-\d+-(\d{17,20})/);
+    if (snowflakeMatch) {
+      const snowflakeId = BigInt(snowflakeMatch[1]);
+      const discordEpoch = BigInt(1420070400000);
+      const unixMs = Number((snowflakeId >> BigInt(22)) + discordEpoch);
+      const dt = new Date(unixMs);
+      const y = dt.getFullYear();
+      const mo = String(dt.getMonth() + 1).padStart(2, '0');
+      const d = String(dt.getDate()).padStart(2, '0');
+      const baseDate = `${y}-${mo}-${d}`;
+      // Inject full datetime into time-only markers [HH:MM] -> [YYYY-MM-DDTHH:MM]
+      content = content.replace(/\[(\d{2}:\d{2})\]/g, `[${baseDate}T$1]`);
+    }
+  }
+
   // HTML decode using browser's built-in decoder
   const textarea = typeof document !== 'undefined' ? document.createElement('textarea') : null;
   if (textarea) {

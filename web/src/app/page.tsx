@@ -1,4 +1,7 @@
 import Link from 'next/link'
+import { Skranji } from 'next/font/google'
+
+const skranji = Skranji({ weight: ['400', '700'], subsets: ['latin'] })
 
 const features = [
   {
@@ -24,11 +27,11 @@ const features = [
 export default function HomePage() {
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-      <div className="text-center mb-16">
-        <h1 className="text-5xl font-bold text-gray-900 dark:text-white mb-4">
+      <div className="text-center mb-12">
+        <h1 className={`text-6xl sm:text-7xl text-gray-900 dark:text-white mb-4 ${skranji.className}`}>
           Valhalla Fjorge
         </h1>
-        <p className="text-xl text-gray-600 dark:text-gray-300 mb-2">
+        <p className="text-xl text-gray-600 dark:text-gray-300 mb-4">
           Analyze Your Valhalla Bot Performance
         </p>
         <p className="text-sm text-gray-500 dark:text-gray-400 bg-green-50 dark:bg-green-950 inline-block px-4 py-2 rounded-full">
@@ -36,7 +39,25 @@ export default function HomePage() {
         </p>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-8 mb-16">
+      {/* Concept demo notice */}
+      <div className="max-w-2xl mx-auto mb-12 p-5 bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 text-sm text-gray-600 dark:text-gray-400 space-y-3">
+        <p>
+          <strong className="text-gray-900 dark:text-white">This is a lightweight preview tool.</strong>{' '}
+          PnL values shown here are approximations based on Discord log data (wallet balance before/after each transaction).
+          They can differ from actual on-chain results.
+        </p>
+        <p>
+          For accurate PnL, the{' '}
+          <a href="https://github.com/KrisGravedigger/valhalla-fjorge" className="underline font-medium hover:text-gray-900 dark:hover:text-gray-200">
+            full CLI tool
+          </a>{' '}
+          fetches real deposit, withdrawal, and fee data directly from the Meteora DLMM API.
+          Querying the Meteora API repeatedly from a browser would quickly trigger rate limits and IP blocks,
+          so this web version relies on the approximate values from bot logs instead.
+        </p>
+      </div>
+
+      <div className="grid md:grid-cols-3 gap-8 mb-12">
         {features.map((feature) => (
           <Link
             key={feature.href}
@@ -52,15 +73,6 @@ export default function HomePage() {
             </p>
           </Link>
         ))}
-      </div>
-
-      <div className="text-center text-sm text-gray-500 dark:text-gray-400">
-        <p>
-          This web app uses Discord PnL (balance diff). For Meteora-enriched PnL, use the{' '}
-          <a href="https://github.com/KrisGravedigger/valhalla-fjorge" className="underline hover:text-gray-700 dark:hover:text-gray-200">
-            CLI tool
-          </a>.
-        </p>
       </div>
     </div>
   )

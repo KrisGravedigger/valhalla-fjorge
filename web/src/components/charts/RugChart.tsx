@@ -10,9 +10,10 @@ import { aggregateDailyData, getWalletColors, shortWallet } from './chartUtils';
 
 interface Props {
   positions: MatchedPosition[];
+  hideLegend?: boolean;
 }
 
-export default function RugChart({ positions }: Props) {
+export default function RugChart({ positions, hideLegend }: Props) {
   const { data, wallets } = useMemo(() => aggregateDailyData(positions, 'rugs'), [positions]);
   const colors = useMemo(() => getWalletColors(wallets), [wallets]);
 
@@ -32,7 +33,7 @@ export default function RugChart({ positions }: Props) {
           <XAxis dataKey="date" tick={{ fontSize: 11 }} angle={-45} textAnchor="end" height={60} />
           <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
           <Tooltip />
-          <Legend formatter={(value) => shortWallet(value)} />
+          {!hideLegend && <Legend formatter={(value) => shortWallet(value)} />}
           {wallets.map(wallet => (
             <Line
               key={wallet}
