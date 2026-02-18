@@ -13,3 +13,6 @@ test_output/
 .env
 *.valhalla.json
 *.txt
+web/
+pic/
+archive/
