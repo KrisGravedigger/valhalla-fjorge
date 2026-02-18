@@ -401,10 +401,16 @@ def main():
         for evt in (file_parser.open_events + file_parser.close_events +
                     file_parser.failsafe_events + file_parser.rug_events):
             ts = evt.timestamp  # "[HH:MM]" or "[YYYY-MM-DDTHH:MM]"
-            if ts and 'T' in ts:
+            if not ts:
+                continue
+            if 'T' in ts:
                 # Extract "YYYY-MM-DDTHH:MM" from "[YYYY-MM-DDTHH:MM]"
                 dt_str = ts.strip('[]')
                 file_datetimes.append(dt_str)
+            elif file_date:
+                # [HH:MM] timestamp — build full datetime from file_date + time
+                time_part = ts.strip('[]')  # "HH:MM"
+                file_datetimes.append(f"{file_date}T{time_part}")
 
         # Track for archiving
         processed_files.append((input_file, file_date, file_datetimes))
@@ -626,6 +632,27 @@ def main():
     print(f"Total PnL: {total_pnl:.4f} SOL")
 
     _detect_coverage_gaps(str(positions_csv))
+
+    # Print parsed messages time range
+    all_events_for_range = (
+        event_parser.open_events + event_parser.close_events +
+        event_parser.failsafe_events + event_parser.rug_events +
+        event_parser.insufficient_balance_events
+    )
+    all_timestamps = [e.timestamp for e in all_events_for_range if e.timestamp]
+    if all_timestamps:
+        def _extract_dt_str(ts: str) -> str:
+            """Extract datetime string from '[HH:MM]' or '[YYYY-MM-DDTHH:MM]'"""
+            inner = ts.strip('[]')
+            return inner  # either 'HH:MM' or 'YYYY-MM-DDTHH:MM'
+
+        dt_strings = [_extract_dt_str(ts) for ts in all_timestamps]
+        min_dt = min(dt_strings)
+        max_dt = max(dt_strings)
+        # Display with space instead of 'T' for readability
+        min_display = min_dt.replace('T', ' ')
+        max_display = max_dt.replace('T', ' ')
+        print(f"\nParsed messages: {min_display} → {max_display}")
 
     # Step 8: Retry failed Meteora API calls
     if meteora_failed:
