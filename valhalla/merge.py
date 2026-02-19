@@ -114,7 +114,10 @@ def merge_with_existing_csv(
 
     # Helper: check if position is fully complete (has open + close + meteora PnL)
     def is_fully_complete(pos: MatchedPosition) -> bool:
-        has_open = pos.close_reason not in ("unknown_open", "rug_unknown_open", "failsafe_unknown_open")
+        has_open = pos.close_reason not in (
+            "unknown_open", "rug_unknown_open", "failsafe_unknown_open",
+            "take_profit_unknown_open", "stop_loss_unknown_open"
+        )
         has_close = pos.close_reason != "still_open"
         has_meteora = pos.pnl_source == "meteora"
         return has_open and has_close and has_meteora
@@ -135,11 +138,18 @@ def merge_with_existing_csv(
             existing.token_age = new_pos.token_age
             existing.token_age_days = new_pos.token_age_days
             existing.token_age_hours = new_pos.token_age_hours
-        if existing.close_reason in ("unknown_open", "rug_unknown_open", "failsafe_unknown_open"):
+        if existing.close_reason in (
+            "unknown_open", "rug_unknown_open", "failsafe_unknown_open",
+            "take_profit_unknown_open", "stop_loss_unknown_open"
+        ):
             if existing.close_reason == "rug_unknown_open":
                 existing.close_reason = "rug"
             elif existing.close_reason == "failsafe_unknown_open":
                 existing.close_reason = "failsafe"
+            elif existing.close_reason == "take_profit_unknown_open":
+                existing.close_reason = "take_profit"
+            elif existing.close_reason == "stop_loss_unknown_open":
+                existing.close_reason = "stop_loss"
             else:
                 existing.close_reason = "normal"
         return existing
@@ -161,13 +171,22 @@ def merge_with_existing_csv(
 
         # Rule 1: Fully complete (open + close + meteora) - keep as-is
         if is_fully_complete(existing_pos):
+            # Allow upgrading close_reason from generic "normal" to specific take_profit/stop_loss
+            if (new_matched_pos and existing_pos.close_reason == "normal"
+                    and new_matched_pos.close_reason in (
+                        "take_profit", "stop_loss",
+                        "take_profit_unknown_open", "stop_loss_unknown_open")):
+                existing_pos.close_reason = new_matched_pos.close_reason.replace("_unknown_open", "")
             merged_matched.append(existing_pos)
             kept_complete_count += 1
             continue
 
         # Rule 2: Has Meteora PnL but missing open data (unknown_open)
         # -> enrich with open/close data from new run if available
-        if existing_pos.pnl_source == "meteora" and existing_pos.close_reason in ("unknown_open", "rug_unknown_open", "failsafe_unknown_open"):
+        if existing_pos.pnl_source == "meteora" and existing_pos.close_reason in (
+            "unknown_open", "rug_unknown_open", "failsafe_unknown_open",
+            "take_profit_unknown_open", "stop_loss_unknown_open"
+        ):
             enriched_this = False
 
             # Update close datetime from new data if available
@@ -242,11 +261,18 @@ def merge_with_existing_csv(
             if not new_matched_pos.target_wallet and existing_pos.target_wallet:
                 new_matched_pos.target_wallet = existing_pos.target_wallet
             # Fix close_reason if we now have open data
-            if new_matched_pos.datetime_open and new_matched_pos.close_reason in ("unknown_open", "rug_unknown_open", "failsafe_unknown_open"):
+            if new_matched_pos.datetime_open and new_matched_pos.close_reason in (
+                "unknown_open", "rug_unknown_open", "failsafe_unknown_open",
+                "take_profit_unknown_open", "stop_loss_unknown_open"
+            ):
                 if new_matched_pos.close_reason == "rug_unknown_open":
                     new_matched_pos.close_reason = "rug"
                 elif new_matched_pos.close_reason == "failsafe_unknown_open":
                     new_matched_pos.close_reason = "failsafe"
+                elif new_matched_pos.close_reason == "take_profit_unknown_open":
+                    new_matched_pos.close_reason = "take_profit"
+                elif new_matched_pos.close_reason == "stop_loss_unknown_open":
+                    new_matched_pos.close_reason = "stop_loss"
                 else:
                     new_matched_pos.close_reason = "normal"
             merged_matched.append(new_matched_pos)

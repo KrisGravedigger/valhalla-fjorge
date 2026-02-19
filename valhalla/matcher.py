@@ -72,6 +72,8 @@ class PositionMatcher:
                     close_reason = "failsafe"
                 elif close_event.close_type == "take_profit":
                     close_reason = "take_profit"
+                elif close_event.close_type == "stop_loss":
+                    close_reason = "stop_loss"
                 else:
                     close_reason = "normal"
 
@@ -162,6 +164,13 @@ class PositionMatcher:
                 full_addr = resolved_addresses.get(pid, "")
                 meteora_result = meteora_results.get(pid)
 
+                # Determine base close_reason for unknown_open case
+                # Preserve take_profit/stop_loss type even when open is missing
+                if close_event.close_type in ("take_profit", "stop_loss"):
+                    unknown_open_reason = f"{close_event.close_type}_unknown_open"
+                else:
+                    unknown_open_reason = "unknown_open"
+
                 if meteora_result:
                     # Use Meteora PnL even for unknown_open (Meteora gives us full position data)
                     meteora_pnl = meteora_result.pnl_sol
@@ -175,7 +184,7 @@ class PositionMatcher:
                         sol_received=meteora_result.withdrawn_sol,
                         pnl_sol=meteora_pnl,
                         pnl_pct=meteora_pnl_pct,
-                        close_reason="unknown_open",
+                        close_reason=unknown_open_reason,
                         mc_at_open=0.0,
                         jup_score=0,
                         token_age="",
@@ -204,7 +213,7 @@ class PositionMatcher:
                         sol_received=sol_received,
                         pnl_sol=sol_received,  # For unknown_open, all received is PnL
                         pnl_pct=Decimal('0'),  # Can't calculate % without deployed
-                        close_reason="unknown_open",
+                        close_reason=unknown_open_reason,
                         mc_at_open=0.0,
                         jup_score=0,
                         token_age="",
@@ -227,7 +236,7 @@ class PositionMatcher:
                         sol_received=None,
                         pnl_sol=None,
                         pnl_pct=None,
-                        close_reason="unknown_open",
+                        close_reason=unknown_open_reason,
                         mc_at_open=0.0,
                         jup_score=0,
                         token_age="",

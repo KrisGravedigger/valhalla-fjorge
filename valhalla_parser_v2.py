@@ -437,7 +437,10 @@ def main():
                 if (row.get('pnl_source') == 'meteora'
                         and row.get('datetime_open')
                         and row.get('datetime_close')
-                        and row.get('close_reason') not in ('unknown_open', 'rug_unknown_open', 'failsafe_unknown_open', 'still_open')):
+                        and row.get('close_reason') not in (
+                            'unknown_open', 'rug_unknown_open', 'failsafe_unknown_open', 'still_open',
+                            'take_profit_unknown_open', 'stop_loss_unknown_open'
+                        )):
                     pid = row.get('position_id', '').strip()
                     if pid:
                         already_complete_ids.add(pid)

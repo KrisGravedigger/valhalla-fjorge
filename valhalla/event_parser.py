@@ -60,8 +60,9 @@ class EventParser:
     INSUF_EFFECTIVE_PATTERN = r'Total effective balance:\s*([\d.]+)\s*SOL'
     INSUF_REQUIRED_PATTERN = r'Required amount for this trade:\s*([\d.]+)\s*SOL'
 
-    # Take profit event patterns
+    # Take profit / stop loss event patterns
     TAKE_PROFIT_POSITION_ID_PATTERN = r'Take Profit Executed \(DLMM\)\s*\((\w+)\)'
+    STOP_LOSS_POSITION_ID_PATTERN = r'Stop Loss Executed \(DLMM\)\s*\((\w+)\)'
     TAKE_PROFIT_TARGET_PATTERN = r'Copied From:\s*(\S+)\)'
     ENTRY_VALUE_PATTERN = r'Entry Value:\s*([\d.]+)\s*SOL'
     EXIT_VALUE_PATTERN = r'Exit Value:\s*([\d.]+)\s*SOL'
@@ -158,6 +159,12 @@ class EventParser:
             if event:
                 event.date = self.current_date or ""
                 self.rug_events.append(event)
+
+        elif "Stop Loss Executed (DLMM)" in message:
+            event = self._parse_stop_loss_event(timestamp, message, tx_signatures)
+            if event:
+                event.date = self.current_date or ""
+                self.close_events.append(event)
 
         elif "Skipping position due to" in message:
             event = self._parse_skip_event(timestamp, message)
@@ -260,10 +267,11 @@ class EventParser:
             print(f"Warning: Failed to parse close event: {e}")
             return None
 
-    def _parse_take_profit_event(self, timestamp: str, message: str, tx_signatures: List[str]) -> Optional[CloseEvent]:
-        """Parse a take profit executed event as a close event"""
+    def _parse_tp_sl_event(self, timestamp: str, message: str, tx_signatures: List[str],
+                           position_id_pattern: str, close_type: str) -> Optional[CloseEvent]:
+        """Parse a take profit or stop loss executed event as a close event"""
         try:
-            position_id_match = re.search(self.TAKE_PROFIT_POSITION_ID_PATTERN, message)
+            position_id_match = re.search(position_id_pattern, message)
             target_match = re.search(self.TAKE_PROFIT_TARGET_PATTERN, message)
             entry_match = re.search(self.ENTRY_VALUE_PATTERN, message)
             exit_match = re.search(self.EXIT_VALUE_PATTERN, message)
@@ -280,11 +288,21 @@ class EventParser:
                 ending_usd=0.0,
                 position_id=position_id_match.group(1),
                 tx_signatures=tx_signatures,
-                close_type="take_profit"
+                close_type=close_type
             )
         except (ValueError, AttributeError) as e:
-            print(f"Warning: Failed to parse take profit event: {e}")
+            print(f"Warning: Failed to parse {close_type} event: {e}")
             return None
+
+    def _parse_take_profit_event(self, timestamp: str, message: str, tx_signatures: List[str]) -> Optional[CloseEvent]:
+        """Parse a take profit executed event as a close event"""
+        return self._parse_tp_sl_event(timestamp, message, tx_signatures,
+                                       self.TAKE_PROFIT_POSITION_ID_PATTERN, "take_profit")
+
+    def _parse_stop_loss_event(self, timestamp: str, message: str, tx_signatures: List[str]) -> Optional[CloseEvent]:
+        """Parse a stop loss executed event as a close event"""
+        return self._parse_tp_sl_event(timestamp, message, tx_signatures,
+                                       self.STOP_LOSS_POSITION_ID_PATTERN, "stop_loss")
 
     def _parse_failsafe_event(self, timestamp: str, message: str, tx_signatures: List[str]) -> Optional[FailsafeEvent]:
         """Parse a failsafe activation event"""
