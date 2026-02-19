@@ -68,7 +68,12 @@ class PositionMatcher:
                 pnl_sol = sol_received - sol_deployed
                 pnl_pct = (pnl_sol / sol_deployed * Decimal('100')) if sol_deployed > 0 else Decimal('0')
 
-                close_reason = "failsafe" if pid in failsafe_ids else "normal"
+                if pid in failsafe_ids:
+                    close_reason = "failsafe"
+                elif close_event.close_type == "take_profit":
+                    close_reason = "take_profit"
+                else:
+                    close_reason = "normal"
 
                 # Check if we have Meteora data
                 full_addr = resolved_addresses.get(pid, "")

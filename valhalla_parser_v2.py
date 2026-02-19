@@ -652,7 +652,7 @@ def main():
         # Display with space instead of 'T' for readability
         min_display = min_dt.replace('T', ' ')
         max_display = max_dt.replace('T', ' ')
-        print(f"\nParsed messages: {min_display} → {max_display}")
+        print(f"\nParsed messages: {min_display} -> {max_display}")
 
     # Step 8: Retry failed Meteora API calls
     if meteora_failed:

@@ -174,6 +174,7 @@ class CloseEvent:
     tx_signatures: List[str] = field(default_factory=list)
     total_sol: float = 0.0
     active_positions: int = 0
+    close_type: str = "normal"
     date: str = ""          # "YYYY-MM-DD" format
 
 

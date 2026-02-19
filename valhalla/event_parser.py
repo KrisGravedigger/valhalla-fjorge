@@ -60,6 +60,12 @@ class EventParser:
     INSUF_EFFECTIVE_PATTERN = r'Total effective balance:\s*([\d.]+)\s*SOL'
     INSUF_REQUIRED_PATTERN = r'Required amount for this trade:\s*([\d.]+)\s*SOL'
 
+    # Take profit event patterns
+    TAKE_PROFIT_POSITION_ID_PATTERN = r'Take Profit Executed \(DLMM\)\s*\((\w+)\)'
+    TAKE_PROFIT_TARGET_PATTERN = r'Copied From:\s*(\S+)\)'
+    ENTRY_VALUE_PATTERN = r'Entry Value:\s*([\d.]+)\s*SOL'
+    EXIT_VALUE_PATTERN = r'Exit Value:\s*([\d.]+)\s*SOL'
+
     def __init__(self, base_date: Optional[str] = None):
         """
         Initialize EventParser.
@@ -122,6 +128,12 @@ class EventParser:
             if event:
                 event.date = self.current_date or ""
                 self.open_events.append(event)
+
+        elif "Take Profit Executed (DLMM)" in message:
+            event = self._parse_take_profit_event(timestamp, message, tx_signatures)
+            if event:
+                event.date = self.current_date or ""
+                self.close_events.append(event)
 
         elif "Closed DLMM Position!" in message:
             event = self._parse_close_event(timestamp, message, tx_signatures)
@@ -246,6 +258,32 @@ class EventParser:
             )
         except (ValueError, AttributeError) as e:
             print(f"Warning: Failed to parse close event: {e}")
+            return None
+
+    def _parse_take_profit_event(self, timestamp: str, message: str, tx_signatures: List[str]) -> Optional[CloseEvent]:
+        """Parse a take profit executed event as a close event"""
+        try:
+            position_id_match = re.search(self.TAKE_PROFIT_POSITION_ID_PATTERN, message)
+            target_match = re.search(self.TAKE_PROFIT_TARGET_PATTERN, message)
+            entry_match = re.search(self.ENTRY_VALUE_PATTERN, message)
+            exit_match = re.search(self.EXIT_VALUE_PATTERN, message)
+
+            if not all([position_id_match, target_match, entry_match, exit_match]):
+                return None
+
+            return CloseEvent(
+                timestamp=timestamp,
+                target=target_match.group(1),
+                starting_sol=float(entry_match.group(1)),
+                starting_usd=0.0,
+                ending_sol=float(exit_match.group(1)),
+                ending_usd=0.0,
+                position_id=position_id_match.group(1),
+                tx_signatures=tx_signatures,
+                close_type="take_profit"
+            )
+        except (ValueError, AttributeError) as e:
+            print(f"Warning: Failed to parse take profit event: {e}")
             return None
 
     def _parse_failsafe_event(self, timestamp: str, message: str, tx_signatures: List[str]) -> Optional[FailsafeEvent]:
