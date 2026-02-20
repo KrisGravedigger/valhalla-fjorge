@@ -126,6 +126,8 @@ def merge_with_existing_csv(
     def enrich_existing_with_open(existing: MatchedPosition, new_pos: MatchedPosition) -> MatchedPosition:
         """Take open-side data from new_pos, keep close+Meteora data from existing."""
         existing.datetime_open = new_pos.datetime_open or existing.datetime_open
+        if new_pos.target_wallet and new_pos.target_wallet != 'unknown':
+            existing.target_wallet = new_pos.target_wallet
         if new_pos.token and new_pos.token != 'unknown':
             existing.token = new_pos.token
         if new_pos.position_type and new_pos.position_type != 'unknown':
@@ -278,8 +280,36 @@ def merge_with_existing_csv(
             merged_matched.append(new_matched_pos)
             upgraded_count += 1
         elif new_still_open_event:
-            merged_still_open.append(new_still_open_event)
-            upgraded_count += 1
+            if existing_pos.close_reason not in ('still_open', ''):
+                # Existing has close data (e.g. failsafe_unknown_open with pnl_source=pending).
+                # Don't downgrade to still_open — enrich the existing close with open data instead.
+                open_as_matched = MatchedPosition(
+                    target_wallet=new_still_open_event.target,
+                    token=new_still_open_event.token_name,
+                    position_type=new_still_open_event.position_type,
+                    sol_deployed=Decimal(str(new_still_open_event.your_sol)) if new_still_open_event.your_sol else None,
+                    sol_received=None, pnl_sol=None, pnl_pct=None,
+                    close_reason='', mc_at_open=new_still_open_event.market_cap,
+                    jup_score=new_still_open_event.jup_score,
+                    token_age=new_still_open_event.token_age,
+                    token_age_days=None, token_age_hours=None,
+                    price_drop_pct=None, position_id=position_id,
+                    full_address='', pnl_source='',
+                    meteora_deposited=None, meteora_withdrawn=None,
+                    meteora_fees=None, meteora_pnl=None,
+                    datetime_open=make_iso_datetime(new_still_open_event.date, new_still_open_event.timestamp) if new_still_open_event.timestamp else '',
+                    datetime_close=''
+                )
+                if new_still_open_event.token_age:
+                    days, hours = normalize_token_age(new_still_open_event.token_age)
+                    open_as_matched.token_age_days = days
+                    open_as_matched.token_age_hours = hours
+                enriched = enrich_existing_with_open(existing_pos, open_as_matched)
+                merged_matched.append(enriched)
+                upgraded_count += 1
+            else:
+                merged_still_open.append(new_still_open_event)
+                upgraded_count += 1
         else:
             # No new data - keep existing
             if existing_pos.close_reason == 'still_open':
