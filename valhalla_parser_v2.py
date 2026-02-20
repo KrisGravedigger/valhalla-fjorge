@@ -427,20 +427,26 @@ def main():
     print(f"  Swap events: {len(event_parser.swap_events)}")
     print(f"  Insufficient balance events: {len(event_parser.insufficient_balance_events)}")
 
-    # Load already-complete position IDs from existing CSV
-    # Only skip positions that have meteora PnL AND both open+close dates
+    # Load already-complete and already-meteora position IDs from existing CSV
     positions_csv = output_dir / 'positions.csv'
-    already_complete_ids = set()
+    already_complete_ids = set()   # meteora + both dates + enrichable close_reason → skip everything
+    already_meteora_ids = set()    # any meteora PnL → skip Meteora re-fetch
     if positions_csv.exists():
         with open(positions_csv, 'r', encoding='utf-8') as f:
             for row in csv.DictReader(f):
+                pid = row.get('position_id', '').strip()
+                if not pid:
+                    continue
+                if row.get('pnl_source') == 'meteora':
+                    already_meteora_ids.add(pid)
                 if (row.get('pnl_source') == 'meteora'
                         and row.get('datetime_open')
                         and row.get('datetime_close')
-                        and row.get('close_reason') not in ('unknown_open', 'rug_unknown_open', 'failsafe_unknown_open', 'still_open')):
-                    pid = row.get('position_id', '').strip()
-                    if pid:
-                        already_complete_ids.add(pid)
+                        and row.get('close_reason') not in (
+                            'unknown_open', 'rug_unknown_open', 'failsafe_unknown_open', 'still_open',
+                            'take_profit_unknown_open', 'stop_loss_unknown_open'
+                        )):
+                    already_complete_ids.add(pid)
         if already_complete_ids:
             print(f"  Skipping {len(already_complete_ids)} already-complete positions")
 
@@ -454,15 +460,24 @@ def main():
         resolver = PositionResolver(cache, rpc_client)
 
         # Collect all events with position IDs and tx signatures
+        # Check cache first - only hit RPC for positions not already cached
         seen_pids = set()
         events_to_resolve = []
+        cache_hits = 0
         for event in event_parser.open_events + event_parser.close_events + event_parser.failsafe_events:
-            if event.tx_signatures and event.position_id not in seen_pids:
+            if event.position_id not in seen_pids:
                 if event.position_id not in already_complete_ids:
                     seen_pids.add(event.position_id)
-                    events_to_resolve.append((event.position_id, event.tx_signatures))
+                    cached_addr = cache.get(event.position_id)
+                    if cached_addr:
+                        resolved_addresses[event.position_id] = cached_addr
+                        cache_hits += 1
+                    elif event.tx_signatures:
+                        events_to_resolve.append((event.position_id, event.tx_signatures))
 
         total = len(events_to_resolve)
+        if cache_hits:
+            print(f"  {cache_hits} positions loaded from cache, {total} to resolve via RPC")
         for i, (pid, sigs) in enumerate(events_to_resolve, 1):
             print(f"  Resolving {i}/{total}: {pid}...", end='', flush=True)
             full_addr = resolver.resolve(pid, sigs)
@@ -501,9 +516,11 @@ def main():
         for e in event_parser.failsafe_events:
             closeable_ids.add(e.position_id)
 
-        # Filter to only fetch closeable positions that aren't already complete
+        # Filter to only fetch closeable positions that aren't already complete or already have Meteora data
         addresses_to_fetch = {pid: addr for pid, addr in resolved_addresses.items()
-                              if pid in closeable_ids and pid not in already_complete_ids}
+                              if pid in closeable_ids
+                              and pid not in already_complete_ids
+                              and pid not in already_meteora_ids}
 
         total = len(addresses_to_fetch)
         for i, (pid, full_addr) in enumerate(addresses_to_fetch.items(), 1):
@@ -652,7 +669,7 @@ def main():
         # Display with space instead of 'T' for readability
         min_display = min_dt.replace('T', ' ')
         max_display = max_dt.replace('T', ' ')
-        print(f"\nParsed messages: {min_display} → {max_display}")
+        print(f"\nParsed messages: {min_display} -> {max_display}")
 
     # Step 8: Retry failed Meteora API calls
     if meteora_failed:
