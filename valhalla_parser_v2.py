@@ -505,24 +505,7 @@ def main():
     if not args.skip_meteora and resolved_addresses:
         print(f"\nFetching Meteora PnL data...")
 
-        # Load Moralis API key from .env if available
-        moralis_key = None
-        env_path = Path(__file__).parent / '.env'
-        if env_path.exists():
-            with open(env_path) as ef:
-                for line in ef:
-                    line = line.strip()
-                    if line.startswith('MORALIS_API_KEY='):
-                        moralis_key = line.split('=', 1)[1].strip().strip('"\'')
-                        break
-
-        moralis_pricer = None
-        if moralis_key:
-            from valhalla.meteora import MoralisMarketPricer
-            moralis_pricer = MoralisMarketPricer(moralis_key)
-            print(f"  Moralis market pricer enabled")
-
-        meteora_calc = MeteoraPnlCalculator(moralis_pricer=moralis_pricer)
+        meteora_calc = MeteoraPnlCalculator()
 
         # Build closeable_ids set (only positions that will be used)
         closeable_ids = set()
