@@ -504,6 +504,7 @@ def main():
 
     if not args.skip_meteora and resolved_addresses:
         print(f"\nFetching Meteora PnL data...")
+
         meteora_calc = MeteoraPnlCalculator()
 
         # Build closeable_ids set (only positions that will be used)

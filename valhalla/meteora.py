@@ -16,12 +16,13 @@ class MeteoraPnlCalculator:
 
     def __init__(self):
         self.base_url = "https://dlmm-api.meteora.ag"
-        self._pair_cache: Dict[str, Tuple[bool, bool]] = {}  # pair_addr -> (sol_is_x, sol_is_y)
+        self._pair_cache: Dict[str, Tuple[bool, bool, str]] = {}  # pair_addr -> (sol_is_x, sol_is_y, token_mint)
 
     def _get_sol_side(self, pair_address: str) -> Optional[Tuple[bool, bool]]:
         """Determine which token (x or y) is SOL for a pair. Returns (sol_is_x, sol_is_y)."""
         if pair_address in self._pair_cache:
-            return self._pair_cache[pair_address]
+            sol_is_x, sol_is_y, _ = self._pair_cache[pair_address]
+            return (sol_is_x, sol_is_y)
 
         pair_info = self._meteora_get(f"/pair/{pair_address}")
         if not pair_info:
@@ -35,8 +36,17 @@ class MeteoraPnlCalculator:
         if not (sol_is_x or sol_is_y):
             return None
 
-        self._pair_cache[pair_address] = (sol_is_x, sol_is_y)
+        # Cache includes token mint (non-SOL side)
+        token_mint = mint_y if sol_is_x else mint_x
+        self._pair_cache[pair_address] = (sol_is_x, sol_is_y, token_mint)
         return (sol_is_x, sol_is_y)
+
+    def _get_token_mint(self, pair_address: str) -> Optional[str]:
+        """Return the non-SOL token mint for a pair, or None if not cached."""
+        cached = self._pair_cache.get(pair_address)
+        if cached:
+            return cached[2]
+        return None
 
     def calculate_pnl(self, address: str) -> Optional[MeteoraPnlResult]:
         """
@@ -71,8 +81,11 @@ class MeteoraPnlCalculator:
             # Helper: compute SOL equivalent for a transaction entry.
             # Converts the non-SOL token to SOL using the per-transaction SOL price
             # derived from the SOL-side USD amount.
-            def _tx_sol_equiv(entry, fallback_sol_price: Decimal) -> tuple[Decimal, Decimal, Decimal]:
-                """Returns (sol_amount, sol_equiv_total, sol_price_used)"""
+            def _tx_sol_equiv(
+                entry,
+                fallback_sol_price: Decimal,
+            ) -> tuple[Decimal, Decimal, Decimal, Decimal]:
+                """Returns (sol_amount, sol_equiv_total, total_usd, sol_price_used)"""
                 sol_key = 'token_x_amount' if sol_is_x else 'token_y_amount'
                 tok_key = 'token_y_amount' if sol_is_x else 'token_x_amount'
                 sol_usd_key = 'token_x_usd_amount' if sol_is_x else 'token_y_usd_amount'

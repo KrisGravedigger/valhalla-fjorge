@@ -18,12 +18,13 @@ class EventParser:
     # Regex patterns (from v1)
     TIMESTAMP_PATTERN = r'\[((?:\d{4}-\d{2}-\d{2}T)?\d{2}:\d{2})\]'
     TARGET_PATTERN = r'Target:\s*(\S+)'
-    POSITION_TYPE_PATTERN = r'(Spot|BidAsk|Curve)\s+1-Sided Position\s*\|\s*(\S+)-SOL'
+    POSITION_TYPE_PATTERN = r'(Spot|BidAsk|Curve)\s+\d+-Sided Position\s*\|\s*(\S+)-SOL'
     MARKET_CAP_PATTERN = r'MC:\s*\$([\d,]+\.?\d*)'
     TOKEN_AGE_PATTERN = r'Age:\s*(.+?)(?:\n|$)'
     JUP_SCORE_PATTERN = r'Jup Score:\s*(\d+)'
     YOUR_POS_PATTERN = r'Your Pos:.*?SOL:\s*([\d.]+)'
     TARGET_POS_PATTERN = r'Target Pos:.*?SOL:\s*([\d.]+)'
+    TOTAL_DEPOSIT_USER_PATTERN = r'Total Deposit:.*?\|\s*User\s+([\d.]+)\s*SOL'
 
     # Position ID patterns
     OPEN_POSITION_ID_PATTERN = r'Opened New DLMM Position!\s*\((\w+)\)'
@@ -195,6 +196,7 @@ class EventParser:
             your_sol_match = re.search(self.YOUR_POS_PATTERN, message)
             target_sol_match = re.search(self.TARGET_POS_PATTERN, message)
             position_id_match = re.search(self.OPEN_POSITION_ID_PATTERN, message)
+            total_deposit_match = re.search(self.TOTAL_DEPOSIT_USER_PATTERN, message)
 
             if not all([target_match, position_type_match, mc_match, age_match,
                        jup_match, your_sol_match, target_sol_match, position_id_match]):
@@ -208,7 +210,7 @@ class EventParser:
             token_age = age_match.group(1).strip()
             jup_score = int(jup_match.group(1))
             target_sol = float(target_sol_match.group(1))
-            your_sol = float(your_sol_match.group(1))
+            your_sol = float(total_deposit_match.group(1)) if total_deposit_match else float(your_sol_match.group(1))
             position_id = position_id_match.group(1)
 
             return OpenEvent(
