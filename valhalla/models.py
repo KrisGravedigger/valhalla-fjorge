@@ -160,6 +160,8 @@ class OpenEvent:
     position_id: str        # "BUeWH73d"
     tx_signatures: List[str] = field(default_factory=list)
     date: str = ""          # "YYYY-MM-DD" format
+    target_wallet_address: Optional[str] = field(default=None)    # NEW: full Solana address from lpagent URL
+    target_tx_signatures: List[str] = field(default_factory=list) # NEW: labeled "Target Tx N" signatures
 
 
 @dataclass
@@ -262,6 +264,8 @@ class MatchedPosition:
     meteora_pnl: Optional[Decimal] = None
     datetime_open: str = ""     # ISO 8601: "2026-02-12T15:08:00" or "T15:08:00"
     datetime_close: str = ""    # ISO 8601: "2026-02-12T15:08:00" or "T15:08:00"
+    target_wallet_address: Optional[str] = field(default=None)   # NEW: full Solana address from open event
+    target_tx_signature: Optional[str] = field(default=None)     # NEW: first target tx signature from open event
 
 
 @dataclass

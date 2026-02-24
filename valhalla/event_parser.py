@@ -10,6 +10,7 @@ from .models import (
     OpenEvent, CloseEvent, RugEvent, SkipEvent, FailsafeEvent,
     AddLiquidityEvent, SwapEvent, InsufficientBalanceEvent, short_id
 )
+from .readers import ParsedMessage
 
 
 class EventParser:
@@ -86,13 +87,16 @@ class EventParser:
         self.base_date = base_date
         self.current_date = base_date
 
-    def parse_messages(self, messages: List[Tuple[str, str, List[str]]]) -> None:
+    def parse_messages(self, messages: List[ParsedMessage]) -> None:
         """Parse all messages from PlainTextReader with midnight rollover detection"""
         prev_hour = None
 
-        for timestamp, text, tx_signatures in messages:
-            # No need to strip non-ASCII - patterns match ASCII keywords only
-            clean_text = text
+        for msg in messages:
+            timestamp = msg.timestamp
+            clean_text = msg.clean_text
+            tx_signatures = msg.bot_tx_signatures
+            target_wallet_address = msg.target_wallet_address
+            target_tx_signatures = msg.target_tx_signatures
 
             # Check if timestamp contains a full date [YYYY-MM-DDTHH:MM]
             full_dt_match = re.search(r'\[(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})\]', timestamp)
@@ -116,9 +120,12 @@ class EventParser:
 
                     prev_hour = hour
 
-            self._classify_and_parse_message(timestamp, clean_text, tx_signatures)
+            self._classify_and_parse_message(timestamp, clean_text, tx_signatures,
+                                             target_wallet_address, target_tx_signatures)
 
-    def _classify_and_parse_message(self, timestamp: str, message: str, tx_signatures: List[str]) -> None:
+    def _classify_and_parse_message(self, timestamp: str, message: str, tx_signatures: List[str],
+                                    target_wallet_address: Optional[str] = None,
+                                    target_tx_signatures: Optional[List[str]] = None) -> None:
         """Classify message type and parse accordingly"""
         # Skip "already closed" messages
         if "was already closed" in message:
@@ -126,7 +133,8 @@ class EventParser:
 
         # Check for each event type
         if "Opened New DLMM Position!" in message:
-            event = self._parse_open_event(timestamp, message, tx_signatures)
+            event = self._parse_open_event(timestamp, message, tx_signatures,
+                                           target_wallet_address, target_tx_signatures)
             if event:
                 event.date = self.current_date or ""
                 self.open_events.append(event)
@@ -185,7 +193,9 @@ class EventParser:
                 event.date = self.current_date or ""
                 self.swap_events.append(event)
 
-    def _parse_open_event(self, timestamp: str, message: str, tx_signatures: List[str]) -> Optional[OpenEvent]:
+    def _parse_open_event(self, timestamp: str, message: str, tx_signatures: List[str],
+                          target_wallet_address: Optional[str] = None,
+                          target_tx_signatures: Optional[List[str]] = None) -> Optional[OpenEvent]:
         """Parse an open position event"""
         try:
             target_match = re.search(self.TARGET_PATTERN, message)
@@ -225,7 +235,9 @@ class EventParser:
                 target_sol=target_sol,
                 your_sol=your_sol,
                 position_id=position_id,
-                tx_signatures=tx_signatures
+                tx_signatures=tx_signatures,
+                target_wallet_address=target_wallet_address,
+                target_tx_signatures=target_tx_signatures if target_tx_signatures is not None else []
             )
         except (ValueError, AttributeError) as e:
             print(f"Warning: Failed to parse open event: {e}")

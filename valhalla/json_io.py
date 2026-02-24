@@ -47,7 +47,9 @@ def export_to_json(positions: List[MatchedPosition], unmatched_opens: List[OpenE
             "meteora_deposited": str(pos.meteora_deposited) if pos.meteora_deposited is not None else None,
             "meteora_withdrawn": str(pos.meteora_withdrawn) if pos.meteora_withdrawn is not None else None,
             "meteora_fees": str(pos.meteora_fees) if pos.meteora_fees is not None else None,
-            "meteora_pnl": str(pos.meteora_pnl) if pos.meteora_pnl is not None else None
+            "meteora_pnl": str(pos.meteora_pnl) if pos.meteora_pnl is not None else None,
+            "target_wallet_address": pos.target_wallet_address,
+            "target_tx_signature": pos.target_tx_signature
         }
         positions_data.append(pos_dict)
 
@@ -161,7 +163,9 @@ def import_from_json(json_path: str) -> Tuple[List[MatchedPosition], List[dict]]
             meteora_fees=parse_optional_decimal(pos_dict.get('meteora_fees')),
             meteora_pnl=parse_optional_decimal(pos_dict.get('meteora_pnl')),
             datetime_open=pos_dict.get('datetime_open', ''),
-            datetime_close=pos_dict.get('datetime_close', '')
+            datetime_close=pos_dict.get('datetime_close', ''),
+            target_wallet_address=pos_dict.get('target_wallet_address'),
+            target_tx_signature=pos_dict.get('target_tx_signature')
         ))
 
     still_open_dicts = data.get('still_open', [])

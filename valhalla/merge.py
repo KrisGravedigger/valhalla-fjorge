@@ -103,7 +103,9 @@ def merge_with_existing_csv(
             meteora_fees=parse_optional_decimal(row.get('meteora_fees', '')),
             meteora_pnl=parse_optional_decimal(row.get('meteora_pnl', '')),
             datetime_open=row.get('datetime_open', ''),
-            datetime_close=row.get('datetime_close', '')
+            datetime_close=row.get('datetime_close', ''),
+            target_wallet_address=row.get('target_wallet_address') or None,
+            target_tx_signature=row.get('target_tx_signature') or None
         )
 
         existing_by_id[position_id] = existing_pos
@@ -400,43 +402,44 @@ def merge_positions_csvs(csv_paths: List[str], output_dir: str) -> None:
     print(f"  Positions after deduplication: {len(deduplicated_rows)}")
 
     # Convert rows back to MatchedPosition objects for summary calculation
+
+    # Parse Decimal fields safely (defined outside the loop to avoid re-definition per row)
+    def parse_decimal(val: str) -> Decimal:
+        if not val or val.strip() == '':
+            return Decimal('0')
+        return Decimal(val)
+
+    def parse_optional_decimal(val: str) -> Optional[Decimal]:
+        if not val or val.strip() == '':
+            return None
+        return Decimal(val)
+
+    def parse_int(val: str) -> int:
+        if not val or val.strip() == '':
+            return 0
+        return int(val)
+
+    def parse_optional_int(val: str) -> Optional[int]:
+        if not val or val.strip() == '':
+            return None
+        return int(val)
+
+    def parse_float(val: str) -> float:
+        if not val or val.strip() == '':
+            return 0.0
+        return float(val)
+
+    def parse_optional_float(val: str) -> Optional[float]:
+        if not val or val.strip() == '':
+            return None
+        return float(val)
+
     matched_positions = []
 
     for row in deduplicated_rows:
         # Skip still_open positions for summary (they have no PnL yet)
         if row.get('close_reason') == 'still_open':
             continue
-
-        # Parse Decimal fields safely
-        def parse_decimal(val: str) -> Decimal:
-            if not val or val.strip() == '':
-                return Decimal('0')
-            return Decimal(val)
-
-        def parse_optional_decimal(val: str) -> Optional[Decimal]:
-            if not val or val.strip() == '':
-                return None
-            return Decimal(val)
-
-        def parse_int(val: str) -> int:
-            if not val or val.strip() == '':
-                return 0
-            return int(val)
-
-        def parse_optional_int(val: str) -> Optional[int]:
-            if not val or val.strip() == '':
-                return None
-            return int(val)
-
-        def parse_float(val: str) -> float:
-            if not val or val.strip() == '':
-                return 0.0
-            return float(val)
-
-        def parse_optional_float(val: str) -> Optional[float]:
-            if not val or val.strip() == '':
-                return None
-            return float(val)
 
         matched_positions.append(MatchedPosition(
             target_wallet=row.get('target_wallet', ''),
@@ -461,7 +464,9 @@ def merge_positions_csvs(csv_paths: List[str], output_dir: str) -> None:
             meteora_fees=parse_optional_decimal(row.get('meteora_fees', '')),
             meteora_pnl=parse_optional_decimal(row.get('meteora_pnl', '')),
             datetime_open=row.get('datetime_open', ''),
-            datetime_close=row.get('datetime_close', '')
+            datetime_close=row.get('datetime_close', ''),
+            target_wallet_address=row.get('target_wallet_address') or None,
+            target_tx_signature=row.get('target_tx_signature') or None
         ))
 
     # Write merged positions.csv
@@ -480,8 +485,9 @@ def merge_positions_csvs(csv_paths: List[str], output_dir: str) -> None:
             'mc_at_open', 'jup_score', 'token_age', 'token_age_days', 'token_age_hours',
             'price_drop_pct', 'position_id',
             'full_address', 'pnl_source', 'meteora_deposited', 'meteora_withdrawn',
-            'meteora_fees', 'meteora_pnl'
-        ])
+            'meteora_fees', 'meteora_pnl',
+            'target_wallet_address', 'target_tx_signature'
+        ], extrasaction='ignore')
         writer.writeheader()
         writer.writerows(deduplicated_rows)
 

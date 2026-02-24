@@ -43,7 +43,8 @@ class CsvWriter:
                 'mc_at_open', 'jup_score', 'token_age', 'token_age_days', 'token_age_hours',
                 'price_drop_pct', 'position_id',
                 'full_address', 'pnl_source', 'meteora_deposited', 'meteora_withdrawn',
-                'meteora_fees', 'meteora_pnl'
+                'meteora_fees', 'meteora_pnl',
+                'target_wallet_address', 'target_tx_signature'
             ])
 
             for pos in sorted_positions:
@@ -70,7 +71,9 @@ class CsvWriter:
                     f"{pos.meteora_deposited:.4f}" if pos.meteora_deposited is not None else "",
                     f"{pos.meteora_withdrawn:.4f}" if pos.meteora_withdrawn is not None else "",
                     f"{pos.meteora_fees:.4f}" if pos.meteora_fees is not None else "",
-                    f"{pos.meteora_pnl:.4f}" if pos.meteora_pnl is not None else ""
+                    f"{pos.meteora_pnl:.4f}" if pos.meteora_pnl is not None else "",
+                    pos.target_wallet_address if pos.target_wallet_address else "",
+                    pos.target_tx_signature if pos.target_tx_signature else ""
                 ])
 
             # Add still-open positions
@@ -101,7 +104,9 @@ class CsvWriter:
                     "",  # No meteora_deposited
                     "",  # No meteora_withdrawn
                     "",  # No meteora_fees
-                    ""   # No meteora_pnl
+                    "",  # No meteora_pnl
+                    open_event.target_wallet_address if open_event.target_wallet_address else "",
+                    ""   # No target_tx_signature (only first sig, not applicable for still-open display)
                 ])
 
     def generate_summary_csv(self, matched_positions: List[MatchedPosition],
