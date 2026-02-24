@@ -1,3 +1,5 @@
+analysis_plan.py
+notes/
 __pycache__/
 *.pyc
 output/
