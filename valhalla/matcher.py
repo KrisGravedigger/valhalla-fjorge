@@ -110,7 +110,9 @@ class PositionMatcher:
                         meteora_fees=meteora_result.fees_sol,
                         meteora_pnl=meteora_pnl,
                         datetime_open=make_iso_datetime(open_event.date, open_event.timestamp),
-                        datetime_close=make_iso_datetime(close_event.date, close_event.timestamp)
+                        datetime_close=make_iso_datetime(close_event.date, close_event.timestamp),
+                        target_wallet_address=open_event.target_wallet_address,
+                        target_tx_signature=open_event.target_tx_signatures[0] if open_event.target_tx_signatures else None
                     ))
                 elif use_discord_pnl:
                     # Use Discord PnL (only if flag enabled)
@@ -133,7 +135,9 @@ class PositionMatcher:
                         full_address=full_addr,
                         pnl_source="discord",
                         datetime_open=make_iso_datetime(open_event.date, open_event.timestamp),
-                        datetime_close=make_iso_datetime(close_event.date, close_event.timestamp)
+                        datetime_close=make_iso_datetime(close_event.date, close_event.timestamp),
+                        target_wallet_address=open_event.target_wallet_address,
+                        target_tx_signature=open_event.target_tx_signatures[0] if open_event.target_tx_signatures else None
                     ))
                 else:
                     # Meteora not available and Discord PnL not enabled - leave PnL as None
@@ -156,7 +160,9 @@ class PositionMatcher:
                         full_address=full_addr,
                         pnl_source="pending",
                         datetime_open=make_iso_datetime(open_event.date, open_event.timestamp),
-                        datetime_close=make_iso_datetime(close_event.date, close_event.timestamp)
+                        datetime_close=make_iso_datetime(close_event.date, close_event.timestamp),
+                        target_wallet_address=open_event.target_wallet_address,
+                        target_tx_signature=open_event.target_tx_signatures[0] if open_event.target_tx_signatures else None
                     ))
             else:
                 # Close without matching open (pre-existing position)
@@ -299,7 +305,9 @@ class PositionMatcher:
                             meteora_fees=meteora_result.fees_sol,
                             meteora_pnl=meteora_pnl,
                             datetime_open=make_iso_datetime(open_event.date, open_event.timestamp),
-                            datetime_close=make_iso_datetime(rug_event.date, rug_event.timestamp)
+                            datetime_close=make_iso_datetime(rug_event.date, rug_event.timestamp),
+                            target_wallet_address=open_event.target_wallet_address,
+                            target_tx_signature=open_event.target_tx_signatures[0] if open_event.target_tx_signatures else None
                         ))
                     elif use_discord_pnl:
                         # Use Discord PnL estimate (price drop based)
@@ -326,7 +334,9 @@ class PositionMatcher:
                             full_address=full_addr,
                             pnl_source="discord",
                             datetime_open=make_iso_datetime(open_event.date, open_event.timestamp),
-                            datetime_close=make_iso_datetime(rug_event.date, rug_event.timestamp)
+                            datetime_close=make_iso_datetime(rug_event.date, rug_event.timestamp),
+                            target_wallet_address=open_event.target_wallet_address,
+                            target_tx_signature=open_event.target_tx_signatures[0] if open_event.target_tx_signatures else None
                         ))
                     else:
                         # No Meteora and Discord PnL not enabled - leave as None
@@ -349,7 +359,9 @@ class PositionMatcher:
                             full_address=full_addr,
                             pnl_source="pending",
                             datetime_open=make_iso_datetime(open_event.date, open_event.timestamp),
-                            datetime_close=make_iso_datetime(rug_event.date, rug_event.timestamp)
+                            datetime_close=make_iso_datetime(rug_event.date, rug_event.timestamp),
+                            target_wallet_address=open_event.target_wallet_address,
+                            target_tx_signature=open_event.target_tx_signatures[0] if open_event.target_tx_signatures else None
                         ))
                 else:
                     # Rug event without matching open
@@ -523,7 +535,9 @@ class PositionMatcher:
                         meteora_fees=meteora_result.fees_sol,
                         meteora_pnl=meteora_pnl,
                         datetime_open=make_iso_datetime(open_event.date, open_event.timestamp),
-                        datetime_close=make_iso_datetime(failsafe_event.date, failsafe_event.timestamp)
+                        datetime_close=make_iso_datetime(failsafe_event.date, failsafe_event.timestamp),
+                        target_wallet_address=open_event.target_wallet_address,
+                        target_tx_signature=open_event.target_tx_signatures[0] if open_event.target_tx_signatures else None
                     ))
                 else:
                     # No Meteora and no Discord PnL (failsafe has no balance info)
@@ -546,7 +560,9 @@ class PositionMatcher:
                         full_address=full_addr,
                         pnl_source="pending",
                         datetime_open=make_iso_datetime(open_event.date, open_event.timestamp),
-                        datetime_close=make_iso_datetime(failsafe_event.date, failsafe_event.timestamp)
+                        datetime_close=make_iso_datetime(failsafe_event.date, failsafe_event.timestamp),
+                        target_wallet_address=open_event.target_wallet_address,
+                        target_tx_signature=open_event.target_tx_signatures[0] if open_event.target_tx_signatures else None
                     ))
             else:
                 # Failsafe without matching open
