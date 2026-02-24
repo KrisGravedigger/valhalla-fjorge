@@ -105,7 +105,10 @@ def merge_with_existing_csv(
             datetime_open=row.get('datetime_open', ''),
             datetime_close=row.get('datetime_close', ''),
             target_wallet_address=row.get('target_wallet_address') or None,
-            target_tx_signature=row.get('target_tx_signature') or None
+            target_tx_signature=row.get('target_tx_signature') or None,
+            source_wallet_hold_min=parse_optional_int(row.get('source_wallet_hold_min', '')),
+            source_wallet_pnl_pct=parse_optional_decimal(row.get('source_wallet_pnl_pct', '')),
+            source_wallet_scenario=row.get('source_wallet_scenario') or None
         )
 
         existing_by_id[position_id] = existing_pos
@@ -466,7 +469,10 @@ def merge_positions_csvs(csv_paths: List[str], output_dir: str) -> None:
             datetime_open=row.get('datetime_open', ''),
             datetime_close=row.get('datetime_close', ''),
             target_wallet_address=row.get('target_wallet_address') or None,
-            target_tx_signature=row.get('target_tx_signature') or None
+            target_tx_signature=row.get('target_tx_signature') or None,
+            source_wallet_hold_min=parse_optional_int(row.get('source_wallet_hold_min', '')),
+            source_wallet_pnl_pct=parse_optional_decimal(row.get('source_wallet_pnl_pct', '')),
+            source_wallet_scenario=row.get('source_wallet_scenario') or None
         ))
 
     # Write merged positions.csv
@@ -486,7 +492,8 @@ def merge_positions_csvs(csv_paths: List[str], output_dir: str) -> None:
             'price_drop_pct', 'position_id',
             'full_address', 'pnl_source', 'meteora_deposited', 'meteora_withdrawn',
             'meteora_fees', 'meteora_pnl',
-            'target_wallet_address', 'target_tx_signature'
+            'target_wallet_address', 'target_tx_signature',
+            'source_wallet_hold_min', 'source_wallet_pnl_pct', 'source_wallet_scenario'
         ], extrasaction='ignore')
         writer.writeheader()
         writer.writerows(deduplicated_rows)

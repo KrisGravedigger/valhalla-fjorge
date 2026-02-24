@@ -49,7 +49,10 @@ def export_to_json(positions: List[MatchedPosition], unmatched_opens: List[OpenE
             "meteora_fees": str(pos.meteora_fees) if pos.meteora_fees is not None else None,
             "meteora_pnl": str(pos.meteora_pnl) if pos.meteora_pnl is not None else None,
             "target_wallet_address": pos.target_wallet_address,
-            "target_tx_signature": pos.target_tx_signature
+            "target_tx_signature": pos.target_tx_signature,
+            "source_wallet_hold_min": pos.source_wallet_hold_min,
+            "source_wallet_pnl_pct": str(pos.source_wallet_pnl_pct) if pos.source_wallet_pnl_pct is not None else None,
+            "source_wallet_scenario": pos.source_wallet_scenario
         }
         positions_data.append(pos_dict)
 
@@ -165,7 +168,10 @@ def import_from_json(json_path: str) -> Tuple[List[MatchedPosition], List[dict]]
             datetime_open=pos_dict.get('datetime_open', ''),
             datetime_close=pos_dict.get('datetime_close', ''),
             target_wallet_address=pos_dict.get('target_wallet_address'),
-            target_tx_signature=pos_dict.get('target_tx_signature')
+            target_tx_signature=pos_dict.get('target_tx_signature'),
+            source_wallet_hold_min=pos_dict.get('source_wallet_hold_min'),
+            source_wallet_pnl_pct=parse_optional_decimal(pos_dict.get('source_wallet_pnl_pct')),
+            source_wallet_scenario=pos_dict.get('source_wallet_scenario')
         ))
 
     still_open_dicts = data.get('still_open', [])

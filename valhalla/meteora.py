@@ -5,6 +5,7 @@ Meteora DLMM API client for PnL calculation.
 import json
 import time
 import urllib.request
+from datetime import datetime
 from decimal import Decimal
 from typing import Dict, Optional, Tuple
 
@@ -185,6 +186,30 @@ class MeteoraPnlCalculator:
         except Exception as e:
             print(f"  Meteora API error for {short_id(address)}: {e}")
             return None
+
+    def get_position_timestamps(self, address: str) -> Optional[Tuple[datetime, datetime]]:
+        """
+        Return (open_time, close_time) from position transaction history.
+
+        Calls /position/{address} and extracts min/max onchain_timestamp
+        from the transactions array. Returns None if not available.
+        """
+        pos_info = self._meteora_get(f"/position/{address}")
+        if not pos_info:
+            return None
+        transactions = pos_info.get('transactions', [])
+        if not transactions:
+            return None
+        timestamps = [
+            t.get('onchain_timestamp')
+            for t in transactions
+            if t.get('onchain_timestamp')
+        ]
+        if not timestamps:
+            return None
+        open_ts = datetime.fromtimestamp(min(timestamps))
+        close_ts = datetime.fromtimestamp(max(timestamps))
+        return open_ts, close_ts
 
     def _meteora_get(self, path: str):
         """Make GET request to Meteora API"""

@@ -44,7 +44,8 @@ class CsvWriter:
                 'price_drop_pct', 'position_id',
                 'full_address', 'pnl_source', 'meteora_deposited', 'meteora_withdrawn',
                 'meteora_fees', 'meteora_pnl',
-                'target_wallet_address', 'target_tx_signature'
+                'target_wallet_address', 'target_tx_signature',
+                'source_wallet_hold_min', 'source_wallet_pnl_pct', 'source_wallet_scenario'
             ])
 
             for pos in sorted_positions:
@@ -73,7 +74,10 @@ class CsvWriter:
                     f"{pos.meteora_fees:.4f}" if pos.meteora_fees is not None else "",
                     f"{pos.meteora_pnl:.4f}" if pos.meteora_pnl is not None else "",
                     pos.target_wallet_address if pos.target_wallet_address else "",
-                    pos.target_tx_signature if pos.target_tx_signature else ""
+                    pos.target_tx_signature if pos.target_tx_signature else "",
+                    str(pos.source_wallet_hold_min) if pos.source_wallet_hold_min is not None else "",
+                    f"{pos.source_wallet_pnl_pct:.2f}" if pos.source_wallet_pnl_pct is not None else "",
+                    pos.source_wallet_scenario if pos.source_wallet_scenario else ""
                 ])
 
             # Add still-open positions
@@ -106,7 +110,10 @@ class CsvWriter:
                     "",  # No meteora_fees
                     "",  # No meteora_pnl
                     open_event.target_wallet_address if open_event.target_wallet_address else "",
-                    ""   # No target_tx_signature (only first sig, not applicable for still-open display)
+                    "",  # No target_tx_signature (only first sig, not applicable for still-open display)
+                    "",  # No source_wallet_hold_min
+                    "",  # No source_wallet_pnl_pct
+                    ""   # No source_wallet_scenario
                 ])
 
     def generate_summary_csv(self, matched_positions: List[MatchedPosition],
