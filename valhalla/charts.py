@@ -149,9 +149,13 @@ def _fill_zeros_for_active_range(
     """
     Fill 0 for active wallets on days with no trades.
 
-    For each wallet that has any data, fills 0 for all dates in the global
-    range from the wallet's first active date to the timeline end.
-    This ensures single-day wallets also show 0 on subsequent days.
+    For each wallet that has any data, fills 0 for all dates from the wallet's
+    first active date up to its fill boundary:
+    - Active wallets (gap <= 7 days from global_last): fill to global_last so
+      single-day wallets still show 0 on subsequent days.
+    - Retired wallets (gap > 7 days from global_last): fill only to their last
+      active date to avoid re-adding flat 0 lines after _apply_wallet_retirement
+      has removed the post-retirement data.
     """
     if not dates:
         return
@@ -163,9 +167,13 @@ def _fill_zeros_for_active_range(
         if not wallet_dates:
             continue
         first = min(wallet_dates)
-        # Use global last instead of wallet's last to fill zeros for single-day wallets
+        wallet_last = max(wallet_dates)
+        # For retired wallets (gap > 7 days), stop filling at their last active date.
+        # For active wallets, fill to global_last so single-day wallets still show zero.
+        gap = (global_last - wallet_last).days
+        fill_to = global_last if gap <= 7 else wallet_last
         for d in dates:
-            if first <= d <= global_last and (wallet, d) not in data_dict:
+            if first <= d <= fill_to and (wallet, d) not in data_dict:
                 data_dict[(wallet, d)] = 0
 
 

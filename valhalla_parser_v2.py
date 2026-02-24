@@ -313,22 +313,35 @@ def _generate_loss_report(
 
             if row.metric == "mc_at_open":
                 sl_val = _fmt_mc(row.sl_avg) if row.sl_avg is not None else "N/A"
+                sl_rug_val = _fmt_mc(row.sl_rug_avg) if row.sl_rug_avg is not None else "N/A"
                 all_val = _fmt_mc(row.all_avg) if row.all_avg is not None else "N/A"
             elif row.metric == "token_age_days":
                 sl_val = f"{row.sl_avg:.1f}d" if row.sl_avg is not None else "N/A"
+                sl_rug_val = f"{row.sl_rug_avg:.1f}d" if row.sl_rug_avg is not None else "N/A"
                 all_val = f"{row.all_avg:.1f}d" if row.all_avg is not None else "N/A"
             else:
                 sl_val = f"{row.sl_avg:.0f}" if row.sl_avg is not None else "N/A"
+                sl_rug_val = f"{row.sl_rug_avg:.0f}" if row.sl_rug_avg is not None else "N/A"
                 all_val = f"{row.all_avg:.0f}" if row.all_avg is not None else "N/A"
 
-            diff_str = _fmt_pct(row.diff_pct)
-            note = ""
+            sl_note = ""
             if row.sl_count < 3:
-                note = f" (n={row.sl_count}, insufficient)"
-            rp_rows.append([metric_label + note, sl_val, all_val, diff_str])
+                sl_note = f" (n={row.sl_count}, insufficient)"
+            sl_rug_note = ""
+            if row.sl_rug_count < 3:
+                sl_rug_note = f" (n={row.sl_rug_count}, insufficient)"
+
+            rp_rows.append([
+                metric_label,
+                sl_val + sl_note,
+                sl_rug_val + sl_rug_note,
+                all_val,
+                _fmt_pct(row.diff_pct),
+                _fmt_pct(row.sl_rug_diff_pct),
+            ])
 
         lines.append(_md_table(
-            ["Metric", "Stop-Loss Avg", "All Trades Avg", "Difference"],
+            ["Metric", "SL Only Avg", "SL+Rug/FS Avg", "All Trades Avg", "SL Diff", "SL+Rug Diff"],
             rp_rows,
         ))
     lines.append("")
@@ -392,11 +405,30 @@ def _generate_loss_report(
     # ------------------------------------------------------------------
     lines.append("## Stop-Loss Level Distribution")
     lines.append("")
-    lines.append("If your stop-loss had been set tighter:")
+    lines.append("If your stop-loss had been set tighter, how many positions would have been saved?")
     lines.append("")
 
+    # Sub-table A: SL exits only
+    lines.append("**SL exits only** (stop_loss / stop_loss_unknown_open):")
+    lines.append("")
+    if not result.sl_buckets_sl_only or all(b.count == 0 for b in result.sl_buckets_sl_only):
+        lines.append("_No SL-only positions with PnL percentage data available._")
+    else:
+        sl_only_rows = [
+            [b.bucket_label, str(b.count), f"{b.sol_saved:.3f} SOL"]
+            for b in result.sl_buckets_sl_only
+        ]
+        lines.append(_md_table(
+            ["SL Level", "Positions Below", "SOL Saved vs Actual"],
+            sl_only_rows,
+        ))
+    lines.append("")
+
+    # Sub-table B: All losses (SL + Rug/Failsafe)
+    lines.append("**All losses** (SL + Rug/Failsafe):")
+    lines.append("")
     if not result.sl_buckets or all(b.count == 0 for b in result.sl_buckets):
-        lines.append("_No stop-loss positions with PnL percentage data available._")
+        lines.append("_No loss positions with PnL percentage data available._")
     else:
         sl_rows = [
             [b.bucket_label, str(b.count), f"{b.sol_saved:.3f} SOL"]
@@ -420,7 +452,9 @@ def _generate_loss_report(
         wf_rows = [
             [
                 wf.wallet,
+                f"{wf.overall_sl_only_rate_pct:.0f}%",
                 f"{wf.overall_sl_rate_pct:.0f}%",
+                f"{wf.recent_sl_only_rate_pct:.0f}%",
                 f"{wf.recent_sl_rate_pct:.0f}%",
                 str(wf.recent_position_count),
                 wf.flag,
@@ -428,7 +462,7 @@ def _generate_loss_report(
             for wf in result.wallet_flags
         ]
         lines.append(_md_table(
-            ["Wallet", "Overall SL Rate", "Recent 7d SL Rate", "Recent Positions", "Flag"],
+            ["Wallet", "SL Only Rate", "SL+Rug Rate", "Recent SL Only", "Recent SL+Rug", "Recent Positions", "Flag"],
             wf_rows,
         ))
     lines.append("")
