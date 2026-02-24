@@ -256,7 +256,7 @@ class FilterBacktester:
 
     DEFAULT_THRESHOLDS: Dict[str, List[float]] = {
         "jup_score": [70, 75, 80, 85, 90],
-        "mc_at_open": [1_000_000, 2_000_000, 5_000_000, 10_000_000, 20_000_000],
+        "mc_at_open": [300_000, 500_000, 1_000_000, 3_000_000, 5_000_000],
         "token_age_days": [0, 1, 2, 3, 7],
     }
 

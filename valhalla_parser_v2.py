@@ -727,6 +727,121 @@ def _generate_loss_report(
             lines.append(f"- {rec.strip()}")
     lines.append("")
 
+    # ------------------------------------------------------------------
+    # Section 8: Per-Wallet Analysis
+    # ------------------------------------------------------------------
+    lines.append("## Per-Wallet Analysis")
+    lines.append("")
+
+    # Collect unique wallet names from all positions
+    all_wallets = sorted(set(
+        p.target_wallet for p in positions
+        if getattr(p, 'target_wallet', None) and p.target_wallet != "unknown"
+    ))
+
+    RUG_FAILSAFE_REASONS = {"rug", "rug_unknown_open", "failsafe", "failsafe_unknown_open"}
+
+    wallet_sections_written = 0
+
+    for wallet_name in all_wallets:
+        # Filter to this wallet's positions only
+        wallet_positions = [p for p in positions if p.target_wallet == wallet_name]
+
+        # Only include wallets with at least 3 closed positions (not still_open, not unknown_open)
+        closed_wallet = [
+            p for p in wallet_positions
+            if p.close_reason not in ("still_open", "unknown_open")
+        ]
+        if len(closed_wallet) < 3:
+            continue
+
+        # Skip backtest if fewer than 10 closed positions (too little data)
+        run_backtest = len(closed_wallet) >= 10
+
+        # Compute header stats
+        wins = sum(
+            1 for p in closed_wallet
+            if p.pnl_sol is not None
+            and p.pnl_sol > Decimal("0")
+            and p.close_reason not in LOSS_REASONS
+        )
+        losses = sum(1 for p in closed_wallet if p.close_reason in LOSS_REASONS)
+        rugs_failsafe = sum(1 for p in closed_wallet if p.close_reason in RUG_FAILSAFE_REASONS)
+        wallet_pnl = sum(
+            (p.pnl_sol for p in closed_wallet if p.pnl_sol is not None),
+            Decimal("0")
+        )
+
+        lines.append(f"### Wallet: {wallet_name}")
+        lines.append("")
+        lines.append(
+            f"{len(closed_wallet)} total positions | {wins} wins | {losses} losses | "
+            f"{rugs_failsafe} rugs/failsafe | PnL: {wallet_pnl:.4f} SOL"
+        )
+        lines.append("")
+
+        if run_backtest:
+            lines.append("#### Filter Backtest")
+            lines.append("")
+
+            wallet_bt_results = FilterBacktester().sweep_all(wallet_positions)
+
+            for param, bt_rows in wallet_bt_results.items():
+                lines.append(f"**{PARAM_LABELS.get(param, param)}**")
+                lines.append("")
+                if not bt_rows:
+                    lines.append("_No data._")
+                    lines.append("")
+                    continue
+
+                # Find sweet spot: row with highest net_sol_impact > 0
+                best_idx = None
+                best_impact = Decimal("0")
+                for i, brow in enumerate(bt_rows):
+                    if brow.net_sol_impact > best_impact:
+                        best_impact = brow.net_sol_impact
+                        best_idx = i
+
+                table_rows = []
+                for i, brow in enumerate(bt_rows):
+                    if param == "mc_at_open":
+                        threshold_str = _fmt_mc(brow.threshold)
+                    else:
+                        threshold_str = (
+                            f"{brow.threshold:.0f}"
+                            if brow.threshold == int(brow.threshold)
+                            else f"{brow.threshold}"
+                        )
+
+                    net_str = f"{brow.net_sol_impact:+.4f} SOL"
+                    marker = " <- sweet spot" if i == best_idx else ""
+                    table_rows.append([
+                        f">= {threshold_str}",
+                        str(brow.wins_kept),
+                        str(brow.wins_excluded),
+                        str(brow.losses_avoided),
+                        str(brow.losses_kept),
+                        net_str + marker,
+                    ])
+
+                lines.append(_md_table(
+                    ["Threshold", "Wins Kept", "Wins Excl.", "Losses Avoided", "Losses Kept", "Net SOL Impact"],
+                    table_rows,
+                ))
+                lines.append("")
+        else:
+            lines.append(
+                f"_Filter backtest requires at least 10 closed positions "
+                f"(this wallet has {len(closed_wallet)})._"
+            )
+            lines.append("")
+
+        wallet_sections_written += 1
+
+    if wallet_sections_written == 0:
+        lines.append("_No wallets with sufficient data for per-wallet analysis._")
+        lines.append("")
+
     # Write file
     with open(output_path, 'w', encoding='utf-8') as f:
         f.write("\n".join(lines))
