@@ -266,6 +266,9 @@ class MatchedPosition:
     datetime_close: str = ""    # ISO 8601: "2026-02-12T15:08:00" or "T15:08:00"
     target_wallet_address: Optional[str] = field(default=None)   # NEW: full Solana address from open event
     target_tx_signature: Optional[str] = field(default=None)     # NEW: first target tx signature from open event
+    source_wallet_hold_min: Optional[int] = field(default=None)  # Phase C: source wallet hold duration in minutes
+    source_wallet_pnl_pct: Optional[Decimal] = field(default=None)  # Phase C: source wallet PnL %
+    source_wallet_scenario: Optional[str] = field(default=None)  # Phase C: scenario classification
 
 
 @dataclass

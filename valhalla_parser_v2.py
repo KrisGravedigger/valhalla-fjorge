@@ -561,6 +561,8 @@ def main():
                        help='Filter --backtest to a specific wallet alias')
     parser.add_argument('--no-loss-analysis', action='store_true',
                        help='Skip loss analysis report generation')
+    parser.add_argument('--analyze-source', action='store_true',
+                       help='Analyze source wallet PnL for stop-loss positions (requires Phase A data)')
 
     args = parser.parse_args()
 
@@ -902,6 +904,26 @@ def main():
         matched_positions, unmatched_opens = merge_with_existing_csv(
             matched_positions, unmatched_opens, str(positions_csv)
         )
+
+    # Step 5.7: Source wallet analysis (optional, requires Phase A data)
+    if args.analyze_source:
+        print(f"\nAnalyzing source wallet positions...")
+        from valhalla.source_wallet_analyzer import SourceWalletAnalyzer
+        analyzer_rpc = SolanaRpcClient(args.rpc_url)
+        analyzer = SourceWalletAnalyzer(analyzer_rpc, cache)
+        source_results = analyzer.analyze_batch(matched_positions)
+        # Apply results back to matched_positions
+        results_by_id = {r.position_id: r for r in source_results}
+        updated_count = 0
+        for pos in matched_positions:
+            result = results_by_id.get(pos.position_id)
+            if result and not result.error:
+                pos.source_wallet_hold_min = result.source_hold_min
+                pos.source_wallet_pnl_pct = result.source_pnl_pct
+                pos.source_wallet_scenario = result.scenario
+                updated_count += 1
+        cache.save()
+        print(f"  Updated {updated_count} position(s) with source wallet data")
 
     # Step 6: Generate CSVs
 
