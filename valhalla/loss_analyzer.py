@@ -26,6 +26,9 @@ LOSS_REASONS = {
     "stop_loss_unknown_open",
 }
 
+# Only pure stop-loss exits (no rug/failsafe).
+SL_ONLY_REASONS = {"stop_loss", "stop_loss_unknown_open"}
+
 
 # ---------------------------------------------------------------------------
 # Result dataclasses
@@ -34,12 +37,15 @@ LOSS_REASONS = {
 @dataclass
 class RiskProfileRow:
     """Metric comparison: stop-loss group vs all closed positions."""
-    metric: str                 # "jup_score", "mc_at_open", "token_age_days"
+    metric: str                 # "jup_score", "mc_at_open", "token_age_hours"
     sl_avg: Optional[float]
     all_avg: Optional[float]
     diff_pct: Optional[float]   # (sl_avg - all_avg) / all_avg * 100
     sl_count: int               # positions with valid data in stop-loss group
     all_count: int              # positions with valid data in all group
+    sl_rug_avg: Optional[float]             # avg for SL+Rug/Failsafe combined group
+    sl_rug_count: int                       # positions with valid data in combined group
+    sl_rug_diff_pct: Optional[float]        # (sl_rug_avg - all_avg) / all_avg * 100
 
 
 @dataclass
@@ -68,10 +74,12 @@ class WalletFlag:
     """Per-wallet stop-loss trend flag."""
     wallet: str
     overall_sl_rate_pct: float
-    recent_sl_rate_pct: float   # last 7 days
+    recent_sl_rate_pct: float       # last 7 days (SL+Rug/Failsafe combined)
     recent_position_count: int
-    flag: str                   # "deteriorating" | "ok" | "insufficient_data"
-    message: str                # e.g. "stop-loss rate 7d = 45% vs avg 18%"
+    flag: str                       # "deteriorating" | "ok" | "insufficient_data"
+    message: str                    # e.g. "stop-loss rate 7d = 45% vs avg 18%"
+    overall_sl_only_rate_pct: float = 0.0   # SL-only (no rug/failsafe)
+    recent_sl_only_rate_pct: float = 0.0    # SL-only in last 7 days
 
 
 @dataclass
@@ -85,7 +93,8 @@ class LossAnalysisResult:
     loss_pnl_sol: Decimal
     risk_profile: List[RiskProfileRow]
     backtest_results: Dict[str, List[BacktestRow]]   # param_name -> rows
-    sl_buckets: List[SLBucketRow]
+    sl_buckets: List[SLBucketRow]                    # all losses (SL+Rug/Failsafe)
+    sl_buckets_sl_only: List[SLBucketRow]            # SL-only exits (without rugs)
     wallet_flags: List[WalletFlag]
 
 
@@ -100,14 +109,14 @@ def _get_metric_value(pos: MatchedPosition, metric: str) -> Optional[float]:
     Missing is defined as:
       - jup_score == 0
       - mc_at_open == 0.0
-      - token_age_days is None
+      - token_age_hours: token_age_hours is None
     """
     if metric == "jup_score":
         return float(pos.jup_score) if pos.jup_score != 0 else None
     elif metric == "mc_at_open":
         return pos.mc_at_open if pos.mc_at_open != 0.0 else None
-    elif metric == "token_age_days":
-        return float(pos.token_age_days) if pos.token_age_days is not None else None
+    elif metric == "token_age_hours":
+        return float(pos.token_age_hours) if pos.token_age_hours is not None else None
     return None
 
 
@@ -136,11 +145,14 @@ class LossAnalyzer:
         # Exclude still_open from closed analysis
         closed = [p for p in positions if p.close_reason != "still_open"]
 
-        # Loss positions (by LOSS_REASONS)
+        # Loss positions (by LOSS_REASONS = SL+Rug/Failsafe combined)
         loss_positions = [p for p in closed if p.close_reason in LOSS_REASONS]
 
-        # Stop-loss only (for risk profile comparison)
-        stop_loss_only = [p for p in closed if p.close_reason == "stop_loss"]
+        # Stop-loss only (no rug/failsafe)
+        stop_loss_only = [p for p in closed if p.close_reason in SL_ONLY_REASONS]
+
+        # SL+Rug/Failsafe combined group (= LOSS_REASONS)
+        sl_rug_positions = [p for p in closed if p.close_reason in LOSS_REASONS]
 
         # PnL sums (only where pnl_sol is not None)
         total_pnl_sol = sum(
@@ -153,9 +165,10 @@ class LossAnalyzer:
         )
 
         # Sub-analyses
-        risk_profile = self._risk_profile(stop_loss_only, closed)
+        risk_profile = self._risk_profile(stop_loss_only, sl_rug_positions, closed)
         backtest_results = FilterBacktester().sweep_all(positions)
         sl_buckets = StopLossLevelAnalyzer().analyze(positions)
+        sl_buckets_sl_only = StopLossLevelAnalyzer().analyze(positions, reasons=SL_ONLY_REASONS)
         wallet_flags = WalletTrendAnalyzer().analyze(positions)
 
         return LossAnalysisResult(
@@ -168,38 +181,62 @@ class LossAnalyzer:
             risk_profile=risk_profile,
             backtest_results=backtest_results,
             sl_buckets=sl_buckets,
+            sl_buckets_sl_only=sl_buckets_sl_only,
             wallet_flags=wallet_flags,
         )
 
     def _risk_profile(
         self,
         stop_loss_positions: List[MatchedPosition],
+        sl_rug_positions: List[MatchedPosition],
         all_closed: List[MatchedPosition],
     ) -> List[RiskProfileRow]:
         """
-        For each metric, compute averages for the stop-loss group and all closed positions.
+        For each metric, compute averages for the SL-only group, SL+Rug/Failsafe group,
+        and profitable trades only (pnl_sol > 0 and close_reason not in LOSS_REASONS).
 
-        stop_loss_positions: positions where close_reason == "stop_loss" only.
-        all_closed: all non-still_open positions.
+        stop_loss_positions: positions where close_reason is in SL_ONLY_REASONS.
+        sl_rug_positions: positions where close_reason is in LOSS_REASONS (combined).
+        all_closed: all non-still_open positions. Used only to derive profitable subset.
+
+        The comparison baseline is profitable positions only, not all closed positions.
+        all_count and all_avg in RiskProfileRow refer to profitable positions.
         """
+        # Compute profitable-only baseline (pnl_sol > 0 and not a loss)
+        profitable = [
+            p for p in all_closed
+            if p.pnl_sol is not None
+            and p.pnl_sol > Decimal("0")
+            and p.close_reason not in LOSS_REASONS
+        ]
+
         rows: List[RiskProfileRow] = []
 
-        for metric in ["jup_score", "mc_at_open", "token_age_days"]:
+        for metric in ["jup_score", "mc_at_open", "token_age_hours"]:
             sl_values = [
                 v for p in stop_loss_positions
                 if (v := _get_metric_value(p, metric)) is not None
             ]
+            sl_rug_values = [
+                v for p in sl_rug_positions
+                if (v := _get_metric_value(p, metric)) is not None
+            ]
             all_values = [
-                v for p in all_closed
+                v for p in profitable
                 if (v := _get_metric_value(p, metric)) is not None
             ]
 
             sl_avg: Optional[float] = sum(sl_values) / len(sl_values) if sl_values else None
+            sl_rug_avg: Optional[float] = sum(sl_rug_values) / len(sl_rug_values) if sl_rug_values else None
             all_avg: Optional[float] = sum(all_values) / len(all_values) if all_values else None
 
             diff_pct: Optional[float] = None
             if sl_avg is not None and all_avg is not None and all_avg != 0.0:
                 diff_pct = (sl_avg - all_avg) / all_avg * 100.0
+
+            sl_rug_diff_pct: Optional[float] = None
+            if sl_rug_avg is not None and all_avg is not None and all_avg != 0.0:
+                sl_rug_diff_pct = (sl_rug_avg - all_avg) / all_avg * 100.0
 
             rows.append(RiskProfileRow(
                 metric=metric,
@@ -208,6 +245,9 @@ class LossAnalyzer:
                 diff_pct=diff_pct,
                 sl_count=len(sl_values),
                 all_count=len(all_values),
+                sl_rug_avg=sl_rug_avg,
+                sl_rug_count=len(sl_rug_values),
+                sl_rug_diff_pct=sl_rug_diff_pct,
             ))
 
         return rows
@@ -227,8 +267,8 @@ class FilterBacktester:
 
     DEFAULT_THRESHOLDS: Dict[str, List[float]] = {
         "jup_score": [70, 75, 80, 85, 90],
-        "mc_at_open": [1_000_000, 2_000_000, 5_000_000, 10_000_000, 20_000_000],
-        "token_age_days": [0, 1, 2, 3, 7],
+        "mc_at_open": [300_000, 500_000, 1_000_000, 3_000_000, 5_000_000],
+        "token_age_hours": [1, 2, 3, 4, 5, 6, 8, 12, 24, 48],
     }
 
     def sweep(
@@ -244,7 +284,7 @@ class FilterBacktester:
 
         Args:
             positions: Full position list.
-            param: One of "jup_score", "mc_at_open", "token_age_days".
+            param: One of "jup_score", "mc_at_open", "token_age_hours".
             thresholds: List of threshold values to test. Defaults to DEFAULT_THRESHOLDS[param].
             direction: "min" (value >= threshold passes) or "max" (value <= threshold passes).
             wallet: If given, restrict analysis to this wallet only.
@@ -336,13 +376,44 @@ class FilterBacktester:
         """
         Run sweep() for all three default parameters.
 
+        jup_score thresholds are computed dynamically from data (ceil5(min) to 100, step 5).
+        Other parameters use DEFAULT_THRESHOLDS as-is.
+
         Returns:
             Dict mapping param name to list of BacktestRow.
         """
-        return {
-            param: self.sweep(positions, param, wallet=wallet)
-            for param in self.DEFAULT_THRESHOLDS
-        }
+        results = {}
+        for param in self.DEFAULT_THRESHOLDS:
+            if param == "jup_score":
+                thresholds = self._jup_score_thresholds(positions, wallet)
+            else:
+                thresholds = self.DEFAULT_THRESHOLDS[param]
+            results[param] = self.sweep(positions, param, thresholds=thresholds, wallet=wallet)
+        return results
+
+    def _jup_score_thresholds(
+        self,
+        positions: List[MatchedPosition],
+        wallet: Optional[str] = None,
+    ) -> List[float]:
+        """
+        Compute jup_score thresholds dynamically: from ceil5(min) to 100, step 5.
+
+        Falls back to DEFAULT_THRESHOLDS["jup_score"] if no valid scores are found.
+        """
+        import math
+        filtered = [
+            p for p in positions
+            if p.close_reason not in ("still_open", "unknown_open")
+            and (wallet is None or p.target_wallet == wallet)
+        ]
+        scores = [p.jup_score for p in filtered if p.jup_score and p.jup_score > 0]
+        if not scores:
+            return self.DEFAULT_THRESHOLDS["jup_score"]
+        min_score = min(scores)
+        # Round up to nearest 5
+        start = math.ceil(min_score / 5) * 5
+        return list(range(start, 101, 5))
 
 
 # ---------------------------------------------------------------------------
@@ -359,20 +430,24 @@ class StopLossLevelAnalyzer:
 
     BUCKETS = [-3, -5, -8, -10, -12, -15, -20]  # percentages (negative)
 
-    def analyze(self, positions: List[MatchedPosition]) -> List[SLBucketRow]:
+    def analyze(self, positions: List[MatchedPosition], reasons=None) -> List[SLBucketRow]:
         """
         Analyze stop-loss depth distribution.
 
         Args:
             positions: Full position list.
+            reasons: Set of close_reason values to include. Defaults to LOSS_REASONS.
 
         Returns:
             One SLBucketRow per bucket level.
         """
+        if reasons is None:
+            reasons = LOSS_REASONS
+
         # Only loss positions with pnl_pct available
         loss_with_pct = [
             p for p in positions
-            if p.close_reason in LOSS_REASONS
+            if p.close_reason in reasons
             and p.pnl_pct is not None
         ]
 
@@ -474,6 +549,10 @@ class WalletTrendAnalyzer:
             loss_count = sum(1 for p in wallet_positions if p.close_reason in LOSS_REASONS)
             overall_sl_rate = loss_count / total_count if total_count > 0 else 0.0
 
+            # SL-only rate (no rug/failsafe)
+            sl_only_count = sum(1 for p in wallet_positions if p.close_reason in SL_ONLY_REASONS)
+            overall_sl_only_rate = sl_only_count / total_count if total_count > 0 else 0.0
+
             # Recent positions: datetime_close within RECENT_DAYS of reference_date
             recent_positions = [
                 p for p in wallet_positions
@@ -485,6 +564,14 @@ class WalletTrendAnalyzer:
             )
             recent_sl_rate = (
                 recent_loss_count / recent_count if recent_count > 0 else 0.0
+            )
+
+            # Recent SL-only rate
+            recent_sl_only_count = sum(
+                1 for p in recent_positions if p.close_reason in SL_ONLY_REASONS
+            )
+            recent_sl_only_rate = (
+                recent_sl_only_count / recent_count if recent_count > 0 else 0.0
             )
 
             # Determine flag
@@ -516,6 +603,8 @@ class WalletTrendAnalyzer:
                 recent_position_count=recent_count,
                 flag=flag,
                 message=message,
+                overall_sl_only_rate_pct=overall_sl_only_rate * 100.0,
+                recent_sl_only_rate_pct=recent_sl_only_rate * 100.0,
             )
 
             if include_all or flag == "deteriorating":

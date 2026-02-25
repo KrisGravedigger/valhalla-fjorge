@@ -17,7 +17,7 @@ from datetime import datetime
 from decimal import Decimal
 
 # Import from valhalla package
-from valhalla.models import extract_date_from_filename, MeteoraPnlResult
+from valhalla.models import extract_date_from_filename, MeteoraPnlResult, parse_iso_datetime
 from valhalla.readers import PlainTextReader, HtmlReader, detect_input_format
 from valhalla.event_parser import EventParser
 from valhalla.solana_rpc import AddressCache, SolanaRpcClient, PositionResolver
@@ -208,6 +208,327 @@ def _recover_insufficient_balance_history(output_dir: str) -> None:
 # Loss analysis helpers
 # ---------------------------------------------------------------------------
 
+
+def _generate_wallet_recommendations(positions: List) -> List[str]:
+    """
+    Analyze per-wallet daily data and return recommendation lines.
+
+    Rules:
+      A — "Verify or change tracked wallet":
+          avg positions/day < 3 OR any single day has >= 2 loss events (rug/SL/failsafe)
+      B — "Investigate underperformance":
+          wallet has Daily PnL% ROI < 0.02% for >= 3 consecutive days
+      C — "Consider increasing tracking level":
+          wallet has >= 3 consecutive days where daily PnL SOL < portfolio avg SOL
+          AND daily PnL% ROI > portfolio avg % ROI
+
+    Args:
+        positions: Full list of positions (all close_reasons).
+
+    Returns:
+        List of human-readable recommendation strings.
+        Empty list if no recommendations.
+    """
+    from collections import defaultdict
+    from datetime import date, timedelta
+
+    LOSS_R = {
+        "stop_loss", "rug", "rug_unknown_open",
+        "failsafe", "failsafe_unknown_open",
+        "stop_loss_unknown_open",
+    }
+
+    # Only closed positions with valid datetime_close and pnl_sol
+    closed = [
+        p for p in positions
+        if p.close_reason != "still_open"
+        and p.pnl_sol is not None
+        and getattr(p, 'datetime_close', None)
+        and p.datetime_close
+    ]
+
+    if not closed:
+        return []
+
+    # Compute reference date (most recent close) and 3-day cutoff
+    all_close_dates = []
+    for pos in closed:
+        dt = parse_iso_datetime(pos.datetime_close)
+        if dt is not None:
+            all_close_dates.append(dt.date())
+
+    if not all_close_dates:
+        return []
+
+    reference_date = max(all_close_dates)
+    cutoff_3d = reference_date - timedelta(days=3)
+
+    # Build: wallet -> date -> list of positions
+    daily_by_wallet: Dict[str, Dict[date, List]] = defaultdict(lambda: defaultdict(list))
+    for pos in closed:
+        if getattr(pos, 'target_wallet', None) in (None, 'unknown'):
+            continue
+        dt = parse_iso_datetime(pos.datetime_close)
+        if dt is None:
+            continue
+        daily_by_wallet[pos.target_wallet][dt.date()].append(pos)
+
+    if not daily_by_wallet:
+        return []
+
+    # Compute portfolio averages per date
+    # portfolio_avg_sol[d] = mean of all wallets' daily pnl_sol on date d
+    # portfolio_avg_pct[d] = mean of all wallets' daily pnl_pct on date d (wallets with deployed > 0)
+    all_dates: set = set()
+    for wallet_days in daily_by_wallet.values():
+        all_dates.update(wallet_days.keys())
+
+    portfolio_avg_sol: Dict[date, float] = {}
+    portfolio_avg_pct: Dict[date, float] = {}
+
+    for d in all_dates:
+        sol_vals = []
+        pct_vals = []
+        for wallet_days in daily_by_wallet.values():
+            day_positions = wallet_days.get(d, [])
+            if not day_positions:
+                continue
+            day_sol = float(sum(p.pnl_sol for p in day_positions if p.pnl_sol is not None))
+            sol_vals.append(day_sol)
+            day_deployed = sum(
+                float(p.sol_deployed) for p in day_positions
+                if getattr(p, 'sol_deployed', None) is not None
+            )
+            if day_deployed > 0:
+                day_pct = day_sol / day_deployed * 100.0
+                pct_vals.append(day_pct)
+        if sol_vals:
+            portfolio_avg_sol[d] = sum(sol_vals) / len(sol_vals)
+        if pct_vals:
+            portfolio_avg_pct[d] = sum(pct_vals) / len(pct_vals)
+
+    recommendations: List[str] = []
+
+    for wallet, wallet_days in daily_by_wallet.items():
+        sorted_dates = sorted(wallet_days.keys())
+        wallet_recs: List[str] = []
+
+        # ----------------------------------------------------------------
+        # Rule A: avg positions/day < 3 (over all history) OR any day
+        #         within the recent 3-day window with >= 2 loss events
+        # ----------------------------------------------------------------
+        total_positions_count = sum(len(wallet_days[d]) for d in sorted_dates)
+        num_days = len(sorted_dates)
+        avg_per_day = total_positions_count / num_days if num_days > 0 else 0.0
+
+        rule_a_reasons = []
+        if avg_per_day < 3:
+            rule_a_reasons.append(f"avg {avg_per_day:.1f} pos/day")
+
+        # Only flag days within the 3-day window
+        for d in sorted_dates:
+            if d < cutoff_3d:
+                continue
+            loss_count_day = sum(
+                1 for p in wallet_days[d] if p.close_reason in LOSS_R
+            )
+            if loss_count_day >= 2:
+                rule_a_reasons.append(f"2+ losses on {d}")
+
+        if rule_a_reasons:
+            reason_str = ", ".join(rule_a_reasons)
+            wallet_recs.append(
+                f"{wallet}: Verify or change tracked wallet ({reason_str})"
+            )
+
+        # ----------------------------------------------------------------
+        # Rule B: Daily PnL% ROI < 0.02% for >= 3 consecutive days
+        # ----------------------------------------------------------------
+        consec_b = 0
+        b_start: Optional[date] = None
+        b_end: Optional[date] = None
+        best_b_streak = 0
+        best_b_start: Optional[date] = None
+        best_b_end: Optional[date] = None
+
+        for d in sorted_dates:
+            day_positions = wallet_days[d]
+            day_deployed = sum(
+                float(p.sol_deployed) for p in day_positions
+                if getattr(p, 'sol_deployed', None) is not None
+            )
+            if day_deployed <= 0:
+                # Reset streak — no deployed means can't compute ROI
+                consec_b = 0
+                b_start = None
+                b_end = None
+                continue
+
+            day_sol = float(sum(p.pnl_sol for p in day_positions if p.pnl_sol is not None))
+            day_pct = day_sol / day_deployed * 100.0
+
+            if day_pct < 0.02:
+                if consec_b == 0:
+                    b_start = d
+                b_end = d
+                consec_b += 1
+                if consec_b > best_b_streak:
+                    best_b_streak = consec_b
+                    best_b_start = b_start
+                    best_b_end = b_end
+            else:
+                consec_b = 0
+                b_start = None
+                b_end = None
+
+        # Only flag if the streak ends within the 3-day window
+        if best_b_streak >= 3 and best_b_start and best_b_end and best_b_end >= cutoff_3d:
+            wallet_recs.append(
+                f"{wallet}: Investigate underperformance "
+                f"(Daily ROI < 0.02% for {best_b_streak} consecutive days: "
+                f"{best_b_start} to {best_b_end})"
+            )
+
+        # ----------------------------------------------------------------
+        # Rule C: >= 3 consecutive days where daily PnL SOL < portfolio avg SOL
+        #         AND daily PnL% ROI > portfolio avg % ROI
+        # ----------------------------------------------------------------
+        consec_c = 0
+        c_start: Optional[date] = None
+        c_end: Optional[date] = None
+        best_c_streak = 0
+        best_c_start: Optional[date] = None
+        best_c_end: Optional[date] = None
+
+        for d in sorted_dates:
+            if d not in portfolio_avg_sol or d not in portfolio_avg_pct:
+                consec_c = 0
+                c_start = None
+                c_end = None
+                continue
+
+            day_positions = wallet_days[d]
+            day_sol = float(sum(p.pnl_sol for p in day_positions if p.pnl_sol is not None))
+            day_deployed = sum(
+                float(p.sol_deployed) for p in day_positions
+                if getattr(p, 'sol_deployed', None) is not None
+            )
+
+            if day_deployed <= 0:
+                consec_c = 0
+                c_start = None
+                c_end = None
+                continue
+
+            day_pct = day_sol / day_deployed * 100.0
+            port_sol = portfolio_avg_sol[d]
+            port_pct = portfolio_avg_pct[d]
+
+            if day_sol < port_sol and day_pct > port_pct:
+                if consec_c == 0:
+                    c_start = d
+                c_end = d
+                consec_c += 1
+                if consec_c > best_c_streak:
+                    best_c_streak = consec_c
+                    best_c_start = c_start
+                    best_c_end = c_end
+            else:
+                consec_c = 0
+                c_start = None
+                c_end = None
+
+        # Only flag if the streak ends within the 3-day window
+        if best_c_streak >= 3 and best_c_start and best_c_end and best_c_end >= cutoff_3d:
+            wallet_recs.append(
+                f"{wallet}: Consider increasing tracking level "
+                f"(good ROI% but low absolute SOL for {best_c_streak} consecutive days: "
+                f"{best_c_start} to {best_c_end})"
+            )
+
+        recommendations.extend(wallet_recs)
+
+    # ----------------------------------------------------------------
+    # Rule D: sweet spot not at lowest threshold (per wallet + aggregate)
+    # ----------------------------------------------------------------
+    from valhalla.loss_analyzer import FilterBacktester as _FilterBacktester
+
+    def _fmt_threshold_d(param: str, threshold: float) -> str:
+        """Format threshold for Rule D messages."""
+        if param == "mc_at_open":
+            if threshold >= 1_000_000:
+                return f"${threshold / 1_000_000:.1f}M"
+            elif threshold >= 1_000:
+                return f"${threshold / 1_000:.0f}K"
+            return f"${threshold:.0f}"
+        elif param == "token_age_hours":
+            if threshold < 24:
+                return f"{threshold:.0f}h"
+            return f"{int(threshold // 24)}d"
+        else:
+            return f"{threshold:.0f}" if threshold == int(threshold) else str(threshold)
+
+    PARAM_DISPLAY_D = {
+        "jup_score": "jup_score",
+        "mc_at_open": "mc_at_open",
+        "token_age_hours": "token_age_hours",
+    }
+
+    def _run_rule_d(label: str, rule_d_positions: List) -> List[str]:
+        """Run Rule D for a given set of positions; label is wallet name or 'Portfolio'."""
+        rule_d_recs: List[str] = []
+        bt = _FilterBacktester()
+        bt_results = bt.sweep_all(rule_d_positions)
+        for param, bt_rows in bt_results.items():
+            if not bt_rows or len(bt_rows) < 2:
+                continue
+            # Skip params where all net_sol_impact <= 0
+            if all(r.net_sol_impact <= Decimal("0") for r in bt_rows):
+                continue
+            # Find sweet spot (highest positive net_sol_impact)
+            best_idx = None
+            best_impact = Decimal("0")
+            for i, brow in enumerate(bt_rows):
+                if brow.net_sol_impact > best_impact:
+                    best_impact = brow.net_sol_impact
+                    best_idx = i
+            if best_idx is None or best_idx == 0:
+                continue  # sweet spot is already at lowest threshold — no recommendation
+            sweet_threshold = bt_rows[best_idx].threshold
+            min_threshold = bt_rows[0].threshold
+            param_display = PARAM_DISPLAY_D.get(param, param)
+            rule_d_recs.append(
+                f"{label}: Consider tightening {param_display} filter — "
+                f"sweet spot at >= {_fmt_threshold_d(param, sweet_threshold)}, "
+                f"not the minimum (>= {_fmt_threshold_d(param, min_threshold)}). "
+                f"Net gain: +{best_impact:.3f} SOL"
+            )
+        return rule_d_recs
+
+    # Per-wallet Rule D (10+ closed positions)
+    for wallet in daily_by_wallet:
+        wallet_all_positions = [
+            p for p in positions
+            if getattr(p, 'target_wallet', None) == wallet
+        ]
+        closed_wallet_d = [
+            p for p in wallet_all_positions
+            if p.close_reason not in ("still_open", "unknown_open")
+        ]
+        if len(closed_wallet_d) < 10:
+            continue
+        recommendations.extend(_run_rule_d(wallet, wallet_all_positions))
+
+    # Aggregate Rule D (Portfolio)
+    all_closed_d = [
+        p for p in positions
+        if p.close_reason not in ("still_open", "unknown_open")
+    ]
+    if len(all_closed_d) >= 10:
+        recommendations.extend(_run_rule_d("Portfolio", positions))
+
+    return recommendations
+
 def _fmt_sol(val: Optional[Decimal]) -> str:
     """Format SOL value or return 'N/A'."""
     return f"{val:.4f} SOL" if val is not None else "N/A"
@@ -294,9 +615,9 @@ def _generate_loss_report(
     # ------------------------------------------------------------------
     # Section 2: Risk Profile
     # ------------------------------------------------------------------
-    lines.append("## Risk Profile: Stop-Loss vs All Trades")
+    lines.append("## Risk Profile: Stop-Loss vs Profitable Trades")
     lines.append("")
-    lines.append("Compares average token quality metrics for stop-loss exits vs all closed trades.")
+    lines.append("Compares average token quality metrics for loss groups vs profitable trades only.")
     lines.append("Lower quality metrics in the stop-loss group may indicate avoidable entries.")
     lines.append("")
 
@@ -308,27 +629,43 @@ def _generate_loss_report(
             metric_label = {
                 "jup_score": "jup_score",
                 "mc_at_open": "mc_at_open",
-                "token_age_days": "token_age_days",
+                "token_age_hours": "token_age_hours",
             }.get(row.metric, row.metric)
+
+            def _fmt_age_hours(hours: float) -> str:
+                return f"{hours:.0f}h" if hours < 24 else f"{hours / 24:.0f}d"
 
             if row.metric == "mc_at_open":
                 sl_val = _fmt_mc(row.sl_avg) if row.sl_avg is not None else "N/A"
+                sl_rug_val = _fmt_mc(row.sl_rug_avg) if row.sl_rug_avg is not None else "N/A"
                 all_val = _fmt_mc(row.all_avg) if row.all_avg is not None else "N/A"
-            elif row.metric == "token_age_days":
-                sl_val = f"{row.sl_avg:.1f}d" if row.sl_avg is not None else "N/A"
-                all_val = f"{row.all_avg:.1f}d" if row.all_avg is not None else "N/A"
+            elif row.metric == "token_age_hours":
+                sl_val = _fmt_age_hours(row.sl_avg) if row.sl_avg is not None else "N/A"
+                sl_rug_val = _fmt_age_hours(row.sl_rug_avg) if row.sl_rug_avg is not None else "N/A"
+                all_val = _fmt_age_hours(row.all_avg) if row.all_avg is not None else "N/A"
             else:
                 sl_val = f"{row.sl_avg:.0f}" if row.sl_avg is not None else "N/A"
+                sl_rug_val = f"{row.sl_rug_avg:.0f}" if row.sl_rug_avg is not None else "N/A"
                 all_val = f"{row.all_avg:.0f}" if row.all_avg is not None else "N/A"
 
-            diff_str = _fmt_pct(row.diff_pct)
-            note = ""
+            sl_note = ""
             if row.sl_count < 3:
-                note = f" (n={row.sl_count}, insufficient)"
-            rp_rows.append([metric_label + note, sl_val, all_val, diff_str])
+                sl_note = f" (n={row.sl_count}, insufficient)"
+            sl_rug_note = ""
+            if row.sl_rug_count < 3:
+                sl_rug_note = f" (n={row.sl_rug_count}, insufficient)"
+
+            rp_rows.append([
+                metric_label,
+                sl_val + sl_note,
+                sl_rug_val + sl_rug_note,
+                all_val,
+                _fmt_pct(row.diff_pct),
+                _fmt_pct(row.sl_rug_diff_pct),
+            ])
 
         lines.append(_md_table(
-            ["Metric", "Stop-Loss Avg", "All Trades Avg", "Difference"],
+            ["Metric", "SL Only Avg", "SL+Rug/FS Avg", "Profitable Avg", "SL Diff", "SL+Rug Diff"],
             rp_rows,
         ))
     lines.append("")
@@ -344,8 +681,14 @@ def _generate_loss_report(
     PARAM_LABELS = {
         "jup_score": "jup_score (minimum threshold)",
         "mc_at_open": "mc_at_open (minimum threshold)",
-        "token_age_days": "token_age_days (minimum threshold)",
+        "token_age_hours": "token_age_hours (minimum threshold)",
     }
+
+    def _fmt_age_threshold(threshold: float) -> str:
+        """Format token_age_hours threshold: hours < 24 as Xh, hours >= 24 as Xd."""
+        if threshold < 24:
+            return f"{threshold:.0f}h"
+        return f"{threshold / 24:.0f}d"
 
     for param, bt_rows in result.backtest_results.items():
         lines.append(f"### {PARAM_LABELS.get(param, param)}")
@@ -367,6 +710,8 @@ def _generate_loss_report(
         for i, brow in enumerate(bt_rows):
             if param == "mc_at_open":
                 threshold_str = _fmt_mc(brow.threshold)
+            elif param == "token_age_hours":
+                threshold_str = _fmt_age_threshold(brow.threshold)
             else:
                 threshold_str = f"{brow.threshold:.0f}" if brow.threshold == int(brow.threshold) else f"{brow.threshold}"
 
@@ -392,11 +737,30 @@ def _generate_loss_report(
     # ------------------------------------------------------------------
     lines.append("## Stop-Loss Level Distribution")
     lines.append("")
-    lines.append("If your stop-loss had been set tighter:")
+    lines.append("If your stop-loss had been set tighter, how many positions would have been saved?")
     lines.append("")
 
+    # Sub-table A: SL exits only
+    lines.append("**SL exits only** (stop_loss / stop_loss_unknown_open):")
+    lines.append("")
+    if not result.sl_buckets_sl_only or all(b.count == 0 for b in result.sl_buckets_sl_only):
+        lines.append("_No SL-only positions with PnL percentage data available._")
+    else:
+        sl_only_rows = [
+            [b.bucket_label, str(b.count), f"{b.sol_saved:.3f} SOL"]
+            for b in result.sl_buckets_sl_only
+        ]
+        lines.append(_md_table(
+            ["SL Level", "Positions Below", "SOL Saved vs Actual"],
+            sl_only_rows,
+        ))
+    lines.append("")
+
+    # Sub-table B: All losses (SL + Rug/Failsafe)
+    lines.append("**All losses** (SL + Rug/Failsafe):")
+    lines.append("")
     if not result.sl_buckets or all(b.count == 0 for b in result.sl_buckets):
-        lines.append("_No stop-loss positions with PnL percentage data available._")
+        lines.append("_No loss positions with PnL percentage data available._")
     else:
         sl_rows = [
             [b.bucket_label, str(b.count), f"{b.sol_saved:.3f} SOL"]
@@ -420,7 +784,9 @@ def _generate_loss_report(
         wf_rows = [
             [
                 wf.wallet,
+                f"{wf.overall_sl_only_rate_pct:.0f}%",
                 f"{wf.overall_sl_rate_pct:.0f}%",
+                f"{wf.recent_sl_only_rate_pct:.0f}%",
                 f"{wf.recent_sl_rate_pct:.0f}%",
                 str(wf.recent_position_count),
                 wf.flag,
@@ -428,34 +794,217 @@ def _generate_loss_report(
             for wf in result.wallet_flags
         ]
         lines.append(_md_table(
-            ["Wallet", "Overall SL Rate", "Recent 7d SL Rate", "Recent Positions", "Flag"],
+            ["Wallet", "SL Only Rate", "SL+Rug Rate", "Recent SL Only", "Recent SL+Rug", "Recent Positions", "Flag"],
             wf_rows,
         ))
     lines.append("")
 
     # ------------------------------------------------------------------
-    # Section 6: Source Wallet Comparison (placeholder)
+    # Section 6: Source Wallet Comparison
     # ------------------------------------------------------------------
     lines.append("## Source Wallet Comparison")
     lines.append("")
 
-    has_target_tx = any(
-        getattr(pos, 'target_tx_signature', None)
-        for pos in positions
-        if pos.close_reason in LOSS_REASONS
-    )
+    # Only consider loss positions
+    loss_positions_all = [p for p in positions if p.close_reason in LOSS_REASONS]
+    loss_total = len(loss_positions_all)
 
-    if has_target_tx:
-        tx_count = sum(
-            1 for pos in positions
-            if getattr(pos, 'target_tx_signature', None)
-            and pos.close_reason in LOSS_REASONS
-        )
-        lines.append(f"{tx_count} position(s) have target transaction signatures available.")
-        lines.append("Run `python valhalla_parser_v2.py --analyze-source` to populate source wallet comparison.")
+    # Positions with source_wallet_scenario populated
+    with_scenario = [
+        p for p in loss_positions_all
+        if getattr(p, 'source_wallet_scenario', None)
+    ]
+
+    if not with_scenario:
+        lines.append("_No source wallet data. Run `--analyze-source` to populate._")
     else:
-        lines.append("No source wallet data available. Run Phase C (source_wallet_analyzer) to enable this section.")
+        scenario_count = len(with_scenario)
+        lines.append(
+            f"Source wallet data available for {scenario_count} of {loss_total} loss positions."
+        )
+        lines.append("")
+
+        # Scenario distribution
+        from collections import Counter
+        scenario_counts: Counter = Counter()
+        for p in with_scenario:
+            scenario_counts[p.source_wallet_scenario] += 1
+
+        # Avg pnl_pct per scenario
+        scenario_pnl_pcts: dict = {}
+        for scenario in scenario_counts:
+            pcts = [
+                float(p.source_wallet_pnl_pct)
+                for p in with_scenario
+                if p.source_wallet_scenario == scenario
+                and getattr(p, 'source_wallet_pnl_pct', None) is not None
+            ]
+            if pcts:
+                scenario_pnl_pcts[scenario] = sum(pcts) / len(pcts)
+
+        scenario_order = [
+            "source_held_longer", "source_exited_early", "source_recovered",
+            "held_longer", "exited_first",  # legacy labels from old CSV
+            "both_loss", "comparable",
+            "unknown",  # legacy label from old CSV
+            "no_data", "error",
+        ]
+        dist_rows = []
+        for sc in scenario_order:
+            count = scenario_counts.get(sc, 0)
+            pct_of_total = count / scenario_count * 100.0 if scenario_count > 0 else 0.0
+            avg_pnl = scenario_pnl_pcts.get(sc)
+            avg_pnl_str = f"{avg_pnl:+.1f}%" if avg_pnl is not None else "N/A"
+            dist_rows.append([sc, str(count), f"{pct_of_total:.0f}%", avg_pnl_str])
+
+        lines.append(_md_table(
+            ["Scenario", "Count", "% of Source Data", "Avg Source PnL%"],
+            dist_rows,
+        ))
+        lines.append("")
+        lines.append("**Scenario guide:**")
+        lines.append("- `source_held_longer` / `held_longer`: source wallet stayed in the position longer and recovered — consider widening stop-loss margin or enabling non-SOL token top-up")
+        lines.append("- `source_exited_early` / `exited_first`: source wallet exited before the drop — copy lag or entry speed issue")
+        lines.append("- `source_recovered`: source wallet ended positive while bot lost — timing data unavailable to determine mechanism")
+        lines.append("- `both_loss`: both source and bot lost — likely bad luck or market conditions, not a strategy issue")
+        lines.append("- `comparable`: similar outcomes on both sides — no clear lesson from this position")
+        lines.append("- `no_data` / `no_data`: API error or missing transaction data — could not analyze")
     lines.append("")
+
+    # ------------------------------------------------------------------
+    # Section 7: Wallet Recommendations
+    # ------------------------------------------------------------------
+    lines.append("## Wallet Recommendations")
+    lines.append("")
+    recs = _generate_wallet_recommendations(positions)
+    if not recs:
+        lines.append("No recommendations at this time.")
+    else:
+        for rec in recs:
+            lines.append(f"- {rec.strip()}")
+    lines.append("")
+
+    # ------------------------------------------------------------------
+    # Section 8: Per-Wallet Analysis
+    # ------------------------------------------------------------------
+    lines.append("## Per-Wallet Analysis")
+    lines.append("")
+
+    # Collect unique wallet names from all positions
+    all_wallets = sorted(set(
+        p.target_wallet for p in positions
+        if getattr(p, 'target_wallet', None) and p.target_wallet != "unknown"
+    ))
+
+    RUG_FAILSAFE_REASONS = {"rug", "rug_unknown_open", "failsafe", "failsafe_unknown_open"}
+
+    wallet_sections_written = 0
+
+    for wallet_name in all_wallets:
+        # Filter to this wallet's positions only
+        wallet_positions = [p for p in positions if p.target_wallet == wallet_name]
+
+        # Only include wallets with at least 3 closed positions (not still_open, not unknown_open)
+        closed_wallet = [
+            p for p in wallet_positions
+            if p.close_reason not in ("still_open", "unknown_open")
+        ]
+        if len(closed_wallet) < 3:
+            continue
+
+        # Skip backtest if fewer than 10 closed positions (too little data)
+        run_backtest = len(closed_wallet) >= 10
+
+        # Compute header stats
+        WIN_THRESHOLD = Decimal("0.01")
+        LOSS_THRESHOLD = Decimal("-0.01")
+
+        TP_REASONS = {"take_profit"}
+        SL_REASONS = {"stop_loss", "stop_loss_unknown_open"}
+        RF_REASONS = {"rug", "rug_unknown_open", "failsafe", "failsafe_unknown_open"}
+
+        wins = sum(1 for p in closed_wallet if p.pnl_sol is not None and p.pnl_sol > WIN_THRESHOLD)
+        neutral = sum(1 for p in closed_wallet if p.pnl_sol is not None and LOSS_THRESHOLD <= p.pnl_sol <= WIN_THRESHOLD)
+        losses = sum(1 for p in closed_wallet if p.pnl_sol is not None and p.pnl_sol < LOSS_THRESHOLD)
+        no_pnl = sum(1 for p in closed_wallet if p.pnl_sol is None)
+        tp_count = sum(1 for p in closed_wallet if p.close_reason in TP_REASONS)
+        sl_count = sum(1 for p in closed_wallet if p.close_reason in SL_REASONS)
+        rf_count = sum(1 for p in closed_wallet if p.close_reason in RF_REASONS)
+        wallet_pnl = sum((p.pnl_sol for p in closed_wallet if p.pnl_sol is not None), Decimal("0"))
+
+        lines.append(f"### Wallet: {wallet_name}")
+        lines.append("")
+        lines.append(
+            f"{len(closed_wallet)} total positions | "
+            f"{wins} wins (>{WIN_THRESHOLD} SOL) | {neutral} neutral | {losses} losses (<{LOSS_THRESHOLD} SOL)"
+            f" | [TP: {tp_count} | SL: {sl_count} | Rug/FS: {rf_count}]"
+            f" | PnL: {wallet_pnl:.4f} SOL"
+        )
+        lines.append("")
+
+        if run_backtest:
+            lines.append("#### Filter Backtest")
+            lines.append("")
+
+            wallet_bt_results = FilterBacktester().sweep_all(wallet_positions)
+
+            for param, bt_rows in wallet_bt_results.items():
+                lines.append(f"**{PARAM_LABELS.get(param, param)}**")
+                lines.append("")
+                if not bt_rows:
+                    lines.append("_No data._")
+                    lines.append("")
+                    continue
+
+                # Find sweet spot: row with highest net_sol_impact > 0
+                best_idx = None
+                best_impact = Decimal("0")
+                for i, brow in enumerate(bt_rows):
+                    if brow.net_sol_impact > best_impact:
+                        best_impact = brow.net_sol_impact
+                        best_idx = i
+
+                table_rows = []
+                for i, brow in enumerate(bt_rows):
+                    if param == "mc_at_open":
+                        threshold_str = _fmt_mc(brow.threshold)
+                    elif param == "token_age_hours":
+                        threshold_str = _fmt_age_threshold(brow.threshold)
+                    else:
+                        threshold_str = (
+                            f"{brow.threshold:.0f}"
+                            if brow.threshold == int(brow.threshold)
+                            else f"{brow.threshold}"
+                        )
+
+                    net_str = f"{brow.net_sol_impact:+.4f} SOL"
+                    marker = " <- sweet spot" if i == best_idx else ""
+                    table_rows.append([
+                        f">= {threshold_str}",
+                        str(brow.wins_kept),
+                        str(brow.wins_excluded),
+                        str(brow.losses_avoided),
+                        str(brow.losses_kept),
+                        net_str + marker,
+                    ])
+
+                lines.append(_md_table(
+                    ["Threshold", "Wins Kept", "Wins Excl.", "Losses Avoided", "Losses Kept", "Net SOL Impact"],
+                    table_rows,
+                ))
+                lines.append("")
+        else:
+            lines.append(
+                f"_Filter backtest requires at least 10 closed positions "
+                f"(this wallet has {len(closed_wallet)})._"
+            )
+            lines.append("")
+
+        wallet_sections_written += 1
+
+    if wallet_sections_written == 0:
+        lines.append("_No wallets with sufficient data for per-wallet analysis._")
+        lines.append("")
 
     # Write file
     with open(output_path, 'w', encoding='utf-8') as f:
@@ -467,7 +1016,7 @@ def _print_backtest_table(param: str, rows: List) -> None:
     PARAM_LABELS = {
         "jup_score": "jup_score",
         "mc_at_open": "mc_at_open",
-        "token_age_days": "token_age_days",
+        "token_age_hours": "token_age_hours",
     }
     print(f"\n--- Backtest: {PARAM_LABELS.get(param, param)} ---")
 
@@ -475,11 +1024,18 @@ def _print_backtest_table(param: str, rows: List) -> None:
         print("  No data.")
         return
 
+    def _fmt_age_threshold_t(threshold: float) -> str:
+        if threshold < 24:
+            return f"{threshold:.0f}h"
+        return f"{threshold / 24:.0f}d"
+
     headers = ["Threshold", "Wins Kept", "Wins Excl.", "Losses Avoided", "Losses Kept", "Net SOL Impact"]
     table_rows = []
     for brow in rows:
         if param == "mc_at_open":
             threshold_str = _fmt_mc(brow.threshold)
+        elif param == "token_age_hours":
+            threshold_str = _fmt_age_threshold_t(brow.threshold)
         else:
             threshold_str = f"{brow.threshold:.0f}" if brow.threshold == int(brow.threshold) else f"{brow.threshold}"
 
@@ -508,9 +1064,10 @@ def _run_custom_backtest(
     PARAM_ALIASES = {
         'mc': 'mc_at_open',
         'mc_at_open': 'mc_at_open',
-        'age': 'token_age_days',
-        'token_age': 'token_age_days',
-        'token_age_days': 'token_age_days',
+        'age': 'token_age_hours',
+        'token_age': 'token_age_hours',
+        'token_age_days': 'token_age_hours',
+        'token_age_hours': 'token_age_hours',
         'jup': 'jup_score',
         'jup_score': 'jup_score',
     }
@@ -563,11 +1120,29 @@ def main():
                        help='Skip loss analysis report generation')
     parser.add_argument('--analyze-source', action='store_true',
                        help='Analyze source wallet PnL for stop-loss positions (requires Phase A data)')
+    parser.add_argument('--no-input', action='store_true',
+                       help='Skip input file processing and load from existing positions.csv. '
+                            'Use with --analyze-source to re-run source wallet analysis without new logs.')
+    parser.add_argument('--report', default='all',
+                       help='Comma-separated list of report modules to generate. '
+                            'Options: loss,per-wallet,source,charts,recommendations,all (default: all)')
 
     args = parser.parse_args()
 
-    # Auto-run save_clipboard.ps1 (skip in merge mode)
-    if not args.merge and not args.no_clipboard and not args.recover_insuf:
+    # Parse --report modules
+    report_modules = set(args.report.split(',')) if args.report != 'all' else {'all'}
+    want_all = 'all' in report_modules
+
+    # Initialize shared variables (overwritten in normal mode; used as-is in --no-input mode)
+    event_parser = EventParser()
+    matched_positions = []
+    unmatched_opens = []
+    processed_files = []
+    meteora_results: Dict[str, MeteoraPnlResult] = {}
+    meteora_failed: Dict[str, str] = {}
+
+    # Auto-run save_clipboard.ps1 (skip in merge mode and --no-input mode)
+    if not args.merge and not args.no_clipboard and not args.recover_insuf and not args.no_input:
         clipboard_script = Path('save_clipboard.ps1')
         if clipboard_script.exists():
             print("Running save_clipboard.ps1...")
@@ -597,304 +1172,311 @@ def main():
         merge_positions_csvs(args.merge, str(output_dir))
         return
 
-    # Get input files - either from args or all files in input/ folder
-    if not args.input_files:
-        input_dir = Path('input')
-        if input_dir.exists() and input_dir.is_dir():
-            # Get all .txt and .html files in input/
-            input_files = [str(f) for f in input_dir.iterdir() if f.is_file() and f.suffix in ['.txt', '.html']]
-            if not input_files:
-                parser.error("No .txt or .html files found in input/ folder")
-            print(f"Processing all files in input/ folder: {len(input_files)} file(s)")
-        else:
-            parser.error("No input files specified and input/ folder not found")
-    else:
-        input_files = args.input_files
-
-    # Determine cache file path
-    cache_file = args.cache_file if args.cache_file else str(output_dir / 'address_cache.json')
-
-    # Step 1: Read and parse all input files
-    all_messages = []
-    event_parser = EventParser()  # Will initialize per-file
-    processed_files = []  # Track successfully processed files for archiving
-
-    # Dedup: same position_id across files = same Discord message, keep first seen
-    seen_open_ids = set()
-    seen_close_ids = set()
-    seen_failsafe_ids = set()
-    seen_rug_ids = set()
-
-    for input_file in input_files:
-        # Detect format and create appropriate reader
-        print(f"\nReading Discord logs: {input_file}")
-
-        fmt = args.input_format
-        if fmt == 'auto':
-            fmt = detect_input_format(input_file)
-            print(f"  Auto-detected format: {fmt}")
-
-        if fmt == 'html':
-            reader = HtmlReader(input_file)
-        else:
-            reader = PlainTextReader(input_file)
-
-        messages = reader.read()
-        print(f"  Found {len(messages)} Valhalla messages")
-
-        # Determine date for this file - priority order:
-        # 1. Embedded in timestamps ([YYYY-MM-DDTHH:MM] format) — no base_date needed
-        # 2. Filename prefix (YYYYMMDD_*.txt)
-        # 3. In-file date header (first line)
-        # 4. User prompt if neither found
-        file_date = None
-        date_source = None
-
-        # Check if messages contain full datetime timestamps
-        has_full_timestamps = any(
-            '[' in msg.timestamp and 'T' in msg.timestamp and len(msg.timestamp) > 7
-            for msg in messages
-        )
-
-        if has_full_timestamps:
-            # Dates are embedded in timestamps — no base_date needed
-            date_source = "embedded timestamps"
-            print(f"  Dates embedded in timestamps (no base date needed)")
-        else:
-            # Try filename first
-            file_date = extract_date_from_filename(input_file)
-            if file_date:
-                date_source = "filename"
-            # Then try in-file header
-            elif reader.header_date:
-                file_date = reader.header_date
-                date_source = "in-file header"
-            # Finally, prompt user
-            else:
-                print(f"  No date found in filename or file header")
-                user_input = input(f"  Enter date for {Path(input_file).name} (YYYYMMDD): ").strip()
-                if user_input and len(user_input) == 8 and user_input.isdigit():
-                    try:
-                        year = int(user_input[0:4])
-                        month = int(user_input[4:6])
-                        day = int(user_input[6:8])
-                        datetime(year, month, day)
-                        file_date = f"{year:04d}-{month:02d}-{day:02d}"
-                        date_source = "user input"
-                    except ValueError:
-                        print(f"  Invalid date format, continuing without date")
-
-            if file_date:
-                print(f"  Date detected from {date_source}: {file_date}")
-            elif not has_full_timestamps:
-                print(f"  No date available")
-
-        # Parse events with date context
-        print(f"Parsing events (date: {file_date or 'none'})...")
-        file_parser = EventParser(base_date=file_date)
-        file_parser.parse_messages(messages)
-
-        # Merge events into main parser (deduplicate by position_id across files)
-        dedup_count = 0
-        for e in file_parser.open_events:
-            if e.position_id not in seen_open_ids:
-                seen_open_ids.add(e.position_id)
-                event_parser.open_events.append(e)
-            else:
-                dedup_count += 1
-        for e in file_parser.close_events:
-            if e.position_id not in seen_close_ids:
-                seen_close_ids.add(e.position_id)
-                event_parser.close_events.append(e)
-            else:
-                dedup_count += 1
-        for e in file_parser.failsafe_events:
-            if e.position_id not in seen_failsafe_ids:
-                seen_failsafe_ids.add(e.position_id)
-                event_parser.failsafe_events.append(e)
-            else:
-                dedup_count += 1
-        for e in file_parser.rug_events:
-            pid = e.position_id or id(e)  # rug events may lack position_id
-            if pid not in seen_rug_ids:
-                seen_rug_ids.add(pid)
-                event_parser.rug_events.append(e)
-            else:
-                dedup_count += 1
-        # Non-position events: no dedup needed
-        event_parser.skip_events.extend(file_parser.skip_events)
-        event_parser.swap_events.extend(file_parser.swap_events)
-        event_parser.add_liquidity_events.extend(file_parser.add_liquidity_events)
-        event_parser.insufficient_balance_events.extend(file_parser.insufficient_balance_events)
-        if dedup_count:
-            print(f"  Skipped {dedup_count} duplicate events (already seen in earlier file)")
-
-        # Collect per-file datetime range for archive naming
-        file_datetimes = []
-        for evt in (file_parser.open_events + file_parser.close_events +
-                    file_parser.failsafe_events + file_parser.rug_events):
-            ts = evt.timestamp  # "[HH:MM]" or "[YYYY-MM-DDTHH:MM]"
-            if not ts:
-                continue
-            if 'T' in ts:
-                # Extract "YYYY-MM-DDTHH:MM" from "[YYYY-MM-DDTHH:MM]"
-                dt_str = ts.strip('[]')
-                file_datetimes.append(dt_str)
-            elif file_date:
-                # [HH:MM] timestamp — build full datetime from file_date + time
-                time_part = ts.strip('[]')  # "HH:MM"
-                file_datetimes.append(f"{file_date}T{time_part}")
-
-        # Track for archiving
-        processed_files.append((input_file, file_date, file_datetimes))
-
-    # Step 2: Print aggregated event counts
-    print(f"\nTotal parsed events across {len(input_files)} file(s):")
-
-    print(f"  Open positions: {len(event_parser.open_events)}")
-    print(f"  Close events: {len(event_parser.close_events)}")
-    print(f"  Failsafe events: {len(event_parser.failsafe_events)}")
-    print(f"  Add liquidity events: {len(event_parser.add_liquidity_events)}")
-    print(f"  Rug events: {len(event_parser.rug_events)}")
-    print(f"  Skip events: {len(event_parser.skip_events)}")
-    print(f"  Swap events: {len(event_parser.swap_events)}")
-    print(f"  Insufficient balance events: {len(event_parser.insufficient_balance_events)}")
-
-    # Load already-complete and already-meteora position IDs from existing CSV
+    # positions_csv path (needed in both normal and --no-input mode for Step 5.6)
     positions_csv = output_dir / 'positions.csv'
-    already_complete_ids = set()   # meteora + both dates + enrichable close_reason → skip everything
-    already_meteora_ids = set()    # any meteora PnL → skip Meteora re-fetch
-    if positions_csv.exists():
-        with open(positions_csv, 'r', encoding='utf-8') as f:
-            for row in csv.DictReader(f):
-                pid = row.get('position_id', '').strip()
-                if not pid:
-                    continue
-                if row.get('pnl_source') == 'meteora':
-                    already_meteora_ids.add(pid)
-                if (row.get('pnl_source') == 'meteora'
-                        and row.get('datetime_open')
-                        and row.get('datetime_close')
-                        and row.get('close_reason') not in (
-                            'unknown_open', 'rug_unknown_open', 'failsafe_unknown_open', 'still_open',
-                            'take_profit_unknown_open', 'stop_loss_unknown_open'
-                        )):
-                    already_complete_ids.add(pid)
-        if already_complete_ids:
-            print(f"  Skipping {len(already_complete_ids)} already-complete positions")
 
-    # Step 3: Resolve addresses
-    resolved_addresses: Dict[str, str] = {}
-    cache = AddressCache(cache_file)
-
-    if not args.skip_rpc:
-        print(f"\nResolving position addresses via Solana RPC...")
-        rpc_client = SolanaRpcClient(args.rpc_url)
-        resolver = PositionResolver(cache, rpc_client)
-
-        # Collect all events with position IDs and tx signatures
-        # Check cache first - only hit RPC for positions not already cached
-        seen_pids = set()
-        events_to_resolve = []
-        cache_hits = 0
-        for event in event_parser.open_events + event_parser.close_events + event_parser.failsafe_events:
-            if event.position_id not in seen_pids:
-                if event.position_id not in already_complete_ids:
-                    seen_pids.add(event.position_id)
-                    cached_addr = cache.get(event.position_id)
-                    if cached_addr:
-                        resolved_addresses[event.position_id] = cached_addr
-                        cache_hits += 1
-                    elif event.tx_signatures:
-                        events_to_resolve.append((event.position_id, event.tx_signatures))
-
-        total = len(events_to_resolve)
-        if cache_hits:
-            print(f"  {cache_hits} positions loaded from cache, {total} to resolve via RPC")
-        for i, (pid, sigs) in enumerate(events_to_resolve, 1):
-            print(f"  Resolving {i}/{total}: {pid}...", end='', flush=True)
-            full_addr = resolver.resolve(pid, sigs)
-            if full_addr:
-                resolved_addresses[pid] = full_addr
-                print(f" OK ({full_addr[:8]}...)")
+    if not args.no_input:
+        # Get input files - either from args or all files in input/ folder
+        if not args.input_files:
+            input_dir = Path('input')
+            if input_dir.exists() and input_dir.is_dir():
+                # Get all .txt and .html files in input/
+                input_files = [str(f) for f in input_dir.iterdir() if f.is_file() and f.suffix in ['.txt', '.html']]
+                if not input_files:
+                    parser.error("No .txt or .html files found in input/ folder")
+                print(f"Processing all files in input/ folder: {len(input_files)} file(s)")
             else:
-                print(f" NOT FOUND")
+                parser.error("No input files specified and input/ folder not found")
+        else:
+            input_files = args.input_files
 
-        print(f"  Resolved {len(resolved_addresses)} addresses")
-        cache.save()
-    else:
-        print(f"\nSkipping RPC resolution (--skip-rpc)")
-        # Load from cache only
-        for event in event_parser.open_events + event_parser.close_events + event_parser.failsafe_events:
-            cached = cache.get(event.position_id)
-            if cached:
-                resolved_addresses[event.position_id] = cached
-        print(f"  Loaded {len(resolved_addresses)} addresses from cache")
+        # Determine cache file path
+        cache_file = args.cache_file if args.cache_file else str(output_dir / 'address_cache.json')
 
-    # Step 4: Calculate Meteora PnL
-    meteora_results: Dict[str, MeteoraPnlResult] = {}
-    meteora_failed: Dict[str, str] = {}  # pid -> full_addr for retry
+        # Step 1: Read and parse all input files
+        all_messages = []
 
-    if not args.skip_meteora and resolved_addresses:
-        print(f"\nFetching Meteora PnL data...")
+        # Dedup: same position_id across files = same Discord message, keep first seen
+        seen_open_ids = set()
+        seen_close_ids = set()
+        seen_failsafe_ids = set()
+        seen_rug_ids = set()
 
-        meteora_calc = MeteoraPnlCalculator()
+        for input_file in input_files:
+            # Detect format and create appropriate reader
+            print(f"\nReading Discord logs: {input_file}")
 
-        # Build closeable_ids set (only positions that will be used)
-        closeable_ids = set()
-        for e in event_parser.close_events:
-            closeable_ids.add(e.position_id)
-        for e in event_parser.rug_events:
-            if e.position_id:
-                closeable_ids.add(e.position_id)
-        for e in event_parser.failsafe_events:
-            closeable_ids.add(e.position_id)
+            fmt = args.input_format
+            if fmt == 'auto':
+                fmt = detect_input_format(input_file)
+                print(f"  Auto-detected format: {fmt}")
 
-        # Filter to only fetch closeable positions that aren't already complete or already have Meteora data
-        addresses_to_fetch = {pid: addr for pid, addr in resolved_addresses.items()
-                              if pid in closeable_ids
-                              and pid not in already_complete_ids
-                              and pid not in already_meteora_ids}
+            if fmt == 'html':
+                reader = HtmlReader(input_file)
+            else:
+                reader = PlainTextReader(input_file)
 
-        total = len(addresses_to_fetch)
-        for i, (pid, full_addr) in enumerate(addresses_to_fetch.items(), 1):
-            print(f"  Fetching {i}/{total}: {pid}...", end='', flush=True)
-            result = meteora_calc.calculate_pnl(full_addr)
-            if result:
-                recovered = result.withdrawn_sol + result.fees_sol
-                if recovered < Decimal('0.001'):
-                    print(f" PnL: unknown (recovered {recovered:.4f} SOL ≈ total loss, unreliable)")
+            messages = reader.read()
+            print(f"  Found {len(messages)} Valhalla messages")
+
+            # Determine date for this file - priority order:
+            # 1. Embedded in timestamps ([YYYY-MM-DDTHH:MM] format) — no base_date needed
+            # 2. Filename prefix (YYYYMMDD_*.txt)
+            # 3. In-file date header (first line)
+            # 4. User prompt if neither found
+            file_date = None
+            date_source = None
+
+            # Check if messages contain full datetime timestamps
+            has_full_timestamps = any(
+                '[' in msg.timestamp and 'T' in msg.timestamp and len(msg.timestamp) > 7
+                for msg in messages
+            )
+
+            if has_full_timestamps:
+                # Dates are embedded in timestamps — no base_date needed
+                date_source = "embedded timestamps"
+                print(f"  Dates embedded in timestamps (no base date needed)")
+            else:
+                # Try filename first
+                file_date = extract_date_from_filename(input_file)
+                if file_date:
+                    date_source = "filename"
+                # Then try in-file header
+                elif reader.header_date:
+                    file_date = reader.header_date
+                    date_source = "in-file header"
+                # Finally, prompt user
                 else:
-                    meteora_results[pid] = result
-                    print(f" PnL: {result.pnl_sol:.4f} SOL (${result.pnl_usd:.2f})")
-            else:
-                print(f" FAILED")
-                meteora_failed[pid] = full_addr
+                    print(f"  No date found in filename or file header")
+                    user_input = input(f"  Enter date for {Path(input_file).name} (YYYYMMDD): ").strip()
+                    if user_input and len(user_input) == 8 and user_input.isdigit():
+                        try:
+                            year = int(user_input[0:4])
+                            month = int(user_input[4:6])
+                            day = int(user_input[6:8])
+                            datetime(year, month, day)
+                            file_date = f"{year:04d}-{month:02d}-{day:02d}"
+                            date_source = "user input"
+                        except ValueError:
+                            print(f"  Invalid date format, continuing without date")
 
-        print(f"  Retrieved PnL for {len(meteora_results)} positions")
-    elif args.skip_meteora:
-        print(f"\nSkipping Meteora API (--skip-meteora)")
-    else:
-        print(f"\nSkipping Meteora API (no resolved addresses)")
+                if file_date:
+                    print(f"  Date detected from {date_source}: {file_date}")
+                elif not has_full_timestamps:
+                    print(f"  No date available")
 
-    # Step 5: Match positions
-    print(f"\nMatching positions...")
-    matcher = PositionMatcher(event_parser)
-    matched_positions, unmatched_opens = matcher.match_positions(
-        meteora_results, resolved_addresses, use_discord_pnl=args.use_discord_pnl
-    )
-    print(f"  Matched positions: {len(matched_positions)}")
-    print(f"  Still open: {len(unmatched_opens)}")
+            # Parse events with date context
+            print(f"Parsing events (date: {file_date or 'none'})...")
+            file_parser = EventParser(base_date=file_date)
+            file_parser.parse_messages(messages)
 
-    # Step 5.5: Import and merge with previous data if requested
-    if args.import_json:
-        print(f"\nImporting previous data from {args.import_json}...")
-        imported_positions, imported_still_open = import_from_json(args.import_json)
-        print(f"  Merging with new data...")
-        matched_positions, unmatched_opens = merge_with_imported(
-            matched_positions, imported_positions,
-            unmatched_opens, imported_still_open
+            # Merge events into main parser (deduplicate by position_id across files)
+            dedup_count = 0
+            for e in file_parser.open_events:
+                if e.position_id not in seen_open_ids:
+                    seen_open_ids.add(e.position_id)
+                    event_parser.open_events.append(e)
+                else:
+                    dedup_count += 1
+            for e in file_parser.close_events:
+                if e.position_id not in seen_close_ids:
+                    seen_close_ids.add(e.position_id)
+                    event_parser.close_events.append(e)
+                else:
+                    dedup_count += 1
+            for e in file_parser.failsafe_events:
+                if e.position_id not in seen_failsafe_ids:
+                    seen_failsafe_ids.add(e.position_id)
+                    event_parser.failsafe_events.append(e)
+                else:
+                    dedup_count += 1
+            for e in file_parser.rug_events:
+                pid = e.position_id or id(e)  # rug events may lack position_id
+                if pid not in seen_rug_ids:
+                    seen_rug_ids.add(pid)
+                    event_parser.rug_events.append(e)
+                else:
+                    dedup_count += 1
+            # Non-position events: no dedup needed
+            event_parser.skip_events.extend(file_parser.skip_events)
+            event_parser.swap_events.extend(file_parser.swap_events)
+            event_parser.add_liquidity_events.extend(file_parser.add_liquidity_events)
+            event_parser.insufficient_balance_events.extend(file_parser.insufficient_balance_events)
+            if dedup_count:
+                print(f"  Skipped {dedup_count} duplicate events (already seen in earlier file)")
+
+            # Collect per-file datetime range for archive naming
+            file_datetimes = []
+            for evt in (file_parser.open_events + file_parser.close_events +
+                        file_parser.failsafe_events + file_parser.rug_events):
+                ts = evt.timestamp  # "[HH:MM]" or "[YYYY-MM-DDTHH:MM]"
+                if not ts:
+                    continue
+                if 'T' in ts:
+                    # Extract "YYYY-MM-DDTHH:MM" from "[YYYY-MM-DDTHH:MM]"
+                    dt_str = ts.strip('[]')
+                    file_datetimes.append(dt_str)
+                elif file_date:
+                    # [HH:MM] timestamp — build full datetime from file_date + time
+                    time_part = ts.strip('[]')  # "HH:MM"
+                    file_datetimes.append(f"{file_date}T{time_part}")
+
+            # Track for archiving
+            processed_files.append((input_file, file_date, file_datetimes))
+
+        # Step 2: Print aggregated event counts
+        print(f"\nTotal parsed events across {len(input_files)} file(s):")
+
+        print(f"  Open positions: {len(event_parser.open_events)}")
+        print(f"  Close events: {len(event_parser.close_events)}")
+        print(f"  Failsafe events: {len(event_parser.failsafe_events)}")
+        print(f"  Add liquidity events: {len(event_parser.add_liquidity_events)}")
+        print(f"  Rug events: {len(event_parser.rug_events)}")
+        print(f"  Skip events: {len(event_parser.skip_events)}")
+        print(f"  Swap events: {len(event_parser.swap_events)}")
+        print(f"  Insufficient balance events: {len(event_parser.insufficient_balance_events)}")
+
+        # Load already-complete and already-meteora position IDs from existing CSV
+        already_complete_ids = set()   # meteora + both dates + enrichable close_reason → skip everything
+        already_meteora_ids = set()    # any meteora PnL → skip Meteora re-fetch
+        if positions_csv.exists():
+            with open(positions_csv, 'r', encoding='utf-8') as f:
+                for row in csv.DictReader(f):
+                    pid = row.get('position_id', '').strip()
+                    if not pid:
+                        continue
+                    if row.get('pnl_source') == 'meteora':
+                        already_meteora_ids.add(pid)
+                    if (row.get('pnl_source') == 'meteora'
+                            and row.get('datetime_open')
+                            and row.get('datetime_close')
+                            and row.get('close_reason') not in (
+                                'unknown_open', 'rug_unknown_open', 'failsafe_unknown_open', 'still_open',
+                                'take_profit_unknown_open', 'stop_loss_unknown_open'
+                            )):
+                        already_complete_ids.add(pid)
+            if already_complete_ids:
+                print(f"  Skipping {len(already_complete_ids)} already-complete positions")
+
+        # Step 3: Resolve addresses
+        resolved_addresses: Dict[str, str] = {}
+        cache = AddressCache(cache_file)
+
+        if not args.skip_rpc:
+            print(f"\nResolving position addresses via Solana RPC...")
+            rpc_client = SolanaRpcClient(args.rpc_url)
+            resolver = PositionResolver(cache, rpc_client)
+
+            # Collect all events with position IDs and tx signatures
+            # Check cache first - only hit RPC for positions not already cached
+            seen_pids = set()
+            events_to_resolve = []
+            cache_hits = 0
+            for event in event_parser.open_events + event_parser.close_events + event_parser.failsafe_events:
+                if event.position_id not in seen_pids:
+                    if event.position_id not in already_complete_ids:
+                        seen_pids.add(event.position_id)
+                        cached_addr = cache.get(event.position_id)
+                        if cached_addr:
+                            resolved_addresses[event.position_id] = cached_addr
+                            cache_hits += 1
+                        elif event.tx_signatures:
+                            events_to_resolve.append((event.position_id, event.tx_signatures))
+
+            total = len(events_to_resolve)
+            if cache_hits:
+                print(f"  {cache_hits} positions loaded from cache, {total} to resolve via RPC")
+            for i, (pid, sigs) in enumerate(events_to_resolve, 1):
+                print(f"  Resolving {i}/{total}: {pid}...", end='', flush=True)
+                full_addr = resolver.resolve(pid, sigs)
+                if full_addr:
+                    resolved_addresses[pid] = full_addr
+                    print(f" OK ({full_addr[:8]}...)")
+                else:
+                    print(f" NOT FOUND")
+
+            print(f"  Resolved {len(resolved_addresses)} addresses")
+            cache.save()
+        else:
+            print(f"\nSkipping RPC resolution (--skip-rpc)")
+            # Load from cache only
+            for event in event_parser.open_events + event_parser.close_events + event_parser.failsafe_events:
+                cached = cache.get(event.position_id)
+                if cached:
+                    resolved_addresses[event.position_id] = cached
+            print(f"  Loaded {len(resolved_addresses)} addresses from cache")
+
+        # Step 4: Calculate Meteora PnL
+        meteora_results: Dict[str, MeteoraPnlResult] = {}
+        meteora_failed: Dict[str, str] = {}  # pid -> full_addr for retry
+
+        if not args.skip_meteora and resolved_addresses:
+            print(f"\nFetching Meteora PnL data...")
+
+            meteora_calc = MeteoraPnlCalculator()
+
+            # Build closeable_ids set (only positions that will be used)
+            closeable_ids = set()
+            for e in event_parser.close_events:
+                closeable_ids.add(e.position_id)
+            for e in event_parser.rug_events:
+                if e.position_id:
+                    closeable_ids.add(e.position_id)
+            for e in event_parser.failsafe_events:
+                closeable_ids.add(e.position_id)
+
+            # Filter to only fetch closeable positions that aren't already complete or already have Meteora data
+            addresses_to_fetch = {pid: addr for pid, addr in resolved_addresses.items()
+                                  if pid in closeable_ids
+                                  and pid not in already_complete_ids
+                                  and pid not in already_meteora_ids}
+
+            total = len(addresses_to_fetch)
+            for i, (pid, full_addr) in enumerate(addresses_to_fetch.items(), 1):
+                print(f"  Fetching {i}/{total}: {pid}...", end='', flush=True)
+                result = meteora_calc.calculate_pnl(full_addr)
+                if result:
+                    recovered = result.withdrawn_sol + result.fees_sol
+                    if recovered < Decimal('0.001'):
+                        print(f" PnL: unknown (recovered {recovered:.4f} SOL ≈ total loss, unreliable)")
+                    else:
+                        meteora_results[pid] = result
+                        print(f" PnL: {result.pnl_sol:.4f} SOL (${result.pnl_usd:.2f})")
+                else:
+                    print(f" FAILED")
+                    meteora_failed[pid] = full_addr
+
+            print(f"  Retrieved PnL for {len(meteora_results)} positions")
+        elif args.skip_meteora:
+            print(f"\nSkipping Meteora API (--skip-meteora)")
+        else:
+            print(f"\nSkipping Meteora API (no resolved addresses)")
+
+        # Step 5: Match positions
+        print(f"\nMatching positions...")
+        matcher = PositionMatcher(event_parser)
+        matched_positions, unmatched_opens = matcher.match_positions(
+            meteora_results, resolved_addresses, use_discord_pnl=args.use_discord_pnl
         )
+        print(f"  Matched positions: {len(matched_positions)}")
+        print(f"  Still open: {len(unmatched_opens)}")
+
+        # Step 5.5: Import and merge with previous data if requested
+        if args.import_json:
+            print(f"\nImporting previous data from {args.import_json}...")
+            imported_positions, imported_still_open = import_from_json(args.import_json)
+            print(f"  Merging with new data...")
+            matched_positions, unmatched_opens = merge_with_imported(
+                matched_positions, imported_positions,
+                unmatched_opens, imported_still_open
+            )
+
+    if args.no_input:
+        if not positions_csv.exists():
+            print(f"Error: --no-input requires {positions_csv} to exist.")
+            return
+        print("No-input mode: loading from existing positions.csv...")
 
     # Step 5.6: Merge with existing output if present
     summary_csv = output_dir / 'summary.csv'
@@ -905,10 +1487,17 @@ def main():
             matched_positions, unmatched_opens, str(positions_csv)
         )
 
+    if args.no_input:
+        print(f"  Loaded {len(matched_positions)} position(s) from existing CSV.")
+
     # Step 5.7: Source wallet analysis (optional, requires Phase A data)
     if args.analyze_source:
         print(f"\nAnalyzing source wallet positions...")
         from valhalla.source_wallet_analyzer import SourceWalletAnalyzer
+        # In --no-input mode, cache is not initialized yet — create it now
+        if args.no_input:
+            _cache_file = args.cache_file if args.cache_file else str(output_dir / 'address_cache.json')
+            cache = AddressCache(_cache_file)
         analyzer_rpc = SolanaRpcClient(args.rpc_url)
         analyzer = SourceWalletAnalyzer(analyzer_rpc, cache)
         source_results = analyzer.analyze_batch(matched_positions)
@@ -945,7 +1534,7 @@ def main():
     print(f"  {summary_csv}")
 
     # Step 6.5b: Generate loss analysis report
-    if not args.no_loss_analysis:
+    if not args.no_loss_analysis and (want_all or 'loss' in report_modules):
         loss_report_path = output_dir / 'loss_analysis.md'
         print(f"\nGenerating loss analysis report...")
         try:
@@ -954,13 +1543,23 @@ def main():
         except Exception as e:
             print(f"  Warning: loss analysis failed: {e}")
 
+    # Print wallet recommendations to terminal
+    if want_all or 'recommendations' in report_modules:
+        recs = _generate_wallet_recommendations(matched_positions)
+        if recs:
+            print(f"\n{'='*60}")
+            print("Wallet Recommendations")
+            print(f"{'='*60}")
+            for rec in recs:
+                print(f"  {rec.strip()}")
+
     # --backtest custom run (additive, prints to terminal)
     if hasattr(args, 'backtest') and args.backtest:
         _run_custom_backtest(matched_positions, args.backtest,
                              getattr(args, 'wallet', None))
 
     # Step 6.5: Generate charts
-    if not args.skip_charts:
+    if not args.skip_charts and (want_all or 'charts' in report_modules):
         print(f"\nGenerating charts...")
         generate_charts(matched_positions, str(output_dir))
         insuf_csv = output_dir / 'insufficient_balance.csv'
@@ -1102,11 +1701,11 @@ def main():
                 print(f"  Updated {positions_csv}")
 
                 # Regenerate charts
-                if not args.skip_charts:
+                if not args.skip_charts and (want_all or 'charts' in report_modules):
                     generate_charts(matched_positions, str(output_dir))
 
                 # Regenerate loss report with updated positions
-                if not args.no_loss_analysis:
+                if not args.no_loss_analysis and (want_all or 'loss' in report_modules):
                     try:
                         _generate_loss_report(matched_positions, str(loss_report_path))
                     except Exception as e:
