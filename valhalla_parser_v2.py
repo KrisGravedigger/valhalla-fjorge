@@ -230,7 +230,7 @@ def _generate_wallet_recommendations(positions: List) -> List[str]:
         Empty list if no recommendations.
     """
     from collections import defaultdict
-    from datetime import date
+    from datetime import date, timedelta
 
     LOSS_R = {
         "stop_loss", "rug", "rug_unknown_open",
@@ -249,6 +249,19 @@ def _generate_wallet_recommendations(positions: List) -> List[str]:
 
     if not closed:
         return []
+
+    # Compute reference date (most recent close) and 3-day cutoff
+    all_close_dates = []
+    for pos in closed:
+        dt = parse_iso_datetime(pos.datetime_close)
+        if dt is not None:
+            all_close_dates.append(dt.date())
+
+    if not all_close_dates:
+        return []
+
+    reference_date = max(all_close_dates)
+    cutoff_3d = reference_date - timedelta(days=3)
 
     # Build: wallet -> date -> list of positions
     daily_by_wallet: Dict[str, Dict[date, List]] = defaultdict(lambda: defaultdict(list))
@@ -301,7 +314,8 @@ def _generate_wallet_recommendations(positions: List) -> List[str]:
         wallet_recs: List[str] = []
 
         # ----------------------------------------------------------------
-        # Rule A: avg positions/day < 3 OR any day with >= 2 loss events
+        # Rule A: avg positions/day < 3 (over all history) OR any day
+        #         within the recent 3-day window with >= 2 loss events
         # ----------------------------------------------------------------
         total_positions_count = sum(len(wallet_days[d]) for d in sorted_dates)
         num_days = len(sorted_dates)
@@ -311,7 +325,10 @@ def _generate_wallet_recommendations(positions: List) -> List[str]:
         if avg_per_day < 3:
             rule_a_reasons.append(f"avg {avg_per_day:.1f} pos/day")
 
+        # Only flag days within the 3-day window
         for d in sorted_dates:
+            if d < cutoff_3d:
+                continue
             loss_count_day = sum(
                 1 for p in wallet_days[d] if p.close_reason in LOSS_R
             )
@@ -364,7 +381,8 @@ def _generate_wallet_recommendations(positions: List) -> List[str]:
                 b_start = None
                 b_end = None
 
-        if best_b_streak >= 3 and best_b_start and best_b_end:
+        # Only flag if the streak ends within the 3-day window
+        if best_b_streak >= 3 and best_b_start and best_b_end and best_b_end >= cutoff_3d:
             wallet_recs.append(
                 f"{wallet}: Investigate underperformance "
                 f"(Daily ROI < 0.02% for {best_b_streak} consecutive days: "
@@ -420,7 +438,8 @@ def _generate_wallet_recommendations(positions: List) -> List[str]:
                 c_start = None
                 c_end = None
 
-        if best_c_streak >= 3 and best_c_start and best_c_end:
+        # Only flag if the streak ends within the 3-day window
+        if best_c_streak >= 3 and best_c_start and best_c_end and best_c_end >= cutoff_3d:
             wallet_recs.append(
                 f"{wallet}: Consider increasing tracking level "
                 f"(good ROI% but low absolute SOL for {best_c_streak} consecutive days: "
@@ -428,6 +447,85 @@ def _generate_wallet_recommendations(positions: List) -> List[str]:
             )
 
         recommendations.extend(wallet_recs)
+
+    # ----------------------------------------------------------------
+    # Rule D: sweet spot not at lowest threshold (per wallet + aggregate)
+    # ----------------------------------------------------------------
+    from valhalla.loss_analyzer import FilterBacktester as _FilterBacktester
+
+    def _fmt_threshold_d(param: str, threshold: float) -> str:
+        """Format threshold for Rule D messages."""
+        if param == "mc_at_open":
+            if threshold >= 1_000_000:
+                return f"${threshold / 1_000_000:.1f}M"
+            elif threshold >= 1_000:
+                return f"${threshold / 1_000:.0f}K"
+            return f"${threshold:.0f}"
+        elif param == "token_age_days":
+            if threshold < 1.0:
+                return f"{threshold * 24:.0f}h"
+            return f"{threshold:.0f}d"
+        else:
+            return f"{threshold:.0f}" if threshold == int(threshold) else str(threshold)
+
+    PARAM_DISPLAY_D = {
+        "jup_score": "jup_score",
+        "mc_at_open": "mc_at_open",
+        "token_age_days": "token_age_hours",
+    }
+
+    def _run_rule_d(label: str, rule_d_positions: List) -> List[str]:
+        """Run Rule D for a given set of positions; label is wallet name or 'Portfolio'."""
+        rule_d_recs: List[str] = []
+        bt = _FilterBacktester()
+        bt_results = bt.sweep_all(rule_d_positions)
+        for param, bt_rows in bt_results.items():
+            if not bt_rows or len(bt_rows) < 2:
+                continue
+            # Skip params where all net_sol_impact <= 0
+            if all(r.net_sol_impact <= Decimal("0") for r in bt_rows):
+                continue
+            # Find sweet spot (highest positive net_sol_impact)
+            best_idx = None
+            best_impact = Decimal("0")
+            for i, brow in enumerate(bt_rows):
+                if brow.net_sol_impact > best_impact:
+                    best_impact = brow.net_sol_impact
+                    best_idx = i
+            if best_idx is None or best_idx == 0:
+                continue  # sweet spot is already at lowest threshold — no recommendation
+            sweet_threshold = bt_rows[best_idx].threshold
+            min_threshold = bt_rows[0].threshold
+            param_display = PARAM_DISPLAY_D.get(param, param)
+            rule_d_recs.append(
+                f"{label}: Consider tightening {param_display} filter — "
+                f"sweet spot at >= {_fmt_threshold_d(param, sweet_threshold)}, "
+                f"not the minimum (>= {_fmt_threshold_d(param, min_threshold)}). "
+                f"Net gain: +{best_impact:.3f} SOL"
+            )
+        return rule_d_recs
+
+    # Per-wallet Rule D (10+ closed positions)
+    for wallet in daily_by_wallet:
+        wallet_all_positions = [
+            p for p in positions
+            if getattr(p, 'target_wallet', None) == wallet
+        ]
+        closed_wallet_d = [
+            p for p in wallet_all_positions
+            if p.close_reason not in ("still_open", "unknown_open")
+        ]
+        if len(closed_wallet_d) < 10:
+            continue
+        recommendations.extend(_run_rule_d(wallet, wallet_all_positions))
+
+    # Aggregate Rule D (Portfolio)
+    all_closed_d = [
+        p for p in positions
+        if p.close_reason not in ("still_open", "unknown_open")
+    ]
+    if len(all_closed_d) >= 10:
+        recommendations.extend(_run_rule_d("Portfolio", positions))
 
     return recommendations
 
@@ -517,9 +615,9 @@ def _generate_loss_report(
     # ------------------------------------------------------------------
     # Section 2: Risk Profile
     # ------------------------------------------------------------------
-    lines.append("## Risk Profile: Stop-Loss vs All Trades")
+    lines.append("## Risk Profile: Stop-Loss vs Profitable Trades")
     lines.append("")
-    lines.append("Compares average token quality metrics for stop-loss exits vs all closed trades.")
+    lines.append("Compares average token quality metrics for loss groups vs profitable trades only.")
     lines.append("Lower quality metrics in the stop-loss group may indicate avoidable entries.")
     lines.append("")
 
@@ -564,7 +662,7 @@ def _generate_loss_report(
             ])
 
         lines.append(_md_table(
-            ["Metric", "SL Only Avg", "SL+Rug/FS Avg", "All Trades Avg", "SL Diff", "SL+Rug Diff"],
+            ["Metric", "SL Only Avg", "SL+Rug/FS Avg", "Profitable Avg", "SL Diff", "SL+Rug Diff"],
             rp_rows,
         ))
     lines.append("")
@@ -580,8 +678,14 @@ def _generate_loss_report(
     PARAM_LABELS = {
         "jup_score": "jup_score (minimum threshold)",
         "mc_at_open": "mc_at_open (minimum threshold)",
-        "token_age_days": "token_age_days (minimum threshold)",
+        "token_age_days": "token_age_hours (minimum threshold)",
     }
+
+    def _fmt_age_threshold(threshold: float) -> str:
+        """Format token_age_days threshold: fractional days as hours, whole days as days."""
+        if threshold < 1.0:
+            return f"{threshold * 24:.0f}h"
+        return f"{threshold:.0f}d"
 
     for param, bt_rows in result.backtest_results.items():
         lines.append(f"### {PARAM_LABELS.get(param, param)}")
@@ -603,6 +707,8 @@ def _generate_loss_report(
         for i, brow in enumerate(bt_rows):
             if param == "mc_at_open":
                 threshold_str = _fmt_mc(brow.threshold)
+            elif param == "token_age_days":
+                threshold_str = _fmt_age_threshold(brow.threshold)
             else:
                 threshold_str = f"{brow.threshold:.0f}" if brow.threshold == int(brow.threshold) else f"{brow.threshold}"
 
@@ -691,27 +797,61 @@ def _generate_loss_report(
     lines.append("")
 
     # ------------------------------------------------------------------
-    # Section 6: Source Wallet Comparison (placeholder)
+    # Section 6: Source Wallet Comparison
     # ------------------------------------------------------------------
     lines.append("## Source Wallet Comparison")
     lines.append("")
 
-    has_target_tx = any(
-        getattr(pos, 'target_tx_signature', None)
-        for pos in positions
-        if pos.close_reason in LOSS_REASONS
-    )
+    # Only consider loss positions
+    loss_positions_all = [p for p in positions if p.close_reason in LOSS_REASONS]
+    loss_total = len(loss_positions_all)
 
-    if has_target_tx:
-        tx_count = sum(
-            1 for pos in positions
-            if getattr(pos, 'target_tx_signature', None)
-            and pos.close_reason in LOSS_REASONS
-        )
-        lines.append(f"{tx_count} position(s) have target transaction signatures available.")
-        lines.append("Run `python valhalla_parser_v2.py --analyze-source` to populate source wallet comparison.")
+    # Positions with source_wallet_scenario populated
+    with_scenario = [
+        p for p in loss_positions_all
+        if getattr(p, 'source_wallet_scenario', None)
+    ]
+
+    if not with_scenario:
+        lines.append("_No source wallet data. Run `--analyze-source` to populate._")
     else:
-        lines.append("No source wallet data available. Run Phase C (source_wallet_analyzer) to enable this section.")
+        scenario_count = len(with_scenario)
+        lines.append(
+            f"Source wallet data available for {scenario_count} of {loss_total} loss positions."
+        )
+        lines.append("")
+
+        # Scenario distribution
+        from collections import Counter
+        scenario_counts: Counter = Counter()
+        for p in with_scenario:
+            scenario_counts[p.source_wallet_scenario] += 1
+
+        # Avg pnl_pct per scenario
+        scenario_pnl_pcts: dict = {}
+        for scenario in scenario_counts:
+            pcts = [
+                float(p.source_wallet_pnl_pct)
+                for p in with_scenario
+                if p.source_wallet_scenario == scenario
+                and getattr(p, 'source_wallet_pnl_pct', None) is not None
+            ]
+            if pcts:
+                scenario_pnl_pcts[scenario] = sum(pcts) / len(pcts)
+
+        scenario_order = ["held_longer", "exited_first", "both_loss", "unknown", "error"]
+        dist_rows = []
+        for sc in scenario_order:
+            count = scenario_counts.get(sc, 0)
+            pct_of_total = count / scenario_count * 100.0 if scenario_count > 0 else 0.0
+            avg_pnl = scenario_pnl_pcts.get(sc)
+            avg_pnl_str = f"{avg_pnl:+.1f}%" if avg_pnl is not None else "N/A"
+            dist_rows.append([sc, str(count), f"{pct_of_total:.0f}%", avg_pnl_str])
+
+        lines.append(_md_table(
+            ["Scenario", "Count", "% of Source Data", "Avg Source PnL%"],
+            dist_rows,
+        ))
     lines.append("")
 
     # ------------------------------------------------------------------
@@ -806,6 +946,8 @@ def _generate_loss_report(
                 for i, brow in enumerate(bt_rows):
                     if param == "mc_at_open":
                         threshold_str = _fmt_mc(brow.threshold)
+                    elif param == "token_age_days":
+                        threshold_str = _fmt_age_threshold(brow.threshold)
                     else:
                         threshold_str = (
                             f"{brow.threshold:.0f}"
@@ -852,7 +994,7 @@ def _print_backtest_table(param: str, rows: List) -> None:
     PARAM_LABELS = {
         "jup_score": "jup_score",
         "mc_at_open": "mc_at_open",
-        "token_age_days": "token_age_days",
+        "token_age_days": "token_age_hours",
     }
     print(f"\n--- Backtest: {PARAM_LABELS.get(param, param)} ---")
 
@@ -860,11 +1002,18 @@ def _print_backtest_table(param: str, rows: List) -> None:
         print("  No data.")
         return
 
+    def _fmt_age_threshold_t(threshold: float) -> str:
+        if threshold < 1.0:
+            return f"{threshold * 24:.0f}h"
+        return f"{threshold:.0f}d"
+
     headers = ["Threshold", "Wins Kept", "Wins Excl.", "Losses Avoided", "Losses Kept", "Net SOL Impact"]
     table_rows = []
     for brow in rows:
         if param == "mc_at_open":
             threshold_str = _fmt_mc(brow.threshold)
+        elif param == "token_age_days":
+            threshold_str = _fmt_age_threshold_t(brow.threshold)
         else:
             threshold_str = f"{brow.threshold:.0f}" if brow.threshold == int(brow.threshold) else f"{brow.threshold}"
 
@@ -951,8 +1100,15 @@ def main():
     parser.add_argument('--no-input', action='store_true',
                        help='Skip input file processing and load from existing positions.csv. '
                             'Use with --analyze-source to re-run source wallet analysis without new logs.')
+    parser.add_argument('--report', default='all',
+                       help='Comma-separated list of report modules to generate. '
+                            'Options: loss,per-wallet,source,charts,recommendations,all (default: all)')
 
     args = parser.parse_args()
+
+    # Parse --report modules
+    report_modules = set(args.report.split(',')) if args.report != 'all' else {'all'}
+    want_all = 'all' in report_modules
 
     # Initialize shared variables (overwritten in normal mode; used as-is in --no-input mode)
     event_parser = EventParser()
@@ -1355,7 +1511,7 @@ def main():
     print(f"  {summary_csv}")
 
     # Step 6.5b: Generate loss analysis report
-    if not args.no_loss_analysis:
+    if not args.no_loss_analysis and (want_all or 'loss' in report_modules):
         loss_report_path = output_dir / 'loss_analysis.md'
         print(f"\nGenerating loss analysis report...")
         try:
@@ -1365,13 +1521,14 @@ def main():
             print(f"  Warning: loss analysis failed: {e}")
 
     # Print wallet recommendations to terminal
-    recs = _generate_wallet_recommendations(matched_positions)
-    if recs:
-        print(f"\n{'='*60}")
-        print("Wallet Recommendations")
-        print(f"{'='*60}")
-        for rec in recs:
-            print(f"  {rec.strip()}")
+    if want_all or 'recommendations' in report_modules:
+        recs = _generate_wallet_recommendations(matched_positions)
+        if recs:
+            print(f"\n{'='*60}")
+            print("Wallet Recommendations")
+            print(f"{'='*60}")
+            for rec in recs:
+                print(f"  {rec.strip()}")
 
     # --backtest custom run (additive, prints to terminal)
     if hasattr(args, 'backtest') and args.backtest:
@@ -1379,7 +1536,7 @@ def main():
                              getattr(args, 'wallet', None))
 
     # Step 6.5: Generate charts
-    if not args.skip_charts:
+    if not args.skip_charts and (want_all or 'charts' in report_modules):
         print(f"\nGenerating charts...")
         generate_charts(matched_positions, str(output_dir))
         insuf_csv = output_dir / 'insufficient_balance.csv'
@@ -1521,11 +1678,11 @@ def main():
                 print(f"  Updated {positions_csv}")
 
                 # Regenerate charts
-                if not args.skip_charts:
+                if not args.skip_charts and (want_all or 'charts' in report_modules):
                     generate_charts(matched_positions, str(output_dir))
 
                 # Regenerate loss report with updated positions
-                if not args.no_loss_analysis:
+                if not args.no_loss_analysis and (want_all or 'loss' in report_modules):
                     try:
                         _generate_loss_report(matched_positions, str(loss_report_path))
                     except Exception as e:

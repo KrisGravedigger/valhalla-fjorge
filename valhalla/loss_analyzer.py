@@ -193,12 +193,23 @@ class LossAnalyzer:
     ) -> List[RiskProfileRow]:
         """
         For each metric, compute averages for the SL-only group, SL+Rug/Failsafe group,
-        and all closed positions.
+        and profitable trades only (pnl_sol > 0 and close_reason not in LOSS_REASONS).
 
         stop_loss_positions: positions where close_reason is in SL_ONLY_REASONS.
         sl_rug_positions: positions where close_reason is in LOSS_REASONS (combined).
-        all_closed: all non-still_open positions.
+        all_closed: all non-still_open positions. Used only to derive profitable subset.
+
+        The comparison baseline is profitable positions only, not all closed positions.
+        all_count and all_avg in RiskProfileRow refer to profitable positions.
         """
+        # Compute profitable-only baseline (pnl_sol > 0 and not a loss)
+        profitable = [
+            p for p in all_closed
+            if p.pnl_sol is not None
+            and p.pnl_sol > Decimal("0")
+            and p.close_reason not in LOSS_REASONS
+        ]
+
         rows: List[RiskProfileRow] = []
 
         for metric in ["jup_score", "mc_at_open", "token_age_days"]:
@@ -211,7 +222,7 @@ class LossAnalyzer:
                 if (v := _get_metric_value(p, metric)) is not None
             ]
             all_values = [
-                v for p in all_closed
+                v for p in profitable
                 if (v := _get_metric_value(p, metric)) is not None
             ]
 
@@ -257,7 +268,8 @@ class FilterBacktester:
     DEFAULT_THRESHOLDS: Dict[str, List[float]] = {
         "jup_score": [70, 75, 80, 85, 90],
         "mc_at_open": [300_000, 500_000, 1_000_000, 3_000_000, 5_000_000],
-        "token_age_days": [0, 1, 2, 3, 7],
+        # Fractional days representing: 1h, 2h, 3h, 4h, 5h, 6h, 8h, 12h, 24h, 48h
+        "token_age_days": [1/24, 2/24, 3/24, 4/24, 5/24, 6/24, 8/24, 12/24, 1.0, 2.0],
     }
 
     def sweep(
@@ -365,13 +377,44 @@ class FilterBacktester:
         """
         Run sweep() for all three default parameters.
 
+        jup_score thresholds are computed dynamically from data (ceil5(min) to 100, step 5).
+        Other parameters use DEFAULT_THRESHOLDS as-is.
+
         Returns:
             Dict mapping param name to list of BacktestRow.
         """
-        return {
-            param: self.sweep(positions, param, wallet=wallet)
-            for param in self.DEFAULT_THRESHOLDS
-        }
+        results = {}
+        for param in self.DEFAULT_THRESHOLDS:
+            if param == "jup_score":
+                thresholds = self._jup_score_thresholds(positions, wallet)
+            else:
+                thresholds = self.DEFAULT_THRESHOLDS[param]
+            results[param] = self.sweep(positions, param, thresholds=thresholds, wallet=wallet)
+        return results
+
+    def _jup_score_thresholds(
+        self,
+        positions: List[MatchedPosition],
+        wallet: Optional[str] = None,
+    ) -> List[float]:
+        """
+        Compute jup_score thresholds dynamically: from ceil5(min) to 100, step 5.
+
+        Falls back to DEFAULT_THRESHOLDS["jup_score"] if no valid scores are found.
+        """
+        import math
+        filtered = [
+            p for p in positions
+            if p.close_reason not in ("still_open", "unknown_open")
+            and (wallet is None or p.target_wallet == wallet)
+        ]
+        scores = [p.jup_score for p in filtered if p.jup_score and p.jup_score > 0]
+        if not scores:
+            return self.DEFAULT_THRESHOLDS["jup_score"]
+        min_score = min(scores)
+        # Round up to nearest 5
+        start = math.ceil(min_score / 5) * 5
+        return list(range(start, 101, 5))
 
 
 # ---------------------------------------------------------------------------
