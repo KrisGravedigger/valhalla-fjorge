@@ -37,7 +37,7 @@ SL_ONLY_REASONS = {"stop_loss", "stop_loss_unknown_open"}
 @dataclass
 class RiskProfileRow:
     """Metric comparison: stop-loss group vs all closed positions."""
-    metric: str                 # "jup_score", "mc_at_open", "token_age_days"
+    metric: str                 # "jup_score", "mc_at_open", "token_age_hours"
     sl_avg: Optional[float]
     all_avg: Optional[float]
     diff_pct: Optional[float]   # (sl_avg - all_avg) / all_avg * 100
@@ -109,14 +109,14 @@ def _get_metric_value(pos: MatchedPosition, metric: str) -> Optional[float]:
     Missing is defined as:
       - jup_score == 0
       - mc_at_open == 0.0
-      - token_age_days is None
+      - token_age_hours: token_age_days is None
     """
     if metric == "jup_score":
         return float(pos.jup_score) if pos.jup_score != 0 else None
     elif metric == "mc_at_open":
         return pos.mc_at_open if pos.mc_at_open != 0.0 else None
-    elif metric == "token_age_days":
-        return float(pos.token_age_days) if pos.token_age_days is not None else None
+    elif metric == "token_age_hours":
+        return float(pos.token_age_days) * 24.0 if pos.token_age_days is not None else None
     return None
 
 
@@ -212,7 +212,7 @@ class LossAnalyzer:
 
         rows: List[RiskProfileRow] = []
 
-        for metric in ["jup_score", "mc_at_open", "token_age_days"]:
+        for metric in ["jup_score", "mc_at_open", "token_age_hours"]:
             sl_values = [
                 v for p in stop_loss_positions
                 if (v := _get_metric_value(p, metric)) is not None
@@ -268,8 +268,7 @@ class FilterBacktester:
     DEFAULT_THRESHOLDS: Dict[str, List[float]] = {
         "jup_score": [70, 75, 80, 85, 90],
         "mc_at_open": [300_000, 500_000, 1_000_000, 3_000_000, 5_000_000],
-        # Fractional days representing: 1h, 2h, 3h, 4h, 5h, 6h, 8h, 12h, 24h, 48h
-        "token_age_days": [1/24, 2/24, 3/24, 4/24, 5/24, 6/24, 8/24, 12/24, 1.0, 2.0],
+        "token_age_hours": [1, 2, 3, 4, 5, 6, 8, 12, 24, 48],
     }
 
     def sweep(
@@ -285,7 +284,7 @@ class FilterBacktester:
 
         Args:
             positions: Full position list.
-            param: One of "jup_score", "mc_at_open", "token_age_days".
+            param: One of "jup_score", "mc_at_open", "token_age_hours".
             thresholds: List of threshold values to test. Defaults to DEFAULT_THRESHOLDS[param].
             direction: "min" (value >= threshold passes) or "max" (value <= threshold passes).
             wallet: If given, restrict analysis to this wallet only.

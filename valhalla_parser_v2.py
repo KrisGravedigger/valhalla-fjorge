@@ -461,17 +461,17 @@ def _generate_wallet_recommendations(positions: List) -> List[str]:
             elif threshold >= 1_000:
                 return f"${threshold / 1_000:.0f}K"
             return f"${threshold:.0f}"
-        elif param == "token_age_days":
-            if threshold < 1.0:
-                return f"{threshold * 24:.0f}h"
-            return f"{threshold:.0f}d"
+        elif param == "token_age_hours":
+            if threshold < 24:
+                return f"{threshold:.0f}h"
+            return f"{int(threshold // 24)}d"
         else:
             return f"{threshold:.0f}" if threshold == int(threshold) else str(threshold)
 
     PARAM_DISPLAY_D = {
         "jup_score": "jup_score",
         "mc_at_open": "mc_at_open",
-        "token_age_days": "token_age_hours",
+        "token_age_hours": "token_age_hours",
     }
 
     def _run_rule_d(label: str, rule_d_positions: List) -> List[str]:
@@ -629,17 +629,20 @@ def _generate_loss_report(
             metric_label = {
                 "jup_score": "jup_score",
                 "mc_at_open": "mc_at_open",
-                "token_age_days": "token_age_days",
+                "token_age_hours": "token_age_hours",
             }.get(row.metric, row.metric)
+
+            def _fmt_age_hours(hours: float) -> str:
+                return f"{hours:.0f}h" if hours < 24 else f"{hours / 24:.0f}d"
 
             if row.metric == "mc_at_open":
                 sl_val = _fmt_mc(row.sl_avg) if row.sl_avg is not None else "N/A"
                 sl_rug_val = _fmt_mc(row.sl_rug_avg) if row.sl_rug_avg is not None else "N/A"
                 all_val = _fmt_mc(row.all_avg) if row.all_avg is not None else "N/A"
-            elif row.metric == "token_age_days":
-                sl_val = f"{row.sl_avg:.1f}d" if row.sl_avg is not None else "N/A"
-                sl_rug_val = f"{row.sl_rug_avg:.1f}d" if row.sl_rug_avg is not None else "N/A"
-                all_val = f"{row.all_avg:.1f}d" if row.all_avg is not None else "N/A"
+            elif row.metric == "token_age_hours":
+                sl_val = _fmt_age_hours(row.sl_avg) if row.sl_avg is not None else "N/A"
+                sl_rug_val = _fmt_age_hours(row.sl_rug_avg) if row.sl_rug_avg is not None else "N/A"
+                all_val = _fmt_age_hours(row.all_avg) if row.all_avg is not None else "N/A"
             else:
                 sl_val = f"{row.sl_avg:.0f}" if row.sl_avg is not None else "N/A"
                 sl_rug_val = f"{row.sl_rug_avg:.0f}" if row.sl_rug_avg is not None else "N/A"
@@ -678,14 +681,14 @@ def _generate_loss_report(
     PARAM_LABELS = {
         "jup_score": "jup_score (minimum threshold)",
         "mc_at_open": "mc_at_open (minimum threshold)",
-        "token_age_days": "token_age_hours (minimum threshold)",
+        "token_age_hours": "token_age_hours (minimum threshold)",
     }
 
     def _fmt_age_threshold(threshold: float) -> str:
-        """Format token_age_days threshold: fractional days as hours, whole days as days."""
-        if threshold < 1.0:
-            return f"{threshold * 24:.0f}h"
-        return f"{threshold:.0f}d"
+        """Format token_age_hours threshold: hours < 24 as Xh, hours >= 24 as Xd."""
+        if threshold < 24:
+            return f"{threshold:.0f}h"
+        return f"{threshold / 24:.0f}d"
 
     for param, bt_rows in result.backtest_results.items():
         lines.append(f"### {PARAM_LABELS.get(param, param)}")
@@ -707,7 +710,7 @@ def _generate_loss_report(
         for i, brow in enumerate(bt_rows):
             if param == "mc_at_open":
                 threshold_str = _fmt_mc(brow.threshold)
-            elif param == "token_age_days":
+            elif param == "token_age_hours":
                 threshold_str = _fmt_age_threshold(brow.threshold)
             else:
                 threshold_str = f"{brow.threshold:.0f}" if brow.threshold == int(brow.threshold) else f"{brow.threshold}"
@@ -946,7 +949,7 @@ def _generate_loss_report(
                 for i, brow in enumerate(bt_rows):
                     if param == "mc_at_open":
                         threshold_str = _fmt_mc(brow.threshold)
-                    elif param == "token_age_days":
+                    elif param == "token_age_hours":
                         threshold_str = _fmt_age_threshold(brow.threshold)
                     else:
                         threshold_str = (
@@ -994,7 +997,7 @@ def _print_backtest_table(param: str, rows: List) -> None:
     PARAM_LABELS = {
         "jup_score": "jup_score",
         "mc_at_open": "mc_at_open",
-        "token_age_days": "token_age_hours",
+        "token_age_hours": "token_age_hours",
     }
     print(f"\n--- Backtest: {PARAM_LABELS.get(param, param)} ---")
 
@@ -1003,16 +1006,16 @@ def _print_backtest_table(param: str, rows: List) -> None:
         return
 
     def _fmt_age_threshold_t(threshold: float) -> str:
-        if threshold < 1.0:
-            return f"{threshold * 24:.0f}h"
-        return f"{threshold:.0f}d"
+        if threshold < 24:
+            return f"{threshold:.0f}h"
+        return f"{threshold / 24:.0f}d"
 
     headers = ["Threshold", "Wins Kept", "Wins Excl.", "Losses Avoided", "Losses Kept", "Net SOL Impact"]
     table_rows = []
     for brow in rows:
         if param == "mc_at_open":
             threshold_str = _fmt_mc(brow.threshold)
-        elif param == "token_age_days":
+        elif param == "token_age_hours":
             threshold_str = _fmt_age_threshold_t(brow.threshold)
         else:
             threshold_str = f"{brow.threshold:.0f}" if brow.threshold == int(brow.threshold) else f"{brow.threshold}"
@@ -1042,9 +1045,10 @@ def _run_custom_backtest(
     PARAM_ALIASES = {
         'mc': 'mc_at_open',
         'mc_at_open': 'mc_at_open',
-        'age': 'token_age_days',
-        'token_age': 'token_age_days',
-        'token_age_days': 'token_age_days',
+        'age': 'token_age_hours',
+        'token_age': 'token_age_hours',
+        'token_age_days': 'token_age_hours',
+        'token_age_hours': 'token_age_hours',
         'jup': 'jup_score',
         'jup_score': 'jup_score',
     }
