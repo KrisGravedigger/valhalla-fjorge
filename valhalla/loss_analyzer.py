@@ -109,14 +109,14 @@ def _get_metric_value(pos: MatchedPosition, metric: str) -> Optional[float]:
     Missing is defined as:
       - jup_score == 0
       - mc_at_open == 0.0
-      - token_age_hours: token_age_days is None
+      - token_age_hours: token_age_hours is None
     """
     if metric == "jup_score":
         return float(pos.jup_score) if pos.jup_score != 0 else None
     elif metric == "mc_at_open":
         return pos.mc_at_open if pos.mc_at_open != 0.0 else None
     elif metric == "token_age_hours":
-        return float(pos.token_age_days) * 24.0 if pos.token_age_days is not None else None
+        return float(pos.token_age_hours) if pos.token_age_hours is not None else None
     return None
 
 

@@ -842,7 +842,13 @@ def _generate_loss_report(
             if pcts:
                 scenario_pnl_pcts[scenario] = sum(pcts) / len(pcts)
 
-        scenario_order = ["held_longer", "exited_first", "both_loss", "unknown", "error"]
+        scenario_order = [
+            "source_held_longer", "source_exited_early", "source_recovered",
+            "held_longer", "exited_first",  # legacy labels from old CSV
+            "both_loss", "comparable",
+            "unknown",  # legacy label from old CSV
+            "no_data", "error",
+        ]
         dist_rows = []
         for sc in scenario_order:
             count = scenario_counts.get(sc, 0)
@@ -855,6 +861,14 @@ def _generate_loss_report(
             ["Scenario", "Count", "% of Source Data", "Avg Source PnL%"],
             dist_rows,
         ))
+        lines.append("")
+        lines.append("**Scenario guide:**")
+        lines.append("- `source_held_longer` / `held_longer`: source wallet stayed in the position longer and recovered — consider widening stop-loss margin or enabling non-SOL token top-up")
+        lines.append("- `source_exited_early` / `exited_first`: source wallet exited before the drop — copy lag or entry speed issue")
+        lines.append("- `source_recovered`: source wallet ended positive while bot lost — timing data unavailable to determine mechanism")
+        lines.append("- `both_loss`: both source and bot lost — likely bad luck or market conditions, not a strategy issue")
+        lines.append("- `comparable`: similar outcomes on both sides — no clear lesson from this position")
+        lines.append("- `no_data` / `no_data`: API error or missing transaction data — could not analyze")
     lines.append("")
 
     # ------------------------------------------------------------------
@@ -902,24 +916,29 @@ def _generate_loss_report(
         run_backtest = len(closed_wallet) >= 10
 
         # Compute header stats
-        wins = sum(
-            1 for p in closed_wallet
-            if p.pnl_sol is not None
-            and p.pnl_sol > Decimal("0")
-            and p.close_reason not in LOSS_REASONS
-        )
-        losses = sum(1 for p in closed_wallet if p.close_reason in LOSS_REASONS)
-        rugs_failsafe = sum(1 for p in closed_wallet if p.close_reason in RUG_FAILSAFE_REASONS)
-        wallet_pnl = sum(
-            (p.pnl_sol for p in closed_wallet if p.pnl_sol is not None),
-            Decimal("0")
-        )
+        WIN_THRESHOLD = Decimal("0.01")
+        LOSS_THRESHOLD = Decimal("-0.01")
+
+        TP_REASONS = {"take_profit"}
+        SL_REASONS = {"stop_loss", "stop_loss_unknown_open"}
+        RF_REASONS = {"rug", "rug_unknown_open", "failsafe", "failsafe_unknown_open"}
+
+        wins = sum(1 for p in closed_wallet if p.pnl_sol is not None and p.pnl_sol > WIN_THRESHOLD)
+        neutral = sum(1 for p in closed_wallet if p.pnl_sol is not None and LOSS_THRESHOLD <= p.pnl_sol <= WIN_THRESHOLD)
+        losses = sum(1 for p in closed_wallet if p.pnl_sol is not None and p.pnl_sol < LOSS_THRESHOLD)
+        no_pnl = sum(1 for p in closed_wallet if p.pnl_sol is None)
+        tp_count = sum(1 for p in closed_wallet if p.close_reason in TP_REASONS)
+        sl_count = sum(1 for p in closed_wallet if p.close_reason in SL_REASONS)
+        rf_count = sum(1 for p in closed_wallet if p.close_reason in RF_REASONS)
+        wallet_pnl = sum((p.pnl_sol for p in closed_wallet if p.pnl_sol is not None), Decimal("0"))
 
         lines.append(f"### Wallet: {wallet_name}")
         lines.append("")
         lines.append(
-            f"{len(closed_wallet)} total positions | {wins} wins | {losses} losses | "
-            f"{rugs_failsafe} rugs/failsafe | PnL: {wallet_pnl:.4f} SOL"
+            f"{len(closed_wallet)} total positions | "
+            f"{wins} wins (>{WIN_THRESHOLD} SOL) | {neutral} neutral | {losses} losses (<{LOSS_THRESHOLD} SOL)"
+            f" | [TP: {tp_count} | SL: {sl_count} | Rug/FS: {rf_count}]"
+            f" | PnL: {wallet_pnl:.4f} SOL"
         )
         lines.append("")
 

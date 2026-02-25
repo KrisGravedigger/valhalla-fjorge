@@ -27,6 +27,16 @@ SCENARIO_EXITED_FIRST = "exited_first"
 SCENARIO_BOTH_LOSS = "both_loss"
 SCENARIO_UNKNOWN = "unknown"
 
+# New scenario constants
+SCENARIO_NO_DATA = "no_data"                     # actual data missing (API error, no tx, 404)
+SCENARIO_SOURCE_HELD_LONGER = "source_held_longer"   # source won, closed AFTER bot → SL too tight
+SCENARIO_SOURCE_EXITED_EARLY = "source_exited_early" # source won, closed BEFORE bot → copy lag
+SCENARIO_SOURCE_RECOVERED = "source_recovered"       # source won, timing unknown → actionable
+SCENARIO_COMPARABLE = "comparable"                   # both similar outcome or both positive → no clear lesson
+
+# Aliases for backward compatibility (old values still work in existing CSVs)
+# SCENARIO_HELD_LONGER and SCENARIO_EXITED_FIRST retained above as legacy aliases
+
 
 # ---------------------------------------------------------------------------
 # Result dataclass
@@ -80,7 +90,7 @@ class SourceWalletAnalyzer:
                 source_hold_min=None,
                 source_pnl_pct=None,
                 source_pnl_sol=None,
-                scenario=SCENARIO_UNKNOWN,
+                scenario=SCENARIO_NO_DATA,
                 error="no target_tx_signature"
             )
 
@@ -101,7 +111,7 @@ class SourceWalletAnalyzer:
                 source_hold_min=None,
                 source_pnl_pct=None,
                 source_pnl_sol=None,
-                scenario=SCENARIO_UNKNOWN,
+                scenario=SCENARIO_NO_DATA,
                 error=str(e)
             )
 
@@ -115,7 +125,7 @@ class SourceWalletAnalyzer:
                 source_hold_min=None,
                 source_pnl_pct=None,
                 source_pnl_sol=None,
-                scenario=SCENARIO_UNKNOWN,
+                scenario=SCENARIO_NO_DATA,
                 error="could not resolve source position address from tx"
             )
 
@@ -133,7 +143,7 @@ class SourceWalletAnalyzer:
                 source_hold_min=None,
                 source_pnl_pct=None,
                 source_pnl_sol=None,
-                scenario=SCENARIO_UNKNOWN,
+                scenario=SCENARIO_NO_DATA,
                 error=str(e)
             )
 
@@ -147,7 +157,7 @@ class SourceWalletAnalyzer:
                 source_hold_min=None,
                 source_pnl_pct=None,
                 source_pnl_sol=None,
-                scenario=SCENARIO_UNKNOWN,
+                scenario=SCENARIO_NO_DATA,
                 error="Meteora returned no PnL data"
             )
 
@@ -289,27 +299,32 @@ class SourceWalletAnalyzer:
         Classify the scenario based on source vs bot PnL and timing.
 
         Rules:
-        - If source did significantly better (>5% margin) and closed AFTER bot: held_longer
-        - If source did significantly better (>5% margin) and closed BEFORE bot: exited_first
-        - If both sides are negative: both_loss
-        - Otherwise: unknown
+        - If data missing: no_data
+        - If both sides lost: both_loss (bad luck, no actionable lesson)
+        - If source escaped (positive) and bot lost: check timing
+            - source closed AFTER bot: source_held_longer (SL too tight)
+            - source closed BEFORE bot: source_exited_early (copy lag)
+            - timing unknown: source_recovered (actionable, mechanism unclear)
+        - Otherwise (both positive, or bot won more): comparable (no clear lesson)
         """
         if source_pnl_pct is None or bot_pnl_pct is None:
-            return SCENARIO_UNKNOWN
+            return SCENARIO_NO_DATA
 
-        margin = Decimal('5')
+        ZERO = Decimal('0')
 
-        if source_pnl_pct > bot_pnl_pct + margin:
-            # Source did significantly better — determine timing
+        # Both sides lost → bad luck, no actionable lesson
+        if source_pnl_pct <= ZERO and bot_pnl_pct <= ZERO:
+            return SCENARIO_BOTH_LOSS
+
+        # Source escaped (positive), bot lost (non-positive) → actionable
+        if source_pnl_pct > ZERO and bot_pnl_pct <= ZERO:
             bot_close_time = parse_iso_datetime(bot_close_time_str)
             if source_close_time and bot_close_time:
                 if source_close_time > bot_close_time:
-                    return SCENARIO_HELD_LONGER
+                    return SCENARIO_SOURCE_HELD_LONGER
                 else:
-                    return SCENARIO_EXITED_FIRST
-            # Timing unknown but source did better
-            return SCENARIO_HELD_LONGER
-        elif source_pnl_pct <= Decimal('0') and bot_pnl_pct <= Decimal('0'):
-            return SCENARIO_BOTH_LOSS
-        else:
-            return SCENARIO_UNKNOWN
+                    return SCENARIO_SOURCE_EXITED_EARLY
+            return SCENARIO_SOURCE_RECOVERED
+
+        # Both positive, or bot won more, or source marginally better → no clear lesson
+        return SCENARIO_COMPARABLE
