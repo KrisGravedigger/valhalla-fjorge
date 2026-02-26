@@ -567,49 +567,49 @@ def _build_action_items(
         if sc.status == "consider_replacing":
             if sc.total_pnl_sol < Decimal("0"):
                 replacing.append(
-                    f"{sc.wallet}: ujemny PnL łącznie ({sc.total_pnl_sol:+.3f} SOL) "
-                    f"na {sc.closed_positions} pozycjach — kandydat do wymiany"
+                    f"{sc.wallet}: negative total PnL ({sc.total_pnl_sol:+.3f} SOL) "
+                    f"across {sc.closed_positions} positions — candidate for replacement"
                 )
             elif sc.win_rate_7d_pct is not None and sc.win_rate_7d_pct < 45.0:
                 replacing.append(
-                    f"{sc.wallet}: win rate 7d spada do {sc.win_rate_7d_pct:.0f}% "
-                    f"(całość: {sc.win_rate_pct:.0f}%) — rozważ wymianę"
+                    f"{sc.wallet}: 7d win rate dropped to {sc.win_rate_7d_pct:.0f}% "
+                    f"(overall: {sc.win_rate_pct:.0f}%) — consider replacing"
                 )
             else:
                 # fallback if neither sub-condition is specifically True
                 wr_str = f"{sc.win_rate_7d_pct:.0f}%" if sc.win_rate_7d_pct is not None else "N/A"
                 replacing.append(
-                    f"{sc.wallet}: słabe wyniki — kandydat do wymiany "
+                    f"{sc.wallet}: poor performance — candidate for replacement "
                     f"(PnL: {sc.total_pnl_sol:+.3f} SOL, WR 7d: {wr_str})"
                 )
 
         # Win rate decline trigger (separate bullet, regardless of status)
         if sc.win_rate_trend_pp is not None and sc.win_rate_trend_pp < -15.0:
             replacing.append(
-                f"{sc.wallet}: win rate spada — {sc.win_rate_7d_pct:.0f}% (7d) "
-                f"vs {sc.win_rate_pct:.0f}% (całość)"
+                f"{sc.wallet}: win rate declining — {sc.win_rate_7d_pct:.0f}% (7d) "
+                f"vs {sc.win_rate_pct:.0f}% (overall)"
             )
 
         # High rug rate trigger (separate bullet, regardless of status)
         if sc.rug_rate_pct > 15.0:
             replacing.append(
-                f"{sc.wallet}: wysoki rug rate ({sc.rug_rate_pct:.0f}%) — "
-                f"wallet handluje ryzykowniejszymi tokenami"
+                f"{sc.wallet}: high rug rate ({sc.rug_rate_pct:.0f}%) — "
+                f"wallet trades riskier tokens"
             )
 
         # increase_capital trigger
         if sc.status == "increase_capital":
             wr_7d = sc.win_rate_7d_pct if sc.win_rate_7d_pct is not None else sc.win_rate_pct
             increasing.append(
-                f"{sc.wallet}: win rate {wr_7d:.0f}% przez 7 dni "
-                f"przy {sc.closed_positions} pozycjach — rozważ zwiększenie kapitału"
+                f"{sc.wallet}: 7d win rate {wr_7d:.0f}% across {sc.closed_positions} positions "
+                f"— consider increasing capital"
             )
 
         # inactive trigger
         if sc.status == "inactive" and sc.days_since_last_position is not None:
             inactive_items.append(
-                f"{sc.wallet}: brak aktywności od ponad {sc.days_since_last_position} "
-                f"dni — sprawdź czy jest nadal aktywny"
+                f"{sc.wallet}: no activity for {sc.days_since_last_position}+ days "
+                f"— verify wallet is still active"
             )
 
     # Existing Rules A-D
@@ -679,6 +679,7 @@ def _generate_loss_report(
 
     analyzer = LossAnalyzer()
     result = analyzer.analyze(positions)
+    inactive_wallets = {sc.wallet for sc in result.wallet_scorecards if sc.status == "inactive"}
     wallet_recs = _generate_wallet_recommendations(positions)
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
     date_str = datetime.now().strftime("%Y-%m-%d")
@@ -714,21 +715,21 @@ def _generate_loss_report(
     # ------------------------------------------------------------------
     # Table of Contents
     # ------------------------------------------------------------------
-    lines.append("## Spis treści")
+    lines.append("## Table of Contents")
     lines.append("")
-    lines.append("- [1. Podsumowanie wykonawcze](#executive-summary)")
-    lines.append("- [2. Pilne działania](#action-items)")
+    lines.append("- [1. Executive Summary](#executive-summary)")
+    lines.append("- [2. Action Items](#action-items)")
     lines.append("- [3. Wallet Scorecard](#wallet-scorecard)")
-    lines.append("- [4. Rekomendacje filtrów](#filter-recommendations)")
-    lines.append("- [5. Analiza strat](#loss-analysis)")
-    lines.append("- [6. Filter Backtest](#filter-backtest)")
-    lines.append("- [7. Szczegóły per wallet](#per-wallet-details)")
+    lines.append("- [4. Filter Recommendations](#filter-recommendations)")
+    lines.append("- [5. Loss Analysis](#loss-analysis)")
+    lines.append("- [6. Global Filter Backtest](#filter-backtest)")
+    lines.append("- [7. Per-Wallet Details](#per-wallet-details)")
     lines.append("")
 
     # ------------------------------------------------------------------
     # Section 1: Executive Summary
     # ------------------------------------------------------------------
-    lines.append("## 1. Podsumowanie wykonawcze {#executive-summary}")
+    lines.append("## 1. Executive Summary {#executive-summary}")
     lines.append("")
 
     loss_rate = (
@@ -751,35 +752,36 @@ def _generate_loss_report(
     ]
 
     lines.append(
-        f"> Portfel zamknął {result.closed_positions} pozycji"
-        f" z łącznym PnL {result.total_pnl_sol:+.4f} SOL."
+        f"> Portfolio closed {result.closed_positions} positions"
+        f" with total PnL {result.total_pnl_sol:+.4f} SOL."
     )
     lines.append(
-        f"> Wskaźnik strat (SL+Rug+Failsafe): {loss_rate:.1f}%"
-        f" ({result.loss_positions} pozycji)."
+        f"> Loss rate (SL+Rug+Failsafe): {loss_rate:.1f}%"
+        f" ({result.loss_positions} positions)."
     )
     if best_wallet is not None:
         lines.append(
-            f"> Najlepszy wallet: {best_wallet.wallet}"
-            f" ({best_wallet.pnl_per_day_sol:+.4f} SOL/dzień,"
+            f"> Top wallet: {best_wallet.wallet}"
+            f" ({best_wallet.pnl_per_day_sol:+.4f} SOL/day,"
             f" WR {best_wallet.win_rate_pct:.0f}%)."
         )
     if replacing_wallets:
-        lines.append(f"> {len(replacing_wallets)} wallet(ów) kandyduje do wymiany.")
+        lines.append(f"> {len(replacing_wallets)} wallet(s) flagged for replacement.")
     elif active_scorecards:
-        lines.append("> Wszystkie wallety w normie — brak pilnych działań.")
+        lines.append("> All wallets within normal range — no urgent actions.")
     lines.append("")
 
     # ------------------------------------------------------------------
     # Section 2: Pilne działania
     # ------------------------------------------------------------------
-    lines.append("## 2. Pilne działania {#action-items}")
+    lines.append("## 2. Action Items {#action-items}")
     lines.append("")
 
     action_items = _build_action_items(result, positions, wallet_recs)
+    action_items = [item for item in action_items if not any(item.startswith(w) for w in inactive_wallets)]
 
     if not action_items:
-        lines.append("_Brak pilnych działań._")
+        lines.append("_No urgent actions._")
     else:
         for idx, item in enumerate(action_items, start=1):
             lines.append(f"{idx}. {item}")
@@ -792,10 +794,12 @@ def _generate_loss_report(
     lines.append("")
 
     if not result.wallet_scorecards:
-        lines.append("_Brak danych do scorecarda (brak zamkniętych pozycji)._")
+        lines.append("_No scorecard data (no closed positions)._")
     else:
         sc_rows = []
         for sc in result.wallet_scorecards:
+            if sc.wallet in inactive_wallets:
+                continue
             wr_7d_str = f"{sc.win_rate_7d_pct:.0f}%" if sc.win_rate_7d_pct is not None else "N/A"
             hold_str = f"{sc.avg_hold_minutes:.0f}m" if sc.avg_hold_minutes is not None else "N/A"
             trend_str = f"{sc.win_rate_trend_pp:+.0f}pp" if sc.win_rate_trend_pp is not None else "N/A"
@@ -812,8 +816,8 @@ def _generate_loss_report(
                 sc.status,
             ])
         lines.append(_md_table(
-            ["Wallet", "Poz.", "WR%", "WR 7d%", "PnL (SOL)", "SOL/dzień",
-             "Rug Rate", "Śr. czas", "Trend", "Status"],
+            ["Wallet", "Pos.", "WR%", "WR 7d%", "PnL (SOL)", "SOL/day",
+             "Rug Rate", "Avg Hold", "Trend", "Status"],
             sc_rows,
         ))
     lines.append("")
@@ -821,7 +825,7 @@ def _generate_loss_report(
     # ------------------------------------------------------------------
     # Section 4: Rekomendacje filtrów
     # ------------------------------------------------------------------
-    lines.append("## 4. Rekomendacje filtrów {#filter-recommendations}")
+    lines.append("## 4. Filter Recommendations {#filter-recommendations}")
     lines.append("")
 
     filter_recs = [
@@ -830,7 +834,7 @@ def _generate_loss_report(
     ]
 
     if not filter_recs:
-        lines.append("_Brak actionable rekomendacji filtrów._")
+        lines.append("_No actionable filter recommendations._")
     else:
         for rec in filter_recs:
             lines.append(f"- {rec.strip()}")
@@ -839,7 +843,7 @@ def _generate_loss_report(
     # ------------------------------------------------------------------
     # Section 5: Analiza strat
     # ------------------------------------------------------------------
-    lines.append("## 5. Analiza strat {#loss-analysis}")
+    lines.append("## 5. Loss Analysis {#loss-analysis}")
     lines.append("")
 
     # ---- 5a. Risk Profile ----
@@ -1006,7 +1010,7 @@ def _generate_loss_report(
     # ------------------------------------------------------------------
     # Section 6: Filter Backtest (globalny)
     # ------------------------------------------------------------------
-    lines.append("## 6. Filter Backtest (globalny) {#filter-backtest}")
+    lines.append("## 6. Global Filter Backtest {#filter-backtest}")
     lines.append("")
     lines.append("For each parameter: what if only trades meeting the threshold were taken?")
     lines.append("")
@@ -1056,7 +1060,7 @@ def _generate_loss_report(
     # ------------------------------------------------------------------
     # Section 7: Szczegóły per wallet
     # ------------------------------------------------------------------
-    lines.append("## 7. Szczegóły per wallet {#per-wallet-details}")
+    lines.append("## 7. Per-Wallet Details {#per-wallet-details}")
     lines.append("")
 
     # Collect unique wallet names from all positions
@@ -1070,6 +1074,8 @@ def _generate_loss_report(
     wallet_sections_written = 0
 
     for wallet_name in all_wallets:
+        if wallet_name in inactive_wallets:
+            continue
         # Filter to this wallet's positions only
         wallet_positions = [p for p in positions if p.target_wallet == wallet_name]
 

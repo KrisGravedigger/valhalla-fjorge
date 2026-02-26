@@ -674,7 +674,7 @@ class WalletScorecardAnalyzer:
     """
 
     MIN_POSITIONS = 30
-    INACTIVE_DAYS = 3
+    INACTIVE_DAYS = 7
     WIN_RATE_INCREASE_THRESHOLD = 60.0   # win_rate_pct overall
     WIN_RATE_7D_INCREASE_THRESHOLD = 65.0
     MAX_RUG_RATE_FOR_INCREASE = 8.0
