@@ -529,6 +529,106 @@ def _generate_wallet_recommendations(positions: List) -> List[str]:
 
     return recommendations
 
+
+def _build_action_items(
+    result: object,
+    positions: List,
+    wallet_recs: object = None,
+) -> List[str]:
+    """
+    Build a prioritized list of action item strings for the report.
+
+    Combines scorecard-based triggers with the existing Rules A-D from
+    _generate_wallet_recommendations().
+
+    Priority order in output:
+      1. consider_replacing wallets
+      2. increase_capital wallets
+      3. filter sweet-spot recommendations (Rule D)
+      4. inactive wallets
+      5. deteriorating wallets (WalletTrendAnalyzer flags)
+      6. remaining A-B-C rules
+
+    Args:
+        result: LossAnalysisResult from LossAnalyzer.analyze().
+        positions: Full list of MatchedPosition (passed to _generate_wallet_recommendations).
+        wallet_recs: Optional pre-computed wallet recommendations (reserved for doc 007).
+
+    Returns:
+        List of recommendation strings, each starting with a wallet name or
+        "Portfolio:".
+    """
+    replacing: List[str] = []
+    increasing: List[str] = []
+    inactive_items: List[str] = []
+
+    for sc in result.wallet_scorecards:
+        # consider_replacing triggers
+        if sc.status == "consider_replacing":
+            if sc.total_pnl_sol < Decimal("0"):
+                replacing.append(
+                    f"{sc.wallet}: ujemny PnL łącznie ({sc.total_pnl_sol:+.3f} SOL) "
+                    f"na {sc.closed_positions} pozycjach — kandydat do wymiany"
+                )
+            elif sc.win_rate_7d_pct is not None and sc.win_rate_7d_pct < 45.0:
+                replacing.append(
+                    f"{sc.wallet}: win rate 7d spada do {sc.win_rate_7d_pct:.0f}% "
+                    f"(całość: {sc.win_rate_pct:.0f}%) — rozważ wymianę"
+                )
+            else:
+                # fallback if neither sub-condition is specifically True
+                wr_str = f"{sc.win_rate_7d_pct:.0f}%" if sc.win_rate_7d_pct is not None else "N/A"
+                replacing.append(
+                    f"{sc.wallet}: słabe wyniki — kandydat do wymiany "
+                    f"(PnL: {sc.total_pnl_sol:+.3f} SOL, WR 7d: {wr_str})"
+                )
+
+        # Win rate decline trigger (separate bullet, regardless of status)
+        if sc.win_rate_trend_pp is not None and sc.win_rate_trend_pp < -15.0:
+            replacing.append(
+                f"{sc.wallet}: win rate spada — {sc.win_rate_7d_pct:.0f}% (7d) "
+                f"vs {sc.win_rate_pct:.0f}% (całość)"
+            )
+
+        # High rug rate trigger (separate bullet, regardless of status)
+        if sc.rug_rate_pct > 15.0:
+            replacing.append(
+                f"{sc.wallet}: wysoki rug rate ({sc.rug_rate_pct:.0f}%) — "
+                f"wallet handluje ryzykowniejszymi tokenami"
+            )
+
+        # increase_capital trigger
+        if sc.status == "increase_capital":
+            wr_7d = sc.win_rate_7d_pct if sc.win_rate_7d_pct is not None else sc.win_rate_pct
+            increasing.append(
+                f"{sc.wallet}: win rate {wr_7d:.0f}% przez 7 dni "
+                f"przy {sc.closed_positions} pozycjach — rozważ zwiększenie kapitału"
+            )
+
+        # inactive trigger
+        if sc.status == "inactive" and sc.days_since_last_position is not None:
+            inactive_items.append(
+                f"{sc.wallet}: brak aktywności od ponad {sc.days_since_last_position} "
+                f"dni — sprawdź czy jest nadal aktywny"
+            )
+
+    # Existing Rules A-D
+    existing_recs = _generate_wallet_recommendations(positions)
+
+    filter_recs = [r for r in existing_recs if "sweet spot" in r.lower() or "tightening" in r.lower()]
+    other_recs = [r for r in existing_recs if r not in filter_recs]
+
+    # Deteriorating flag from result.wallet_flags
+    deteriorating_recs = [
+        f"{wf.wallet}: deteriorating stop-loss rate — {wf.message}"
+        for wf in result.wallet_flags
+        if wf.flag == "deteriorating"
+    ]
+
+    all_items = replacing + increasing + filter_recs + inactive_items + deteriorating_recs + other_recs
+    return all_items
+
+
 def _fmt_sol(val: Optional[Decimal]) -> str:
     """Format SOL value or return 'N/A'."""
     return f"{val:.4f} SOL" if val is not None else "N/A"
