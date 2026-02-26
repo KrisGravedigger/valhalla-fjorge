@@ -674,48 +674,176 @@ def _generate_loss_report(
 ) -> None:
     """Generate loss_analysis.md from matched positions."""
     from valhalla.loss_analyzer import (
-        LossAnalyzer, FilterBacktester, StopLossLevelAnalyzer,
-        WalletTrendAnalyzer, LOSS_REASONS,
+        LossAnalyzer, FilterBacktester, LOSS_REASONS,
     )
 
     analyzer = LossAnalyzer()
     result = analyzer.analyze(positions)
+    wallet_recs = _generate_wallet_recommendations(positions)
+    now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
+    date_str = datetime.now().strftime("%Y-%m-%d")
+
+    # ------------------------------------------------------------------
+    # Local helpers (preserved from original function)
+    # ------------------------------------------------------------------
+    def _fmt_age_hours(hours: float) -> str:
+        return f"{hours:.0f}h" if hours < 24 else f"{hours / 24:.0f}d"
+
+    def _fmt_age_threshold(threshold: float) -> str:
+        """Format token_age_hours threshold: hours < 24 as Xh, hours >= 24 as Xd."""
+        if threshold < 24:
+            return f"{threshold:.0f}h"
+        return f"{threshold / 24:.0f}d"
+
+    # PARAM_LABELS: used in Section 6 (Filter Backtest) and Section 7 (per-wallet loop)
+    PARAM_LABELS = {
+        "jup_score": "jup_score (minimum threshold)",
+        "mc_at_open": "mc_at_open (minimum threshold)",
+        "token_age_hours": "token_age_hours (minimum threshold)",
+    }
 
     lines: List[str] = []
-    now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
-    lines.append("# Loss Analysis Report")
+
+    # ------------------------------------------------------------------
+    # Report header
+    # ------------------------------------------------------------------
+    lines.append(f"# Loss Analysis Report — {date_str}")
     lines.append(f"Generated: {now_str}")
     lines.append("")
 
     # ------------------------------------------------------------------
-    # Section 1: Overview
+    # Table of Contents
     # ------------------------------------------------------------------
-    lines.append("## Overview")
+    lines.append("## Spis treści")
+    lines.append("")
+    lines.append("- [1. Podsumowanie wykonawcze](#executive-summary)")
+    lines.append("- [2. Pilne działania](#action-items)")
+    lines.append("- [3. Wallet Scorecard](#wallet-scorecard)")
+    lines.append("- [4. Rekomendacje filtrów](#filter-recommendations)")
+    lines.append("- [5. Analiza strat](#loss-analysis)")
+    lines.append("- [6. Filter Backtest](#filter-backtest)")
+    lines.append("- [7. Szczegóły per wallet](#per-wallet-details)")
+    lines.append("")
+
+    # ------------------------------------------------------------------
+    # Section 1: Executive Summary
+    # ------------------------------------------------------------------
+    lines.append("## 1. Podsumowanie wykonawcze {#executive-summary}")
     lines.append("")
 
     loss_rate = (
         result.loss_positions / result.closed_positions * 100.0
         if result.closed_positions > 0 else 0.0
     )
-    rug_failsafe_count = sum(
-        1 for p in positions
-        if p.close_reason in {"rug", "rug_unknown_open", "failsafe", "failsafe_unknown_open"}
-    )
 
-    overview_rows = [
-        ["Total positions (closed)", str(result.closed_positions)],
-        ["Stop-loss exits", str(result.stop_loss_positions)],
-        ["Rug / failsafe", str(rug_failsafe_count)],
-        ["Total loss PnL", _fmt_sol(result.loss_pnl_sol)],
-        ["Loss rate", f"{loss_rate:.1f}%"],
+    active_scorecards = [
+        sc for sc in result.wallet_scorecards
+        if sc.status not in ("inactive", "insufficient_data")
     ]
-    lines.append(_md_table(["Metric", "Value"], overview_rows))
+    best_wallet = max(
+        active_scorecards,
+        key=lambda sc: sc.pnl_per_day_sol,
+        default=None,
+    )
+    replacing_wallets = [
+        sc for sc in result.wallet_scorecards
+        if sc.status == "consider_replacing"
+    ]
+
+    lines.append(
+        f"> Portfel zamknął {result.closed_positions} pozycji"
+        f" z łącznym PnL {result.total_pnl_sol:+.4f} SOL."
+    )
+    lines.append(
+        f"> Wskaźnik strat (SL+Rug+Failsafe): {loss_rate:.1f}%"
+        f" ({result.loss_positions} pozycji)."
+    )
+    if best_wallet is not None:
+        lines.append(
+            f"> Najlepszy wallet: {best_wallet.wallet}"
+            f" ({best_wallet.pnl_per_day_sol:+.4f} SOL/dzień,"
+            f" WR {best_wallet.win_rate_pct:.0f}%)."
+        )
+    if replacing_wallets:
+        lines.append(f"> {len(replacing_wallets)} wallet(ów) kandyduje do wymiany.")
+    elif active_scorecards:
+        lines.append("> Wszystkie wallety w normie — brak pilnych działań.")
     lines.append("")
 
     # ------------------------------------------------------------------
-    # Section 2: Risk Profile
+    # Section 2: Pilne działania
     # ------------------------------------------------------------------
-    lines.append("## Risk Profile: Stop-Loss vs Profitable Trades")
+    lines.append("## 2. Pilne działania {#action-items}")
+    lines.append("")
+
+    action_items = _build_action_items(result, positions, wallet_recs)
+
+    if not action_items:
+        lines.append("_Brak pilnych działań._")
+    else:
+        for idx, item in enumerate(action_items, start=1):
+            lines.append(f"{idx}. {item}")
+    lines.append("")
+
+    # ------------------------------------------------------------------
+    # Section 3: Wallet Scorecard
+    # ------------------------------------------------------------------
+    lines.append("## 3. Wallet Scorecard {#wallet-scorecard}")
+    lines.append("")
+
+    if not result.wallet_scorecards:
+        lines.append("_Brak danych do scorecarda (brak zamkniętych pozycji)._")
+    else:
+        sc_rows = []
+        for sc in result.wallet_scorecards:
+            wr_7d_str = f"{sc.win_rate_7d_pct:.0f}%" if sc.win_rate_7d_pct is not None else "N/A"
+            hold_str = f"{sc.avg_hold_minutes:.0f}m" if sc.avg_hold_minutes is not None else "N/A"
+            trend_str = f"{sc.win_rate_trend_pp:+.0f}pp" if sc.win_rate_trend_pp is not None else "N/A"
+            sc_rows.append([
+                sc.wallet,
+                str(sc.closed_positions),
+                f"{sc.win_rate_pct:.0f}%",
+                wr_7d_str,
+                f"{sc.total_pnl_sol:+.4f}",
+                f"{sc.pnl_per_day_sol:+.4f}",
+                f"{sc.rug_rate_pct:.0f}%",
+                hold_str,
+                trend_str,
+                sc.status,
+            ])
+        lines.append(_md_table(
+            ["Wallet", "Poz.", "WR%", "WR 7d%", "PnL (SOL)", "SOL/dzień",
+             "Rug Rate", "Śr. czas", "Trend", "Status"],
+            sc_rows,
+        ))
+    lines.append("")
+
+    # ------------------------------------------------------------------
+    # Section 4: Rekomendacje filtrów
+    # ------------------------------------------------------------------
+    lines.append("## 4. Rekomendacje filtrów {#filter-recommendations}")
+    lines.append("")
+
+    filter_recs = [
+        r for r in wallet_recs
+        if "sweet spot" in r.lower() or "tightening" in r.lower()
+    ]
+
+    if not filter_recs:
+        lines.append("_Brak actionable rekomendacji filtrów._")
+    else:
+        for rec in filter_recs:
+            lines.append(f"- {rec.strip()}")
+    lines.append("")
+
+    # ------------------------------------------------------------------
+    # Section 5: Analiza strat
+    # ------------------------------------------------------------------
+    lines.append("## 5. Analiza strat {#loss-analysis}")
+    lines.append("")
+
+    # ---- 5a. Risk Profile ----
+    lines.append("### 5a. Risk Profile: Stop-Loss vs Profitable Trades")
     lines.append("")
     lines.append("Compares average token quality metrics for loss groups vs profitable trades only.")
     lines.append("Lower quality metrics in the stop-loss group may indicate avoidable entries.")
@@ -731,9 +859,6 @@ def _generate_loss_report(
                 "mc_at_open": "mc_at_open",
                 "token_age_hours": "token_age_hours",
             }.get(row.metric, row.metric)
-
-            def _fmt_age_hours(hours: float) -> str:
-                return f"{hours:.0f}h" if hours < 24 else f"{hours / 24:.0f}d"
 
             if row.metric == "mc_at_open":
                 sl_val = _fmt_mc(row.sl_avg) if row.sl_avg is not None else "N/A"
@@ -770,72 +895,8 @@ def _generate_loss_report(
         ))
     lines.append("")
 
-    # ------------------------------------------------------------------
-    # Section 3: Filter Backtest
-    # ------------------------------------------------------------------
-    lines.append("## Filter Backtest")
-    lines.append("")
-    lines.append("For each parameter: what if only trades meeting the threshold were taken?")
-    lines.append("")
-
-    PARAM_LABELS = {
-        "jup_score": "jup_score (minimum threshold)",
-        "mc_at_open": "mc_at_open (minimum threshold)",
-        "token_age_hours": "token_age_hours (minimum threshold)",
-    }
-
-    def _fmt_age_threshold(threshold: float) -> str:
-        """Format token_age_hours threshold: hours < 24 as Xh, hours >= 24 as Xd."""
-        if threshold < 24:
-            return f"{threshold:.0f}h"
-        return f"{threshold / 24:.0f}d"
-
-    for param, bt_rows in result.backtest_results.items():
-        lines.append(f"### {PARAM_LABELS.get(param, param)}")
-        lines.append("")
-        if not bt_rows:
-            lines.append("_No data._")
-            lines.append("")
-            continue
-
-        # Find sweet spot: row with highest net_sol_impact > 0
-        best_idx = None
-        best_impact = Decimal("0")
-        for i, brow in enumerate(bt_rows):
-            if brow.net_sol_impact > best_impact:
-                best_impact = brow.net_sol_impact
-                best_idx = i
-
-        table_rows = []
-        for i, brow in enumerate(bt_rows):
-            if param == "mc_at_open":
-                threshold_str = _fmt_mc(brow.threshold)
-            elif param == "token_age_hours":
-                threshold_str = _fmt_age_threshold(brow.threshold)
-            else:
-                threshold_str = f"{brow.threshold:.0f}" if brow.threshold == int(brow.threshold) else f"{brow.threshold}"
-
-            net_str = f"{brow.net_sol_impact:+.4f} SOL"
-            marker = " <- sweet spot" if i == best_idx else ""
-            table_rows.append([
-                f">= {threshold_str}",
-                str(brow.wins_kept),
-                str(brow.wins_excluded),
-                str(brow.losses_avoided),
-                str(brow.losses_kept),
-                net_str + marker,
-            ])
-
-        lines.append(_md_table(
-            ["Threshold", "Wins Kept", "Wins Excl.", "Losses Avoided", "Losses Kept", "Net SOL Impact"],
-            table_rows,
-        ))
-        lines.append("")
-
-    # ------------------------------------------------------------------
-    # Section 4: Stop-Loss Level Distribution
-    # ------------------------------------------------------------------
-    lines.append("## Stop-Loss Level Distribution")
+    # ---- 5b. Stop-Loss Level Distribution ----
+    lines.append("### 5b. Stop-Loss Level Distribution")
     lines.append("")
     lines.append("If your stop-loss had been set tighter, how many positions would have been saved?")
     lines.append("")
@@ -872,37 +933,8 @@ def _generate_loss_report(
         ))
     lines.append("")
 
-    # ------------------------------------------------------------------
-    # Section 5: Wallet Stop-Loss Flags
-    # ------------------------------------------------------------------
-    lines.append("## Wallet Stop-Loss Flags")
-    lines.append("")
-
-    if not result.wallet_flags:
-        lines.append("No wallets flagged (all within normal stop-loss rates).")
-    else:
-        wf_rows = [
-            [
-                wf.wallet,
-                f"{wf.overall_sl_only_rate_pct:.0f}%",
-                f"{wf.overall_sl_rate_pct:.0f}%",
-                f"{wf.recent_sl_only_rate_pct:.0f}%",
-                f"{wf.recent_sl_rate_pct:.0f}%",
-                str(wf.recent_position_count),
-                wf.flag,
-            ]
-            for wf in result.wallet_flags
-        ]
-        lines.append(_md_table(
-            ["Wallet", "SL Only Rate", "SL+Rug Rate", "Recent SL Only", "Recent SL+Rug", "Recent Positions", "Flag"],
-            wf_rows,
-        ))
-    lines.append("")
-
-    # ------------------------------------------------------------------
-    # Section 6: Source Wallet Comparison
-    # ------------------------------------------------------------------
-    lines.append("## Source Wallet Comparison")
+    # ---- 5c. Source Wallet Comparison ----
+    lines.append("### 5c. Source Wallet Comparison")
     lines.append("")
 
     # Only consider loss positions
@@ -972,22 +1004,59 @@ def _generate_loss_report(
     lines.append("")
 
     # ------------------------------------------------------------------
-    # Section 7: Wallet Recommendations
+    # Section 6: Filter Backtest (globalny)
     # ------------------------------------------------------------------
-    lines.append("## Wallet Recommendations")
+    lines.append("## 6. Filter Backtest (globalny) {#filter-backtest}")
     lines.append("")
-    recs = _generate_wallet_recommendations(positions)
-    if not recs:
-        lines.append("No recommendations at this time.")
-    else:
-        for rec in recs:
-            lines.append(f"- {rec.strip()}")
+    lines.append("For each parameter: what if only trades meeting the threshold were taken?")
     lines.append("")
 
+    for param, bt_rows in result.backtest_results.items():
+        lines.append(f"### {PARAM_LABELS.get(param, param)}")
+        lines.append("")
+        if not bt_rows:
+            lines.append("_No data._")
+            lines.append("")
+            continue
+
+        # Find sweet spot: row with highest net_sol_impact > 0
+        best_idx = None
+        best_impact = Decimal("0")
+        for i, brow in enumerate(bt_rows):
+            if brow.net_sol_impact > best_impact:
+                best_impact = brow.net_sol_impact
+                best_idx = i
+
+        table_rows = []
+        for i, brow in enumerate(bt_rows):
+            if param == "mc_at_open":
+                threshold_str = _fmt_mc(brow.threshold)
+            elif param == "token_age_hours":
+                threshold_str = _fmt_age_threshold(brow.threshold)
+            else:
+                threshold_str = f"{brow.threshold:.0f}" if brow.threshold == int(brow.threshold) else f"{brow.threshold}"
+
+            net_str = f"{brow.net_sol_impact:+.4f} SOL"
+            marker = " <- sweet spot" if i == best_idx else ""
+            table_rows.append([
+                f">= {threshold_str}",
+                str(brow.wins_kept),
+                str(brow.wins_excluded),
+                str(brow.losses_avoided),
+                str(brow.losses_kept),
+                net_str + marker,
+            ])
+
+        lines.append(_md_table(
+            ["Threshold", "Wins Kept", "Wins Excl.", "Losses Avoided", "Losses Kept", "Net SOL Impact"],
+            table_rows,
+        ))
+        lines.append("")
+
     # ------------------------------------------------------------------
-    # Section 8: Per-Wallet Analysis
+    # Section 7: Szczegóły per wallet
     # ------------------------------------------------------------------
-    lines.append("## Per-Wallet Analysis")
+    lines.append("## 7. Szczegóły per wallet {#per-wallet-details}")
     lines.append("")
 
     # Collect unique wallet names from all positions
