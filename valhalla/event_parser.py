@@ -19,12 +19,12 @@ class EventParser:
     # Regex patterns (from v1)
     TIMESTAMP_PATTERN = r'\[((?:\d{4}-\d{2}-\d{2}T)?\d{2}:\d{2})\]'
     TARGET_PATTERN = r'Target:\s*(\S+)'
-    POSITION_TYPE_PATTERN = r'(Spot|BidAsk|Curve)\s+\d+-Sided Position\s*\|\s*(\S+)-SOL'
+    POSITION_TYPE_PATTERN = r'(Spot|BidAsk|Curve)\s+\d+-Sided Position\s*\|\s*(\S+)-(\S+)'
     MARKET_CAP_PATTERN = r'MC:\s*\$([\d,]+\.?\d*)'
     TOKEN_AGE_PATTERN = r'Age:\s*(.+?)(?:\n|$)'
     JUP_SCORE_PATTERN = r'Jup Score:\s*(\d+)'
-    YOUR_POS_PATTERN = r'Your Pos:.*?SOL:\s*([\d.]+)'
-    TARGET_POS_PATTERN = r'Target Pos:.*?SOL:\s*([\d.]+)'
+    YOUR_POS_PATTERN = r'Your Pos:.*?\|\s*\S+:\s*([\d.]+)'
+    TARGET_POS_PATTERN = r'Target Pos:.*?\|\s*\S+:\s*([\d.]+)'
     TOTAL_DEPOSIT_USER_PATTERN = r'Total Deposit:.*?\|\s*User\s+([\d.]+)\s*SOL'
 
     # Position ID patterns
@@ -214,7 +214,8 @@ class EventParser:
 
             position_type = position_type_match.group(1)
             token_name = position_type_match.group(2)
-            token_pair = f"{token_name}-SOL"
+            quote_token = position_type_match.group(3)
+            token_pair = f"{token_name}-{quote_token}"
             target = target_match.group(1)
             market_cap = float(mc_match.group(1).replace(',', ''))
             token_age = age_match.group(1).strip()
