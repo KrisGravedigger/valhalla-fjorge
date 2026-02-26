@@ -1,16 +1,17 @@
 """
 Loss analysis module for Valhalla position data.
 
-Provides four analysis classes that work on List[MatchedPosition]:
+Provides five analysis classes that work on List[MatchedPosition]:
 - LossAnalyzer: risk profiling of stop-loss positions vs all trades
 - FilterBacktester: sweeps filter thresholds, calculates SOL impact
 - StopLossLevelAnalyzer: distribution of losses by depth bucket
 - WalletTrendAnalyzer: per-wallet stop-loss trend flags
+- WalletScorecardAnalyzer: per-wallet performance metrics and actionable classification
 
 All classes return structured data objects. No file I/O, no external calls.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Dict, List, Optional
@@ -83,6 +84,28 @@ class WalletFlag:
 
 
 @dataclass
+class WalletScorecard:
+    """Per-wallet scorecard with performance metrics and classification."""
+    wallet: str
+    total_positions: int
+    closed_positions: int
+    win_rate_pct: float
+    win_rate_7d_pct: Optional[float]    # None if no closed positions in last 7d
+    win_rate_24h_pct: Optional[float]   # None if no closed positions in last 24h
+    win_rate_72h_pct: Optional[float]   # None if no closed positions in last 72h
+    total_pnl_sol: Decimal
+    pnl_7d_sol: Decimal
+    pnl_per_day_sol: Decimal            # pnl_7d_sol / 7
+    rug_rate_pct: float
+    avg_hold_minutes: Optional[float]   # None if datetime fields missing/unparseable
+    capital_efficiency: Optional[float] # total_pnl_sol / sum(sol_deployed); None if no sol_deployed
+    consistency_score: Optional[float]  # max(|WR_24h - WR_all|, |WR_72h - WR_all|, |WR_7d - WR_all|) in pp; None if all sub-rates are None
+    win_rate_trend_pp: Optional[float]  # win_rate_7d_pct - win_rate_pct (pp); None if win_rate_7d_pct is None
+    status: str                         # see status classification below
+    days_since_last_position: Optional[int]  # None if no datetime_close available
+
+
+@dataclass
 class LossAnalysisResult:
     """Top-level result returned by LossAnalyzer.analyze()."""
     total_positions: int
@@ -96,6 +119,7 @@ class LossAnalysisResult:
     sl_buckets: List[SLBucketRow]                    # all losses (SL+Rug/Failsafe)
     sl_buckets_sl_only: List[SLBucketRow]            # SL-only exits (without rugs)
     wallet_flags: List[WalletFlag]
+    wallet_scorecards: List[WalletScorecard] = field(default_factory=list)
 
 
 # ---------------------------------------------------------------------------
@@ -170,6 +194,7 @@ class LossAnalyzer:
         sl_buckets = StopLossLevelAnalyzer().analyze(positions)
         sl_buckets_sl_only = StopLossLevelAnalyzer().analyze(positions, reasons=SL_ONLY_REASONS)
         wallet_flags = WalletTrendAnalyzer().analyze(positions)
+        wallet_scorecards = WalletScorecardAnalyzer().analyze(positions)
 
         return LossAnalysisResult(
             total_positions=total,
@@ -183,6 +208,7 @@ class LossAnalyzer:
             sl_buckets=sl_buckets,
             sl_buckets_sl_only=sl_buckets_sl_only,
             wallet_flags=wallet_flags,
+            wallet_scorecards=wallet_scorecards,
         )
 
     def _risk_profile(
@@ -634,3 +660,234 @@ class WalletTrendAnalyzer:
         if dt is None:
             return False
         return dt >= cutoff
+
+
+# ---------------------------------------------------------------------------
+# WalletScorecardAnalyzer
+# ---------------------------------------------------------------------------
+
+class WalletScorecardAnalyzer:
+    """
+    Per-wallet scorecard: performance metrics and actionable classification.
+
+    Minimum data for non-trivial classification: >= 30 closed positions.
+    """
+
+    MIN_POSITIONS = 30
+    INACTIVE_DAYS = 3
+    WIN_RATE_INCREASE_THRESHOLD = 60.0   # win_rate_pct overall
+    WIN_RATE_7D_INCREASE_THRESHOLD = 65.0
+    MAX_RUG_RATE_FOR_INCREASE = 8.0
+    WIN_RATE_7D_REPLACE_THRESHOLD = 45.0
+
+    def analyze(
+        self,
+        positions: List[MatchedPosition],
+        reference_date: Optional[datetime] = None,
+    ) -> List[WalletScorecard]:
+        """
+        Compute per-wallet scorecards from a list of positions.
+
+        Args:
+            positions: Full list of positions (all close_reasons, including still_open).
+            reference_date: Reference point for recency windows. Defaults to the
+                            maximum datetime_close found in closed positions.
+
+        Returns:
+            List of WalletScorecard, sorted by pnl_per_day_sol descending.
+        """
+        RUG_REASONS = {"rug", "rug_unknown_open"}
+
+        # 1. Filter to closed positions
+        closed = [p for p in positions if p.close_reason != "still_open"]
+
+        # 2. Determine reference_date
+        if reference_date is None:
+            dates = [
+                parse_iso_datetime(p.datetime_close)
+                for p in closed
+                if parse_iso_datetime(p.datetime_close) is not None
+            ]
+            reference_date = max(dates) if dates else datetime.utcnow()
+
+        # 3. Compute time cutoffs
+        cutoff_7d = reference_date - timedelta(days=7)
+        cutoff_72h = reference_date - timedelta(hours=72)
+        cutoff_24h = reference_date - timedelta(hours=24)
+
+        # 4. Group all positions by wallet (including still_open for total_positions)
+        all_by_wallet: Dict[str, List[MatchedPosition]] = {}
+        for pos in positions:
+            all_by_wallet.setdefault(pos.target_wallet, []).append(pos)
+
+        # Also group closed positions by wallet
+        closed_by_wallet: Dict[str, List[MatchedPosition]] = {}
+        for pos in closed:
+            closed_by_wallet.setdefault(pos.target_wallet, []).append(pos)
+
+        # Union of wallets seen in either group
+        all_wallets = set(all_by_wallet.keys()) | set(closed_by_wallet.keys())
+
+        # 5. Compute scorecard per wallet
+        scorecards: List[WalletScorecard] = []
+
+        for wallet in all_wallets:
+            wallet_all = all_by_wallet.get(wallet, [])
+            wallet_closed = closed_by_wallet.get(wallet, [])
+
+            total_positions = len(wallet_all)
+            closed_positions = len(wallet_closed)
+
+            # Win definition: pnl_sol > 0 AND close_reason NOT in LOSS_REASONS
+            def is_win(p: MatchedPosition) -> bool:
+                return (
+                    p.pnl_sol is not None
+                    and p.pnl_sol > Decimal("0")
+                    and p.close_reason not in LOSS_REASONS
+                )
+
+            # win_rate_pct (all closed)
+            wins = sum(1 for p in wallet_closed if is_win(p))
+            win_rate_pct = wins / closed_positions * 100.0 if closed_positions > 0 else 0.0
+
+            # Helper: win_rate for a recent subset
+            def _win_rate_recent(cutoff: datetime) -> Optional[float]:
+                recent = [
+                    p for p in wallet_closed
+                    if parse_iso_datetime(p.datetime_close) is not None
+                    and parse_iso_datetime(p.datetime_close) >= cutoff
+                ]
+                if not recent:
+                    return None
+                return sum(1 for p in recent if is_win(p)) / len(recent) * 100.0
+
+            win_rate_7d_pct = _win_rate_recent(cutoff_7d)
+            win_rate_72h_pct = _win_rate_recent(cutoff_72h)
+            win_rate_24h_pct = _win_rate_recent(cutoff_24h)
+
+            # total_pnl_sol
+            total_pnl_sol = sum(
+                (p.pnl_sol for p in wallet_closed if p.pnl_sol is not None),
+                Decimal("0"),
+            )
+
+            # pnl_7d_sol
+            pnl_7d_sol = sum(
+                (
+                    p.pnl_sol
+                    for p in wallet_closed
+                    if p.pnl_sol is not None
+                    and parse_iso_datetime(p.datetime_close) is not None
+                    and parse_iso_datetime(p.datetime_close) >= cutoff_7d
+                ),
+                Decimal("0"),
+            )
+
+            # pnl_per_day_sol
+            pnl_per_day_sol = pnl_7d_sol / Decimal("7")
+
+            # rug_rate_pct
+            rugs = sum(1 for p in wallet_closed if p.close_reason in RUG_REASONS)
+            rug_rate_pct = rugs / closed_positions * 100.0 if closed_positions > 0 else 0.0
+
+            # avg_hold_minutes
+            hold_times = []
+            for p in wallet_closed:
+                dt_open = parse_iso_datetime(p.datetime_open)
+                dt_close = parse_iso_datetime(p.datetime_close)
+                if dt_open is not None and dt_close is not None and dt_close > dt_open:
+                    hold_times.append((dt_close - dt_open).total_seconds() / 60.0)
+            avg_hold_minutes = sum(hold_times) / len(hold_times) if hold_times else None
+
+            # capital_efficiency
+            deployed_vals = [
+                p.sol_deployed
+                for p in wallet_closed
+                if p.sol_deployed is not None and p.sol_deployed > Decimal("0")
+            ]
+            if not deployed_vals:
+                capital_efficiency = None
+            else:
+                sum_deployed = sum(deployed_vals, Decimal("0"))
+                capital_efficiency = (
+                    float(total_pnl_sol / sum_deployed)
+                    if sum_deployed > Decimal("0")
+                    else None
+                )
+
+            # consistency_score
+            deviations = []
+            for rate in [win_rate_24h_pct, win_rate_72h_pct, win_rate_7d_pct]:
+                if rate is not None:
+                    deviations.append(abs(rate - win_rate_pct))
+            consistency_score = max(deviations) if deviations else None
+
+            # win_rate_trend_pp
+            win_rate_trend_pp = (
+                win_rate_7d_pct - win_rate_pct if win_rate_7d_pct is not None else None
+            )
+
+            # days_since_last_position
+            close_dates = [
+                parse_iso_datetime(p.datetime_close)
+                for p in wallet_closed
+                if parse_iso_datetime(p.datetime_close) is not None
+            ]
+            if close_dates:
+                last_close = max(close_dates)
+                days_since_last_position = (reference_date - last_close).days
+            else:
+                days_since_last_position = None
+
+            # Status classification (priority order, first match wins)
+            if (
+                days_since_last_position is not None
+                and days_since_last_position >= self.INACTIVE_DAYS
+            ):
+                status = "inactive"
+            elif closed_positions < self.MIN_POSITIONS:
+                status = "insufficient_data"
+            elif (
+                closed_positions >= self.MIN_POSITIONS
+                and win_rate_7d_pct is not None
+                and win_rate_7d_pct >= self.WIN_RATE_7D_INCREASE_THRESHOLD
+                and win_rate_pct >= self.WIN_RATE_INCREASE_THRESHOLD
+                and total_pnl_sol > Decimal("0")
+                and rug_rate_pct < self.MAX_RUG_RATE_FOR_INCREASE
+            ):
+                status = "increase_capital"
+            elif closed_positions >= self.MIN_POSITIONS and (
+                total_pnl_sol < Decimal("0")
+                or (
+                    win_rate_7d_pct is not None
+                    and win_rate_7d_pct < self.WIN_RATE_7D_REPLACE_THRESHOLD
+                )
+            ):
+                status = "consider_replacing"
+            else:
+                status = "monitor"
+
+            scorecards.append(WalletScorecard(
+                wallet=wallet,
+                total_positions=total_positions,
+                closed_positions=closed_positions,
+                win_rate_pct=win_rate_pct,
+                win_rate_7d_pct=win_rate_7d_pct,
+                win_rate_24h_pct=win_rate_24h_pct,
+                win_rate_72h_pct=win_rate_72h_pct,
+                total_pnl_sol=total_pnl_sol,
+                pnl_7d_sol=pnl_7d_sol,
+                pnl_per_day_sol=pnl_per_day_sol,
+                rug_rate_pct=rug_rate_pct,
+                avg_hold_minutes=avg_hold_minutes,
+                capital_efficiency=capital_efficiency,
+                consistency_score=consistency_score,
+                win_rate_trend_pp=win_rate_trend_pp,
+                status=status,
+                days_since_last_position=days_since_last_position,
+            ))
+
+        # 6. Sort by pnl_per_day_sol descending (Decimal comparison)
+        scorecards.sort(key=lambda s: s.pnl_per_day_sol, reverse=True)
+
+        return scorecards
