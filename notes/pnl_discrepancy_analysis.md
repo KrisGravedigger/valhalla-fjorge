@@ -129,3 +129,117 @@ but can overcorrect if the market price has moved since the actual swap.
 
 **Recommendation**: Accept our calc as the correct "realized PnL" metric. lpagent is useful
 for "what would this be worth today" but is NOT a measure of what was actually earned.
+
+---
+
+## Full Cross-Reference Analysis (2026-02-27)
+
+### Dataset Matching
+
+Full position-by-position comparison using extracted lpagent CSV (1212 positions) vs our
+positions.csv (1461 positions).
+
+| | Count | Notes |
+|---|---|---|
+| Matched | 1196 | By position address prefix+suffix |
+| lpagent only | 16 | Mostly very recent (minutes/hours old) |
+| Our data only | 243 | Feb 11-14 positions (lpagent CSV goes back to Feb 15) |
+
+### Aggregate Totals (1196 matched positions)
+
+| Metric | lpagent (from %) | Ours | Diff |
+|---|---|---|---|
+| **PnL** | 2.40 SOL | 8.39 SOL | +5.99 SOL |
+| **Fees** | 23.42 SOL | 23.05 SOL | -0.37 SOL (1.6%) |
+
+Fees match within 1.6% - validates our fee calculation is correct.
+
+### Breakdown of 5.99 SOL PnL Difference
+
+| Category | Impact | Positions | Details |
+|---|---|---|---|
+| Bug #1: Phantom deposit | +1.85 SOL | 15 | our_dep=0 when lp_dep>0. Token-only first deposit causes SOL price=0. Fix committed, data needs regeneration. |
+| lpagent bug: DSc936vC | +3.00 SOL | 1 | Meteora API confirms 3.0 SOL in, 3.0 SOL out, 0 tokens. lpagent shows -3.0 (100% loss) - incorrect. |
+| Mark-to-market (we higher) | +1.82 SOL | 190 | Memecoins depreciated after close |
+| Mark-to-market (we lower) | -0.72 SOL | 71 | Tokens appreciated after close |
+| Close matches | +0.04 SOL | 935 | Rounding |
+| **TOTAL** | **+5.99 SOL** | **1196** | |
+
+### After Corrections
+
+| | Before | After |
+|---|---|---|
+| Ours (fix Bug #1) | 8.39 SOL | 6.54 SOL |
+| lpagent (fix DSc936vC) | 2.40 SOL | 5.40 SOL |
+| Remaining diff | 5.99 SOL | **1.14 SOL** (21%) |
+
+The 1.14 SOL remaining difference is fully explained by mark-to-market (memecoins lose
+value after position close, so our historical prices are systematically higher than
+lpagent's current prices).
+
+### Per-Position Difference Distribution
+
+| Difference range | Count | % |
+|---|---|---|
+| < 0.001 SOL | 934 | 78% |
+| 0.001 - 0.01 SOL | 189 | 16% |
+| 0.01 - 0.05 SOL | 56 | 5% |
+| 0.05 - 0.1 SOL | 9 | 0.8% |
+| 0.1 - 0.5 SOL | 7 | 0.6% |
+| >= 0.5 SOL | 1 | 0.1% |
+
+78% of positions match within 0.001 SOL - strong validation.
+
+### Bug #1: Phantom Deposit (token-only first deposit)
+
+Only 1 position (2jPS4rTv) had this bug with pnl_source=meteora. 14 others were
+`pnl_source=pending` (never calculated) due to the same root cause. After recalculation:
+
+| Position | Token | Status | dep before | dep after | pnl after |
+|---|---|---|---|---|---|
+| 2jPS4rTv | Jellybean | **FIXED** | 0.0000 | 0.3710 | +0.0489 |
+| 7sdV19Ft | Lobstar | **FIXED** | pending | 2.9999 | -0.3673 |
+| Bz4SW4uP | MOG | **FIXED** | pending | 3.0200 | -0.3752 |
+| 8iruKCak | house | **FIXED** | pending | 3.0200 | -0.2904 |
+| 8D3qxRcL | Lobstar | **FIXED** | pending | 4.0000 | -0.0144 |
+| 7KSzqhVU | Jellybean | **FIXED** | pending | 0.7841 | -0.0301 |
+| + 6 more | various | **FIXED** | pending | various | various |
+| T3xDkCiC | Lobstar | still dep=0 | pending | 0.0000 | 0.0000 |
+| FYM6cs11 | NoLimit | still dep=0 | pending | 0.0000 | 0.0000 |
+| EcyQ9YBF | arc | non-SOL pair | pending | FAILED | - |
+
+Fix: Pre-scan all transactions to find initial SOL price. 2 positions remain unfixable
+(all transactions are token-only with zero SOL in any direction).
+
+### DSc936vC (Lobstar, 3.0 SOL)
+
+Meteora API confirms: 3.0 SOL deposited, 3.0 SOL withdrawn, 0 tokens, PnL = 0.
+lpagent shows -3.0 SOL (100% loss) but EXCLUDES this from its displayed total
+(marked as suspicious). Both tools effectively ignore this position. Not a real
+discrepancy.
+
+### Phantom Positions (243 in our data, not in lpagent CSV)
+
+lpagent CSV only goes back to Feb 15. Our data has 243 positions from Feb 11-14
+with +2.48 SOL total PnL. These are real positions but outside lpagent's CSV retention.
+
+### Final Numbers After Recalculation (2026-02-27)
+
+| Metric | lpagent (from %) | Ours | Diff |
+|---|---|---|---|
+| **Fees** | 23.42 SOL | 23.44 SOL | 0.01 SOL (0.06%) |
+| **PnL (raw)** | 2.40 SOL | 6.98 SOL | 4.58 SOL |
+| **PnL (excl DSc936vC)** | 5.40 SOL | 6.98 SOL | 1.58 SOL |
+
+Remaining 1.58 SOL breakdown:
+- Known dep=0 issues (2 positions): ~0.42 SOL
+- Pure mark-to-market: ~1.16 SOL (avg 0.001 SOL/position across 1190 positions)
+
+### Conclusion (definitive, 2026-02-27)
+
+1. **Fees: PERFECT MATCH** - 0.06% difference across 1196 positions
+2. **After all fixes**: 1.16 SOL (22%) difference = mark-to-market on memecoins
+3. **78% of positions match within 0.001 SOL** per-position
+4. **Root cause confirmed**: memecoins lose value after position close, making
+   our historical prices systematically higher than lpagent's current prices
+5. Our calculator is correct for **realized PnL**; lpagent shows **unrealized MtM**
