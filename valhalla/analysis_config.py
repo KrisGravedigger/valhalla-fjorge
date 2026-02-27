@@ -42,3 +42,7 @@ ACTION_HIGH_RUG_RATE_PCT: float = 15.0
 # of the wallet's total opened positions.
 # Example: 0.10 means "more than 1 missed trade per 10 executed trades".
 INSUF_BALANCE_RATE_THRESHOLD: float = 0.10
+
+# Only consider insufficient-balance events and positions from the last N days.
+# Set to 0 to disable the window (use all historical data).
+INSUF_BALANCE_LOOKBACK_DAYS: int = 7

@@ -688,15 +688,20 @@ def _md_table(headers: List[str], rows: List[List[str]]) -> str:
 
 
 def _load_insuf_balance_csv(csv_path: str) -> List:
-    """Load insufficient balance events from CSV, returning simple objects with .target and .required_amount."""
+    """Load insufficient balance events from CSV.
+
+    Returns simple objects with .target, .required_amount, .event_date (date | None).
+    """
     import csv as _csv
+    from datetime import date as _date
     from pathlib import Path
 
     class _InsuFEvent:
-        __slots__ = ("target", "required_amount")
-        def __init__(self, target: str, required_amount: float):
+        __slots__ = ("target", "required_amount", "event_date")
+        def __init__(self, target: str, required_amount: float, event_date):
             self.target = target
             self.required_amount = required_amount
+            self.event_date = event_date  # datetime.date or None
 
     path = Path(csv_path)
     if not path.exists():
@@ -707,12 +712,21 @@ def _load_insuf_balance_csv(csv_path: str) -> List:
             reader = _csv.DictReader(f)
             for row in reader:
                 target = row.get("target_wallet", "").strip()
+                if not target:
+                    continue
                 try:
                     req = float(row.get("required_amount", 0))
                 except ValueError:
                     req = 0.0
-                if target:
-                    events.append(_InsuFEvent(target, req))
+                # Parse event_date from the "datetime" column (ISO format: YYYY-MM-DDTHH:MM:SS)
+                event_date = None
+                raw_dt = row.get("datetime", "").strip()
+                if raw_dt:
+                    try:
+                        event_date = _date.fromisoformat(raw_dt[:10])
+                    except ValueError:
+                        pass
+                events.append(_InsuFEvent(target, req, event_date))
     except Exception:
         pass
     return events

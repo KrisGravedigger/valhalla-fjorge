@@ -26,6 +26,7 @@ from .analysis_config import (
     SCORECARD_INCREASE_MAX_RUG,
     SCORECARD_REPLACE_WR_7D,
     INSUF_BALANCE_RATE_THRESHOLD,
+    INSUF_BALANCE_LOOKBACK_DAYS,
 )
 from .models import MatchedPosition, parse_iso_datetime
 
@@ -923,32 +924,71 @@ class InsufficientBalanceAnalyzer:
     Detects wallets where insufficient-balance events are excessive relative
     to the number of positions opened.
 
-    The rate is computed as: total insuf-balance events / total positions.
-    Wallets exceeding the threshold from analysis_config are flagged.
+    The rate is computed as: insuf-balance events / positions within the
+    lookback window. Both are filtered to the same time window so the
+    comparison is apples-to-apples.
     """
 
     def analyze(
         self,
-        events: list,           # List[InsufficientBalanceEvent]
+        events: list,           # List with .target, .required_amount, .event_date (date)
         positions: list,        # List[MatchedPosition]
         threshold: float = INSUF_BALANCE_RATE_THRESHOLD,
+        lookback_days: int = INSUF_BALANCE_LOOKBACK_DAYS,
     ) -> List["InsufficientBalanceResult"]:
         """
         Return flagged wallets sorted by rate descending.
 
-        Only wallets with at least one position are considered (can't compute
-        a rate without a denominator).
+        If lookback_days > 0, only events and positions within the last
+        lookback_days days (relative to the most recent event date) are
+        considered. Set lookback_days=0 to use all historical data.
+
+        Only wallets with at least one position in the window are considered.
         """
         from collections import defaultdict
+        from datetime import date as _date
+
+        # Determine reference date and cutoff
+        cutoff: Optional[_date] = None
+        if lookback_days > 0:
+            event_dates = [
+                getattr(ev, "event_date", None)
+                for ev in events
+                if getattr(ev, "event_date", None) is not None
+            ]
+            if event_dates:
+                ref_date = max(event_dates)
+                cutoff = ref_date - timedelta(days=lookback_days - 1)
+
+        # Filter events by window
+        filtered_events = [
+            ev for ev in events
+            if cutoff is None or (
+                getattr(ev, "event_date", None) is not None
+                and ev.event_date >= cutoff
+            )
+        ]
+
+        # Filter positions by window (using datetime_open)
+        def _pos_date(pos) -> Optional[_date]:
+            dt = parse_iso_datetime(getattr(pos, "datetime_open", None) or "")
+            return dt.date() if dt else None
+
+        filtered_positions = [
+            pos for pos in positions
+            if cutoff is None or (
+                _pos_date(pos) is not None and _pos_date(pos) >= cutoff
+            )
+        ]
 
         events_per_wallet: Dict[str, list] = defaultdict(list)
-        for ev in events:
+        for ev in filtered_events:
             target = getattr(ev, "target", None)
             if target:
                 events_per_wallet[target].append(ev)
 
         positions_per_wallet: Dict[str, int] = defaultdict(int)
-        for pos in positions:
+        for pos in filtered_positions:
             wallet = getattr(pos, "target_wallet", None)
             if wallet:
                 positions_per_wallet[wallet] += 1
