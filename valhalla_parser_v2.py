@@ -17,6 +17,7 @@ from datetime import datetime
 from decimal import Decimal
 
 # Import from valhalla package
+from valhalla.analysis_config import RECOMMENDATION_LOOKBACK_DAYS
 from valhalla.models import extract_date_from_filename, MeteoraPnlResult, parse_iso_datetime
 from valhalla.readers import PlainTextReader, HtmlReader, detect_input_format
 from valhalla.event_parser import EventParser
@@ -530,29 +531,51 @@ def _generate_wallet_recommendations(positions: List) -> List[str]:
     return recommendations
 
 
+def _filter_recent_positions(positions: List, days: int) -> List:
+    """Return only positions whose datetime_open falls within the last `days` days.
+    If days <= 0, returns the full list unchanged.
+    """
+    if days <= 0 or not positions:
+        return positions
+    dates = [parse_iso_datetime(getattr(p, "datetime_open", None) or "") for p in positions]
+    valid_dates = [d for d in dates if d is not None]
+    if not valid_dates:
+        return positions
+    ref = max(valid_dates)
+    from datetime import timedelta
+    cutoff = ref - timedelta(days=days)
+    return [
+        p for p, d in zip(positions, dates)
+        if d is not None and d >= cutoff
+    ]
+
+
 def _build_action_items(
     result: object,
     positions: List,
     wallet_recs: object = None,
+    insufficient_balance_events: List = None,
 ) -> List[str]:
     """
     Build a prioritized list of action item strings for the report.
 
     Combines scorecard-based triggers with the existing Rules A-D from
-    _generate_wallet_recommendations().
+    _generate_wallet_recommendations(), plus Rule E (insufficient balance).
 
     Priority order in output:
       1. consider_replacing wallets
       2. increase_capital wallets
-      3. filter sweet-spot recommendations (Rule D)
-      4. inactive wallets
-      5. deteriorating wallets (WalletTrendAnalyzer flags)
-      6. remaining A-B-C rules
+      3. insufficient balance warnings (Rule E)
+      4. filter sweet-spot recommendations (Rule D)
+      5. inactive wallets
+      6. deteriorating wallets (WalletTrendAnalyzer flags)
+      7. remaining A-B-C rules
 
     Args:
         result: LossAnalysisResult from LossAnalyzer.analyze().
         positions: Full list of MatchedPosition (passed to _generate_wallet_recommendations).
         wallet_recs: Optional pre-computed wallet recommendations (reserved for doc 007).
+        insufficient_balance_events: List[InsufficientBalanceEvent] from event parser.
 
     Returns:
         List of recommendation strings, each starting with a wallet name or
@@ -565,9 +588,9 @@ def _build_action_items(
     for sc in result.wallet_scorecards:
         # consider_replacing triggers
         if sc.status == "consider_replacing":
-            if sc.total_pnl_sol < Decimal("0"):
+            if sc.pnl_7d_sol < Decimal("0"):
                 replacing.append(
-                    f"{sc.wallet}: negative total PnL ({sc.total_pnl_sol:+.3f} SOL) "
+                    f"{sc.wallet}: negative 7d PnL ({sc.pnl_7d_sol:+.3f} SOL) "
                     f"across {sc.closed_positions} positions — candidate for replacement"
                 )
             elif sc.win_rate_7d_pct is not None and sc.win_rate_7d_pct < 45.0:
@@ -612,8 +635,27 @@ def _build_action_items(
                 f"— verify wallet is still active"
             )
 
-    # Existing Rules A-D
-    existing_recs = _generate_wallet_recommendations(positions)
+    # Filter positions to the recommendation lookback window (applies to Rules A-D and Rule E)
+    recent_positions = _filter_recent_positions(positions, RECOMMENDATION_LOOKBACK_DAYS)
+
+    # Rule E: Insufficient balance events
+    insuf_items: List[str] = []
+    if insufficient_balance_events:
+        from valhalla.loss_analyzer import InsufficientBalanceAnalyzer
+        ib_results = InsufficientBalanceAnalyzer().analyze(
+            insufficient_balance_events, recent_positions
+        )
+        for ib in ib_results:
+            rate_pct = ib.rate * 100
+            insuf_items.append(
+                f"{ib.wallet}: {ib.total_events} insufficient balance events "
+                f"({rate_pct:.0f}% of {ib.total_positions} positions, "
+                f"avg. required {ib.avg_required_sol:.2f} SOL) "
+                f"— consider increasing SOL balance or decreasing position size"
+            )
+
+    # Existing Rules A-D (filtered to the same lookback window)
+    existing_recs = _generate_wallet_recommendations(recent_positions)
 
     filter_recs = [r for r in existing_recs if "sweet spot" in r.lower() or "tightening" in r.lower()]
     other_recs = [r for r in existing_recs if r not in filter_recs]
@@ -625,7 +667,7 @@ def _build_action_items(
         if wf.flag == "deteriorating"
     ]
 
-    all_items = replacing + increasing + filter_recs + inactive_items + deteriorating_recs + other_recs
+    all_items = replacing + increasing + insuf_items + filter_recs + inactive_items + deteriorating_recs + other_recs
     return all_items
 
 
@@ -668,9 +710,55 @@ def _md_table(headers: List[str], rows: List[List[str]]) -> str:
     return "\n".join([header_line, sep_line] + data_lines)
 
 
+def _load_insuf_balance_csv(csv_path: str) -> List:
+    """Load insufficient balance events from CSV.
+
+    Returns simple objects with .target, .required_amount, .event_date (date | None).
+    """
+    import csv as _csv
+    from datetime import date as _date
+    from pathlib import Path
+
+    class _InsuFEvent:
+        __slots__ = ("target", "required_amount", "event_date")
+        def __init__(self, target: str, required_amount: float, event_date):
+            self.target = target
+            self.required_amount = required_amount
+            self.event_date = event_date  # datetime.date or None
+
+    path = Path(csv_path)
+    if not path.exists():
+        return []
+    events = []
+    try:
+        with open(path, newline="", encoding="utf-8") as f:
+            reader = _csv.DictReader(f)
+            for row in reader:
+                target = row.get("target_wallet", "").strip()
+                if not target:
+                    continue
+                try:
+                    req = float(row.get("required_amount", 0))
+                except ValueError:
+                    req = 0.0
+                # Parse event_date from the "datetime" column (ISO format: YYYY-MM-DDTHH:MM:SS)
+                event_date = None
+                raw_dt = row.get("datetime", "").strip()
+                if raw_dt:
+                    try:
+                        event_date = _date.fromisoformat(raw_dt[:10])
+                    except ValueError:
+                        pass
+                events.append(_InsuFEvent(target, req, event_date))
+    except Exception:
+        pass
+    return events
+
+
 def _generate_loss_report(
     positions: List,
     output_path: str,
+    insufficient_balance_csv: str = None,
 ) -> None:
     """Generate loss_analysis.md from matched positions."""
     from valhalla.loss_analyzer import (
@@ -777,7 +865,8 @@ def _generate_loss_report(
     lines.append("## 2. Action Items {#action-items}")
     lines.append("")
 
-    action_items = _build_action_items(result, positions, wallet_recs)
+    insuf_events = _load_insuf_balance_csv(insufficient_balance_csv) if insufficient_balance_csv else []
+    action_items = _build_action_items(result, positions, wallet_recs, insuf_events)
     action_items = [item for item in action_items if not any(item.startswith(w) for w in inactive_wallets)]
 
     if not action_items:
@@ -1711,9 +1800,14 @@ def main():
     # Step 6.5b: Generate loss analysis report
     if not args.no_loss_analysis and (want_all or 'loss' in report_modules):
         loss_report_path = output_dir / 'loss_analysis.md'
+        insuf_csv_path = str(output_dir / 'insufficient_balance.csv')
         print(f"\nGenerating loss analysis report...")
         try:
-            _generate_loss_report(matched_positions, str(loss_report_path))
+            _generate_loss_report(
+                matched_positions,
+                str(loss_report_path),
+                insuf_csv_path,
+            )
             print(f"  {loss_report_path}")
         except Exception as e:
             print(f"  Warning: loss analysis failed: {e}")
@@ -1882,7 +1976,11 @@ def main():
                 # Regenerate loss report with updated positions
                 if not args.no_loss_analysis and (want_all or 'loss' in report_modules):
                     try:
-                        _generate_loss_report(matched_positions, str(loss_report_path))
+                        _generate_loss_report(
+                            matched_positions,
+                            str(loss_report_path),
+                            insuf_csv_path,
+                        )
                     except Exception as e:
                         print(f"  Warning: loss analysis failed: {e}")
 
