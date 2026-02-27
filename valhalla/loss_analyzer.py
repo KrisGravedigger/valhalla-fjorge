@@ -1,14 +1,16 @@
 """
 Loss analysis module for Valhalla position data.
 
-Provides five analysis classes that work on List[MatchedPosition]:
+Provides six analysis classes that work on List[MatchedPosition]:
 - LossAnalyzer: risk profiling of stop-loss positions vs all trades
 - FilterBacktester: sweeps filter thresholds, calculates SOL impact
 - StopLossLevelAnalyzer: distribution of losses by depth bucket
 - WalletTrendAnalyzer: per-wallet stop-loss trend flags
 - WalletScorecardAnalyzer: per-wallet performance metrics and actionable classification
+- InsufficientBalanceAnalyzer: detects wallets with too many missed trades due to low SOL
 
 All classes return structured data objects. No file I/O, no external calls.
+Thresholds are read from valhalla.analysis_config (edit that file to tune behaviour).
 """
 
 from dataclasses import dataclass, field
@@ -16,6 +18,15 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Dict, List, Optional
 
+from .analysis_config import (
+    SCORECARD_MIN_POSITIONS,
+    SCORECARD_INACTIVE_DAYS,
+    SCORECARD_INCREASE_WR_ALL,
+    SCORECARD_INCREASE_WR_7D,
+    SCORECARD_INCREASE_MAX_RUG,
+    SCORECARD_REPLACE_WR_7D,
+    INSUF_BALANCE_RATE_THRESHOLD,
+)
 from .models import MatchedPosition, parse_iso_datetime
 
 
@@ -673,12 +684,12 @@ class WalletScorecardAnalyzer:
     Minimum data for non-trivial classification: >= 30 closed positions.
     """
 
-    MIN_POSITIONS = 30
-    INACTIVE_DAYS = 7
-    WIN_RATE_INCREASE_THRESHOLD = 60.0   # win_rate_pct overall
-    WIN_RATE_7D_INCREASE_THRESHOLD = 65.0
-    MAX_RUG_RATE_FOR_INCREASE = 8.0
-    WIN_RATE_7D_REPLACE_THRESHOLD = 45.0
+    MIN_POSITIONS = SCORECARD_MIN_POSITIONS
+    INACTIVE_DAYS = SCORECARD_INACTIVE_DAYS
+    WIN_RATE_INCREASE_THRESHOLD = SCORECARD_INCREASE_WR_ALL
+    WIN_RATE_7D_INCREASE_THRESHOLD = SCORECARD_INCREASE_WR_7D
+    MAX_RUG_RATE_FOR_INCREASE = SCORECARD_INCREASE_MAX_RUG
+    WIN_RATE_7D_REPLACE_THRESHOLD = SCORECARD_REPLACE_WR_7D
 
     def analyze(
         self,
@@ -891,3 +902,74 @@ class WalletScorecardAnalyzer:
         scorecards.sort(key=lambda s: s.pnl_per_day_sol, reverse=True)
 
         return scorecards
+
+
+# ---------------------------------------------------------------------------
+# InsufficientBalanceAnalyzer
+# ---------------------------------------------------------------------------
+
+@dataclass
+class InsufficientBalanceResult:
+    """Analysis result for a wallet with excessive insufficient-balance events."""
+    wallet: str
+    total_events: int           # total insufficient-balance events for this wallet
+    total_positions: int        # total opened positions for this wallet
+    rate: float                 # total_events / total_positions
+    avg_required_sol: float     # average SOL required per missed trade
+
+
+class InsufficientBalanceAnalyzer:
+    """
+    Detects wallets where insufficient-balance events are excessive relative
+    to the number of positions opened.
+
+    The rate is computed as: total insuf-balance events / total positions.
+    Wallets exceeding the threshold from analysis_config are flagged.
+    """
+
+    def analyze(
+        self,
+        events: list,           # List[InsufficientBalanceEvent]
+        positions: list,        # List[MatchedPosition]
+        threshold: float = INSUF_BALANCE_RATE_THRESHOLD,
+    ) -> List["InsufficientBalanceResult"]:
+        """
+        Return flagged wallets sorted by rate descending.
+
+        Only wallets with at least one position are considered (can't compute
+        a rate without a denominator).
+        """
+        from collections import defaultdict
+
+        events_per_wallet: Dict[str, list] = defaultdict(list)
+        for ev in events:
+            target = getattr(ev, "target", None)
+            if target:
+                events_per_wallet[target].append(ev)
+
+        positions_per_wallet: Dict[str, int] = defaultdict(int)
+        for pos in positions:
+            wallet = getattr(pos, "target_wallet", None)
+            if wallet:
+                positions_per_wallet[wallet] += 1
+
+        results: List[InsufficientBalanceResult] = []
+        for wallet, wallet_events in events_per_wallet.items():
+            total_pos = positions_per_wallet.get(wallet, 0)
+            if total_pos == 0:
+                continue  # can't compute a meaningful ratio
+            rate = len(wallet_events) / total_pos
+            if rate > threshold:
+                avg_req = sum(
+                    getattr(ev, "required_amount", 0.0) for ev in wallet_events
+                ) / len(wallet_events)
+                results.append(InsufficientBalanceResult(
+                    wallet=wallet,
+                    total_events=len(wallet_events),
+                    total_positions=total_pos,
+                    rate=rate,
+                    avg_required_sol=avg_req,
+                ))
+
+        results.sort(key=lambda r: r.rate, reverse=True)
+        return results
