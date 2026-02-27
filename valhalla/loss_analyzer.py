@@ -26,7 +26,7 @@ from .analysis_config import (
     SCORECARD_INCREASE_MAX_RUG,
     SCORECARD_REPLACE_WR_7D,
     INSUF_BALANCE_RATE_THRESHOLD,
-    INSUF_BALANCE_LOOKBACK_DAYS,
+    RECOMMENDATION_LOOKBACK_DAYS,
 )
 from .models import MatchedPosition, parse_iso_datetime
 
@@ -864,12 +864,12 @@ class WalletScorecardAnalyzer:
                 and win_rate_7d_pct is not None
                 and win_rate_7d_pct >= self.WIN_RATE_7D_INCREASE_THRESHOLD
                 and win_rate_pct >= self.WIN_RATE_INCREASE_THRESHOLD
-                and total_pnl_sol > Decimal("0")
+                and pnl_7d_sol > Decimal("0")
                 and rug_rate_pct < self.MAX_RUG_RATE_FOR_INCREASE
             ):
                 status = "increase_capital"
             elif closed_positions >= self.MIN_POSITIONS and (
-                total_pnl_sol < Decimal("0")
+                pnl_7d_sol < Decimal("0")
                 or (
                     win_rate_7d_pct is not None
                     and win_rate_7d_pct < self.WIN_RATE_7D_REPLACE_THRESHOLD
@@ -934,7 +934,7 @@ class InsufficientBalanceAnalyzer:
         events: list,           # List with .target, .required_amount, .event_date (date)
         positions: list,        # List[MatchedPosition]
         threshold: float = INSUF_BALANCE_RATE_THRESHOLD,
-        lookback_days: int = INSUF_BALANCE_LOOKBACK_DAYS,
+        lookback_days: int = RECOMMENDATION_LOOKBACK_DAYS,
     ) -> List["InsufficientBalanceResult"]:
         """
         Return flagged wallets sorted by rate descending.

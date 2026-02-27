@@ -43,6 +43,9 @@ ACTION_HIGH_RUG_RATE_PCT: float = 15.0
 # Example: 0.10 means "more than 1 missed trade per 10 executed trades".
 INSUF_BALANCE_RATE_THRESHOLD: float = 0.10
 
-# Only consider insufficient-balance events and positions from the last N days.
-# Set to 0 to disable the window (use all historical data).
-INSUF_BALANCE_LOOKBACK_DAYS: int = 7
+# Lookback window (in days) applied to ALL action-item recommendations:
+#   - insufficient balance events and positions (Rule E)
+#   - filter sweet-spot backtest (Rule D)
+#   - wallet status classification (increase_capital / consider_replacing)
+# Set to 0 to use all historical data.
+RECOMMENDATION_LOOKBACK_DAYS: int = 7

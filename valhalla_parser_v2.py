@@ -17,6 +17,7 @@ from datetime import datetime
 from decimal import Decimal
 
 # Import from valhalla package
+from valhalla.analysis_config import RECOMMENDATION_LOOKBACK_DAYS
 from valhalla.models import extract_date_from_filename, MeteoraPnlResult, parse_iso_datetime
 from valhalla.readers import PlainTextReader, HtmlReader, detect_input_format
 from valhalla.event_parser import EventParser
@@ -530,6 +531,25 @@ def _generate_wallet_recommendations(positions: List) -> List[str]:
     return recommendations
 
 
+def _filter_recent_positions(positions: List, days: int) -> List:
+    """Return only positions whose datetime_open falls within the last `days` days.
+    If days <= 0, returns the full list unchanged.
+    """
+    if days <= 0 or not positions:
+        return positions
+    dates = [parse_iso_datetime(getattr(p, "datetime_open", None) or "") for p in positions]
+    valid_dates = [d for d in dates if d is not None]
+    if not valid_dates:
+        return positions
+    ref = max(valid_dates)
+    from datetime import timedelta
+    cutoff = ref - timedelta(days=days)
+    return [
+        p for p, d in zip(positions, dates)
+        if d is not None and d >= cutoff
+    ]
+
+
 def _build_action_items(
     result: object,
     positions: List,
@@ -568,9 +588,9 @@ def _build_action_items(
     for sc in result.wallet_scorecards:
         # consider_replacing triggers
         if sc.status == "consider_replacing":
-            if sc.total_pnl_sol < Decimal("0"):
+            if sc.pnl_7d_sol < Decimal("0"):
                 replacing.append(
-                    f"{sc.wallet}: negative total PnL ({sc.total_pnl_sol:+.3f} SOL) "
+                    f"{sc.wallet}: negative 7d PnL ({sc.pnl_7d_sol:+.3f} SOL) "
                     f"across {sc.closed_positions} positions — candidate for replacement"
                 )
             elif sc.win_rate_7d_pct is not None and sc.win_rate_7d_pct < 45.0:
@@ -615,12 +635,15 @@ def _build_action_items(
                 f"— verify wallet is still active"
             )
 
+    # Filter positions to the recommendation lookback window (applies to Rules A-D and Rule E)
+    recent_positions = _filter_recent_positions(positions, RECOMMENDATION_LOOKBACK_DAYS)
+
     # Rule E: Insufficient balance events
     insuf_items: List[str] = []
     if insufficient_balance_events:
         from valhalla.loss_analyzer import InsufficientBalanceAnalyzer
         ib_results = InsufficientBalanceAnalyzer().analyze(
-            insufficient_balance_events, positions
+            insufficient_balance_events, recent_positions
         )
         for ib in ib_results:
             rate_pct = ib.rate * 100
@@ -631,8 +654,8 @@ def _build_action_items(
                 f"— consider increasing SOL balance or decreasing position size"
             )
 
-    # Existing Rules A-D
-    existing_recs = _generate_wallet_recommendations(positions)
+    # Existing Rules A-D (filtered to the same lookback window)
+    existing_recs = _generate_wallet_recommendations(recent_positions)
 
     filter_recs = [r for r in existing_recs if "sweet spot" in r.lower() or "tightening" in r.lower()]
     other_recs = [r for r in existing_recs if r not in filter_recs]
