@@ -49,3 +49,33 @@ INSUF_BALANCE_RATE_THRESHOLD: float = 0.10
 #   - wallet status classification (increase_capital / consider_replacing)
 # Set to 0 to use all historical data.
 RECOMMENDATION_LOOKBACK_DAYS: int = 7
+
+# ---------------------------------------------------------------------------
+# Portfolio-level position size guard (Feature 1)
+# ---------------------------------------------------------------------------
+
+# Your total portfolio value in SOL.
+# Set to 0.0 to disable position size checking.
+PORTFOLIO_TOTAL_SOL: float = 0.0
+
+# Maximum allowed fraction of portfolio in a single position.
+# 0.125 = 1/8 of portfolio. Configurable.
+MAX_POSITION_FRACTION: float = 0.125
+
+# ---------------------------------------------------------------------------
+# Rule F: consecutive underperformance → reduce capital (Feature 2)
+# ---------------------------------------------------------------------------
+
+# Number of consecutive days of worse PnL% than portfolio average that
+# triggers a Rule F "reduce capital" recommendation.
+REDUCE_CAPITAL_CONSECUTIVE_DAYS: int = 3
+
+# ---------------------------------------------------------------------------
+# Loss Detail Table (Feature 3)
+# ---------------------------------------------------------------------------
+
+# Minimum loss (in SOL) to include in the loss detail table.
+LOSS_DETAIL_MIN_SOL: float = 0.1
+
+# Lookback window (in days) for the loss detail table.
+LOSS_DETAIL_LOOKBACK_DAYS: int = 3
