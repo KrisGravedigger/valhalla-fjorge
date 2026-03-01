@@ -17,6 +17,7 @@ from datetime import datetime
 from decimal import Decimal
 
 # Import from valhalla package
+import valhalla.analysis_config as _cfg
 from valhalla.analysis_config import (
     RECOMMENDATION_LOOKBACK_DAYS,
     PORTFOLIO_TOTAL_SOL,
@@ -24,6 +25,7 @@ from valhalla.analysis_config import (
     REDUCE_CAPITAL_CONSECUTIVE_DAYS,
     LOSS_DETAIL_MIN_SOL,
     LOSS_DETAIL_LOOKBACK_DAYS,
+    PORTFOLIO_WALLET_ADDRESS,
 )
 from valhalla.models import extract_date_from_filename, MeteoraPnlResult, parse_iso_datetime
 from valhalla.readers import PlainTextReader, HtmlReader, detect_input_format
@@ -1633,6 +1635,19 @@ def main():
                             'Options: loss,per-wallet,source,charts,recommendations,all (default: all)')
 
     args = parser.parse_args()
+
+    # Auto-fetch portfolio SOL balance from on-chain wallet if configured
+    if PORTFOLIO_WALLET_ADDRESS:
+        _rpc_tmp = SolanaRpcClient(args.rpc_url)
+        _fetched = _rpc_tmp.get_sol_balance(PORTFOLIO_WALLET_ADDRESS)
+        if _fetched is not None:
+            _short = PORTFOLIO_WALLET_ADDRESS[:4] + "..." + PORTFOLIO_WALLET_ADDRESS[-4:]
+            print(f"Portfolio: fetched balance {_fetched:.2f} SOL from wallet {_short}")
+            _cfg.PORTFOLIO_TOTAL_SOL = _fetched
+            PORTFOLIO_TOTAL_SOL = _fetched
+        else:
+            print(f"Warning: Could not fetch SOL balance for wallet {PORTFOLIO_WALLET_ADDRESS}, "
+                  f"using configured PORTFOLIO_TOTAL_SOL = {PORTFOLIO_TOTAL_SOL:.2f} SOL")
 
     # Parse --report modules
     report_modules = set(args.report.split(',')) if args.report != 'all' else {'all'}
