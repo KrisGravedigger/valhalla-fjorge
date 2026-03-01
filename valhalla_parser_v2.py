@@ -1284,7 +1284,7 @@ def _generate_loss_report(
     ]
 
     if not with_scenario:
-        lines.append("_No source wallet data. Run `--analyze-source` to populate._")
+        lines.append("_No source wallet data available yet._")
     else:
         scenario_count = len(with_scenario)
         lines.append(
@@ -1625,11 +1625,9 @@ def main():
                        help='Filter --backtest to a specific wallet alias')
     parser.add_argument('--no-loss-analysis', action='store_true',
                        help='Skip loss analysis report generation')
-    parser.add_argument('--analyze-source', action='store_true',
-                       help='Analyze source wallet PnL for stop-loss positions (requires Phase A data)')
     parser.add_argument('--no-input', action='store_true',
                        help='Skip input file processing and load from existing positions.csv. '
-                            'Use with --analyze-source to re-run source wallet analysis without new logs.')
+                            'Useful to re-run analysis without processing new logs.')
     parser.add_argument('--report', default='all',
                        help='Comma-separated list of report modules to generate. '
                             'Options: loss,per-wallet,source,charts,recommendations,all (default: all)')
@@ -1997,8 +1995,8 @@ def main():
     if args.no_input:
         print(f"  Loaded {len(matched_positions)} position(s) from existing CSV.")
 
-    # Step 5.7: Source wallet analysis (optional, requires Phase A data)
-    if args.analyze_source:
+    # Step 5.7: Source wallet analysis (runs always, idempotent — skips already-analyzed positions)
+    if True:
         print(f"\nAnalyzing source wallet positions...")
         from valhalla.source_wallet_analyzer import SourceWalletAnalyzer
         # In --no-input mode, cache is not initialized yet — create it now
