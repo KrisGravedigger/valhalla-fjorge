@@ -1283,10 +1283,11 @@ def _generate_loss_report(
     loss_positions_all = [p for p in positions if p.close_reason in LOSS_REASONS]
     loss_total = len(loss_positions_all)
 
-    # Positions with source_wallet_scenario populated
+    # Positions with source_wallet_scenario populated (excluding failed attempts)
     with_scenario = [
         p for p in loss_positions_all
         if getattr(p, 'source_wallet_scenario', None)
+        and p.source_wallet_scenario != "no_data"
     ]
 
     if not with_scenario:
@@ -2035,6 +2036,9 @@ def main():
                 pos.source_wallet_pnl_pct = result.source_pnl_pct
                 pos.source_wallet_scenario = result.scenario
                 updated_count += 1
+            elif result and result.error:
+                # Mark as attempted so it's not retried on every run
+                pos.source_wallet_scenario = "no_data"
         cache.save()
         print(f"  Updated {updated_count} position(s) with source wallet data")
 
