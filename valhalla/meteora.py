@@ -113,14 +113,43 @@ class MeteoraPnlCalculator:
                 total_usd = sol_usd + tok_usd
                 return sol_amt, total_sol_equiv, total_usd, sol_price
 
-            # Track a running SOL price for fallback (for txs with no SOL portion)
-            running_sol_price = Decimal('0')
-
-            # Get deposits - None means API error, [] means no deposits
+            # Fetch all three data sets first, then process
             deposits = self._meteora_get(f"/position/{address}/deposits")
             if deposits is None:
                 print(f"  API error on deposits for {short_id(address)}")
                 return None
+
+            time.sleep(0.3)
+
+            withdraws = self._meteora_get(f"/position/{address}/withdraws")
+            if withdraws is None:
+                print(f"  API error on withdraws for {short_id(address)}")
+                return None
+
+            time.sleep(0.3)
+
+            fees_list = self._meteora_get(f"/position/{address}/claim_fees")
+            if fees_list is None:
+                print(f"  API error on claim_fees for {short_id(address)}")
+                return None
+
+            # Pre-scan ALL transactions to find an initial SOL price.
+            # This prevents token-only deposits from being valued at 0
+            # when they appear before any SOL-bearing transaction.
+            sol_amount_key = 'token_x_amount' if sol_is_x else 'token_y_amount'
+            sol_usd_amount_key = 'token_x_usd_amount' if sol_is_x else 'token_y_usd_amount'
+            initial_sol_price = Decimal('0')
+            for entry in (deposits or []) + (withdraws or []) + (fees_list or []):
+                raw = Decimal(str(entry.get(sol_amount_key, 0)))
+                amt = raw / LAMPORTS
+                usd = Decimal(str(entry.get(sol_usd_amount_key, 0)))
+                if amt > 0 and usd > 0:
+                    initial_sol_price = usd / amt
+                    break  # use the first available SOL price
+
+            running_sol_price = initial_sol_price
+
+            # Process deposits
             dep_sol_total = Decimal('0')
             dep_sol_equiv = Decimal('0')
             dep_usd = Decimal('0')
@@ -132,13 +161,7 @@ class MeteoraPnlCalculator:
                 if price > 0:
                     running_sol_price = price
 
-            time.sleep(0.3)
-
-            # Get withdrawals - None means API error, [] means no withdrawals
-            withdraws = self._meteora_get(f"/position/{address}/withdraws")
-            if withdraws is None:
-                print(f"  API error on withdraws for {short_id(address)}")
-                return None
+            # Process withdrawals
             wdr_sol_total = Decimal('0')
             wdr_sol_equiv = Decimal('0')
             wdr_usd = Decimal('0')
@@ -150,13 +173,7 @@ class MeteoraPnlCalculator:
                 if price > 0:
                     running_sol_price = price
 
-            time.sleep(0.3)
-
-            # Get claimed fees - None means API error, [] means no fees
-            fees_list = self._meteora_get(f"/position/{address}/claim_fees")
-            if fees_list is None:
-                print(f"  API error on claim_fees for {short_id(address)}")
-                return None
+            # Process claimed fees
             fee_sol_total = Decimal('0')
             fee_sol_equiv = Decimal('0')
             fee_usd = Decimal('0')

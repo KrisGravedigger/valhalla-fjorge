@@ -17,7 +17,16 @@ from datetime import datetime
 from decimal import Decimal
 
 # Import from valhalla package
-from valhalla.analysis_config import RECOMMENDATION_LOOKBACK_DAYS
+import valhalla.analysis_config as _cfg
+from valhalla.analysis_config import (
+    RECOMMENDATION_LOOKBACK_DAYS,
+    PORTFOLIO_TOTAL_SOL,
+    MAX_POSITION_FRACTION,
+    REDUCE_CAPITAL_CONSECUTIVE_DAYS,
+    LOSS_DETAIL_MIN_SOL,
+    LOSS_DETAIL_LOOKBACK_DAYS,
+    PORTFOLIO_WALLET_ADDRESS,
+)
 from valhalla.models import extract_date_from_filename, MeteoraPnlResult, parse_iso_datetime
 from valhalla.readers import PlainTextReader, HtmlReader, detect_input_format
 from valhalla.event_parser import EventParser
@@ -447,6 +456,65 @@ def _generate_wallet_recommendations(positions: List) -> List[str]:
                 f"{best_c_start} to {best_c_end})"
             )
 
+        # ----------------------------------------------------------------
+        # Rule F: wallet's daily pnl_pct < portfolio_avg_pct for N
+        #         consecutive days → reduce capital
+        # ----------------------------------------------------------------
+        consec_f = 0
+        f_start: Optional[date] = None
+        f_end: Optional[date] = None
+        best_f_streak = 0
+        best_f_start: Optional[date] = None
+        best_f_end: Optional[date] = None
+
+        for d in sorted_dates:
+            # Only count days where BOTH wallet AND portfolio have pnl_pct data
+            if d not in portfolio_avg_pct:
+                consec_f = 0
+                f_start = None
+                f_end = None
+                continue
+
+            day_positions = wallet_days[d]
+            day_sol = float(sum(p.pnl_sol for p in day_positions if p.pnl_sol is not None))
+            day_deployed = sum(
+                float(p.sol_deployed) for p in day_positions
+                if getattr(p, 'sol_deployed', None) is not None
+            )
+
+            if day_deployed <= 0:
+                # Skip days where we can't compute wallet pnl_pct
+                consec_f = 0
+                f_start = None
+                f_end = None
+                continue
+
+            day_pct = day_sol / day_deployed * 100.0
+            port_pct = portfolio_avg_pct[d]
+
+            if day_pct < port_pct:
+                if consec_f == 0:
+                    f_start = d
+                f_end = d
+                consec_f += 1
+                if consec_f > best_f_streak:
+                    best_f_streak = consec_f
+                    best_f_start = f_start
+                    best_f_end = f_end
+            else:
+                consec_f = 0
+                f_start = None
+                f_end = None
+
+        # Flag if streak >= threshold and ends within the 3-day window
+        if (best_f_streak >= REDUCE_CAPITAL_CONSECUTIVE_DAYS
+                and best_f_start and best_f_end
+                and best_f_end >= cutoff_3d):
+            wallet_recs.append(
+                f"[REDUCE] {wallet}: underperforming (PnL%) for {best_f_streak} consecutive days "
+                f"vs. portfolio avg — consider reducing capital"
+            )
+
         recommendations.extend(wallet_recs)
 
     # ----------------------------------------------------------------
@@ -550,6 +618,43 @@ def _filter_recent_positions(positions: List, days: int) -> List:
     ]
 
 
+def _check_position_size_guard(
+    positions: List,
+    portfolio_sol: float,
+    max_fraction: float,
+) -> List[str]:
+    """
+    Check if any position exceeds max_fraction of portfolio_sol.
+
+    Returns list of action item strings (warnings + recommendations).
+    Empty list if portfolio_sol <= 0 (feature disabled).
+    """
+    if portfolio_sol <= 0:
+        return []
+
+    max_sol = Decimal(str(portfolio_sol)) * Decimal(str(max_fraction))
+
+    # Find positions exceeding the limit (use RECOMMENDATION_LOOKBACK_DAYS window)
+    recent = _filter_recent_positions(positions, RECOMMENDATION_LOOKBACK_DAYS)
+
+    from collections import defaultdict
+    oversized_by_wallet: dict = defaultdict(list)
+    for pos in recent:
+        deployed = getattr(pos, "sol_deployed", None)
+        if deployed is not None and deployed > max_sol:
+            oversized_by_wallet[pos.target_wallet].append(deployed)
+
+    items: List[str] = []
+    for wallet, sizes in oversized_by_wallet.items():
+        largest = max(sizes)
+        items.append(
+            f"WARN {wallet}: position {largest:.3f} SOL exceeds "
+            f"1/{round(1/max_fraction):.0f} portfolio limit ({max_sol:.2f} SOL) "
+            f"— consider reducing position size"
+        )
+    return items
+
+
 def _build_action_items(
     result: object,
     positions: List,
@@ -563,13 +668,15 @@ def _build_action_items(
     _generate_wallet_recommendations(), plus Rule E (insufficient balance).
 
     Priority order in output:
+      0. position size guard warnings (Feature 1)
       1. consider_replacing wallets
       2. increase_capital wallets
-      3. insufficient balance warnings (Rule E)
-      4. filter sweet-spot recommendations (Rule D)
-      5. inactive wallets
-      6. deteriorating wallets (WalletTrendAnalyzer flags)
-      7. remaining A-B-C rules
+      3. Rule F: consecutive underperformance → reduce capital
+      4. insufficient balance warnings (Rule E)
+      5. filter sweet-spot recommendations (Rule D)
+      6. inactive wallets
+      7. deteriorating wallets (WalletTrendAnalyzer flags)
+      8. remaining A-B-C rules
 
     Args:
         result: LossAnalysisResult from LossAnalyzer.analyze().
@@ -654,11 +761,20 @@ def _build_action_items(
                 f"— consider increasing SOL balance or decreasing position size"
             )
 
-    # Existing Rules A-D (filtered to the same lookback window)
+    # Position size guard warnings (Feature 1) — highest priority
+    size_guard_items = _check_position_size_guard(positions, PORTFOLIO_TOTAL_SOL, MAX_POSITION_FRACTION)
+
+    # Existing Rules A-D and Rule F (filtered to the same lookback window)
     existing_recs = _generate_wallet_recommendations(recent_positions)
 
-    filter_recs = [r for r in existing_recs if "sweet spot" in r.lower() or "tightening" in r.lower()]
-    other_recs = [r for r in existing_recs if r not in filter_recs]
+    # Extract Rule F items (prefixed with "[REDUCE] ") from recommendations
+    reduce_capital_items = [
+        r[len("[REDUCE] "):] for r in existing_recs if r.startswith("[REDUCE] ")
+    ]
+    non_reduce_recs = [r for r in existing_recs if not r.startswith("[REDUCE] ")]
+
+    filter_recs = [r for r in non_reduce_recs if "sweet spot" in r.lower() or "tightening" in r.lower()]
+    other_recs = [r for r in non_reduce_recs if r not in filter_recs]
 
     # Deteriorating flag from result.wallet_flags
     deteriorating_recs = [
@@ -667,8 +783,19 @@ def _build_action_items(
         if wf.flag == "deteriorating"
     ]
 
-    all_items = replacing + increasing + insuf_items + filter_recs + inactive_items + deteriorating_recs + other_recs
+    all_items = size_guard_items + replacing + increasing + reduce_capital_items + insuf_items + filter_recs + inactive_items + deteriorating_recs + other_recs
     return all_items
+
+
+def _scenario_label(scenario: Optional[str]) -> str:
+    """Map source wallet scenario to a human-readable label."""
+    return {
+        "source_held_longer": "Held longer (SL too tight)",
+        "source_exited_early": "Exited before us (copy lag)",
+        "source_recovered": "Recovered (unclear mechanism)",
+        "both_loss": "Both lost",
+        "comparable": "Comparable outcome",
+    }.get(scenario or "", "No data")
 
 
 def _fmt_sol(val: Optional[Decimal]) -> str:
@@ -708,6 +835,106 @@ def _md_table(headers: List[str], rows: List[List[str]]) -> str:
         for row in rows
     ]
     return "\n".join([header_line, sep_line] + data_lines)
+
+
+def _build_loss_detail_table(positions: List) -> str:
+    """
+    Build a markdown table of recent large losses.
+
+    Filters: close_reason in LOSS_REASONS, abs(pnl_sol) >= LOSS_DETAIL_MIN_SOL,
+    datetime_close within last LOSS_DETAIL_LOOKBACK_DAYS days.
+    Sorted by pnl_sol ascending (largest loss first).
+    """
+    from valhalla.loss_analyzer import LOSS_REASONS as _LOSS_REASONS
+    from datetime import timedelta
+
+    header = "## 3. Recent Large Losses {#large-losses}"
+    min_sol = Decimal(str(LOSS_DETAIL_MIN_SOL))
+
+    # Collect qualifying positions
+    candidates = []
+    for p in positions:
+        if p.close_reason not in _LOSS_REASONS:
+            continue
+        pnl = getattr(p, "pnl_sol", None)
+        if pnl is None or abs(pnl) < min_sol:
+            continue
+        dt_close = getattr(p, "datetime_close", None)
+        if not dt_close:
+            continue
+        candidates.append(p)
+
+    empty_msg = (
+        f"{header}\n\n"
+        f"_No losses above {LOSS_DETAIL_MIN_SOL:.2f} SOL in the last "
+        f"{LOSS_DETAIL_LOOKBACK_DAYS} days._\n"
+    )
+
+    if not candidates:
+        return empty_msg
+
+    # Filter by datetime_close within last LOSS_DETAIL_LOOKBACK_DAYS days
+    close_dates = []
+    for p in candidates:
+        dt = parse_iso_datetime(p.datetime_close)
+        close_dates.append(dt)
+
+    valid_close = [(p, d) for p, d in zip(candidates, close_dates) if d is not None]
+    if not valid_close:
+        return empty_msg
+
+    ref_date = max(d for _, d in valid_close)
+    cutoff = ref_date - timedelta(days=LOSS_DETAIL_LOOKBACK_DAYS)
+    recent_losses = [(p, d) for p, d in valid_close if d >= cutoff]
+
+    if not recent_losses:
+        return empty_msg
+
+    # Sort by pnl_sol ascending (largest loss first)
+    recent_losses.sort(key=lambda x: x[0].pnl_sol)
+
+    include_portfolio_pct = PORTFOLIO_TOTAL_SOL > 0
+    portfolio_dec = Decimal(str(PORTFOLIO_TOTAL_SOL)) if include_portfolio_pct else None
+
+    headers = ["Open", "Close", "Wallet", "Token", "Reason", "Loss (SOL)", "Loss (%)", "Source PnL (%)", "Source hold (min)", "Source action"]
+    if include_portfolio_pct:
+        headers.append("% portfolio")
+
+    rows = []
+    for p, _ in recent_losses:
+        pnl = p.pnl_sol
+        pnl_pct = getattr(p, "pnl_pct", None)
+        source_pnl_pct = getattr(p, "source_wallet_pnl_pct", None)
+        source_hold = getattr(p, "source_wallet_hold_min", None)
+        scenario = getattr(p, "source_wallet_scenario", None)
+
+        open_str = getattr(p, "datetime_open", None) or "N/A"
+        close_str = p.datetime_close if p.datetime_close else "N/A"
+        token_pair_str = p.token if p.token else "N/A"
+        loss_sol_str = f"-{abs(pnl):.3f}"
+        loss_pct_str = f"{float(pnl_pct):.1f}%" if pnl_pct is not None else "N/A"
+        src_pnl_str = f"{float(source_pnl_pct):.1f}%" if source_pnl_pct is not None else "N/A"
+        src_hold_str = str(source_hold) if source_hold is not None else "N/A"
+
+        row = [
+            open_str,
+            close_str,
+            p.target_wallet,
+            token_pair_str,
+            p.close_reason,
+            loss_sol_str,
+            loss_pct_str,
+            src_pnl_str,
+            src_hold_str,
+            _scenario_label(scenario),
+        ]
+        if include_portfolio_pct:
+            portfolio_pct_val = abs(pnl) / portfolio_dec * 100
+            row.append(f"{float(portfolio_pct_val):.1f}%")
+        rows.append(row)
+
+    table_str = _md_table(headers, rows)
+    return f"{header}\n\n{table_str}\n"
 
 
 def _load_insuf_balance_csv(csv_path: str) -> List:
@@ -784,7 +1011,7 @@ def _generate_loss_report(
             return f"{threshold:.0f}h"
         return f"{threshold / 24:.0f}d"
 
-    # PARAM_LABELS: used in Section 6 (Filter Backtest) and Section 7 (per-wallet loop)
+    # PARAM_LABELS: used in Section 7 (Filter Backtest) and Section 8 (per-wallet loop)
     PARAM_LABELS = {
         "jup_score": "jup_score (minimum threshold)",
         "mc_at_open": "mc_at_open (minimum threshold)",
@@ -807,11 +1034,12 @@ def _generate_loss_report(
     lines.append("")
     lines.append("- [1. Executive Summary](#executive-summary)")
     lines.append("- [2. Action Items](#action-items)")
-    lines.append("- [3. Wallet Scorecard](#wallet-scorecard)")
-    lines.append("- [4. Filter Recommendations](#filter-recommendations)")
-    lines.append("- [5. Loss Analysis](#loss-analysis)")
-    lines.append("- [6. Global Filter Backtest](#filter-backtest)")
-    lines.append("- [7. Per-Wallet Details](#per-wallet-details)")
+    lines.append("- [3. Recent Large Losses](#large-losses)")
+    lines.append("- [4. Wallet Scorecard](#wallet-scorecard)")
+    lines.append("- [5. Filter Recommendations](#filter-recommendations)")
+    lines.append("- [6. Loss Analysis](#loss-analysis)")
+    lines.append("- [7. Global Filter Backtest](#filter-backtest)")
+    lines.append("- [8. Per-Wallet Details](#per-wallet-details)")
     lines.append("")
 
     # ------------------------------------------------------------------
@@ -865,6 +1093,21 @@ def _generate_loss_report(
     lines.append("## 2. Action Items {#action-items}")
     lines.append("")
 
+    # Portfolio size info line
+    if PORTFOLIO_TOTAL_SOL > 0:
+        max_pos_sol = PORTFOLIO_TOTAL_SOL * MAX_POSITION_FRACTION
+        lines.append(
+            f"**Portfolio:** {PORTFOLIO_TOTAL_SOL:.1f} SOL total, "
+            f"max position {max_pos_sol:.2f} SOL "
+            f"(1/{round(1/MAX_POSITION_FRACTION):.0f})"
+        )
+    else:
+        lines.append(
+            "**Portfolio size:** not configured — position size guard disabled "
+            "(set PORTFOLIO_TOTAL_SOL in analysis_config.py to enable)"
+        )
+    lines.append("")
+
     insuf_events = _load_insuf_balance_csv(insufficient_balance_csv) if insufficient_balance_csv else []
     action_items = _build_action_items(result, positions, wallet_recs, insuf_events)
     action_items = [item for item in action_items if not any(item.startswith(w) for w in inactive_wallets)]
@@ -877,9 +1120,15 @@ def _generate_loss_report(
     lines.append("")
 
     # ------------------------------------------------------------------
-    # Section 3: Wallet Scorecard
+    # Section 3: Recent Large Losses
     # ------------------------------------------------------------------
-    lines.append("## 3. Wallet Scorecard {#wallet-scorecard}")
+    loss_detail_section = _build_loss_detail_table(positions)
+    lines.append(loss_detail_section)
+
+    # ------------------------------------------------------------------
+    # Section 4: Wallet Scorecard
+    # ------------------------------------------------------------------
+    lines.append("## 4. Wallet Scorecard {#wallet-scorecard}")
     lines.append("")
 
     if not result.wallet_scorecards:
@@ -912,9 +1161,9 @@ def _generate_loss_report(
     lines.append("")
 
     # ------------------------------------------------------------------
-    # Section 4: Rekomendacje filtrów
+    # Section 5: Rekomendacje filtrów
     # ------------------------------------------------------------------
-    lines.append("## 4. Filter Recommendations {#filter-recommendations}")
+    lines.append("## 5. Filter Recommendations {#filter-recommendations}")
     lines.append("")
 
     filter_recs = [
@@ -930,9 +1179,9 @@ def _generate_loss_report(
     lines.append("")
 
     # ------------------------------------------------------------------
-    # Section 5: Analiza strat
+    # Section 6: Analiza strat
     # ------------------------------------------------------------------
-    lines.append("## 5. Loss Analysis {#loss-analysis}")
+    lines.append("## 6. Loss Analysis {#loss-analysis}")
     lines.append("")
 
     # ---- 5a. Risk Profile ----
@@ -1034,14 +1283,15 @@ def _generate_loss_report(
     loss_positions_all = [p for p in positions if p.close_reason in LOSS_REASONS]
     loss_total = len(loss_positions_all)
 
-    # Positions with source_wallet_scenario populated
+    # Positions with source_wallet_scenario populated (excluding failed attempts)
     with_scenario = [
         p for p in loss_positions_all
         if getattr(p, 'source_wallet_scenario', None)
+        and p.source_wallet_scenario != "no_data"
     ]
 
     if not with_scenario:
-        lines.append("_No source wallet data. Run `--analyze-source` to populate._")
+        lines.append("_No source wallet data available yet._")
     else:
         scenario_count = len(with_scenario)
         lines.append(
@@ -1097,9 +1347,9 @@ def _generate_loss_report(
     lines.append("")
 
     # ------------------------------------------------------------------
-    # Section 6: Filter Backtest (globalny)
+    # Section 7: Filter Backtest (globalny)
     # ------------------------------------------------------------------
-    lines.append("## 6. Global Filter Backtest {#filter-backtest}")
+    lines.append("## 7. Global Filter Backtest {#filter-backtest}")
     lines.append("")
     lines.append("For each parameter: what if only trades meeting the threshold were taken?")
     lines.append("")
@@ -1147,9 +1397,9 @@ def _generate_loss_report(
         lines.append("")
 
     # ------------------------------------------------------------------
-    # Section 7: Szczegóły per wallet
+    # Section 8: Szczegóły per wallet
     # ------------------------------------------------------------------
-    lines.append("## 7. Per-Wallet Details {#per-wallet-details}")
+    lines.append("## 8. Per-Wallet Details {#per-wallet-details}")
     lines.append("")
 
     # Collect unique wallet names from all positions
@@ -1382,16 +1632,27 @@ def main():
                        help='Filter --backtest to a specific wallet alias')
     parser.add_argument('--no-loss-analysis', action='store_true',
                        help='Skip loss analysis report generation')
-    parser.add_argument('--analyze-source', action='store_true',
-                       help='Analyze source wallet PnL for stop-loss positions (requires Phase A data)')
     parser.add_argument('--no-input', action='store_true',
                        help='Skip input file processing and load from existing positions.csv. '
-                            'Use with --analyze-source to re-run source wallet analysis without new logs.')
+                            'Useful to re-run analysis without processing new logs.')
     parser.add_argument('--report', default='all',
                        help='Comma-separated list of report modules to generate. '
                             'Options: loss,per-wallet,source,charts,recommendations,all (default: all)')
 
     args = parser.parse_args()
+
+    # Auto-fetch portfolio SOL balance from on-chain wallet if configured
+    if PORTFOLIO_WALLET_ADDRESS:
+        _rpc_tmp = SolanaRpcClient(args.rpc_url)
+        _fetched = _rpc_tmp.get_sol_balance(PORTFOLIO_WALLET_ADDRESS)
+        if _fetched is not None:
+            _short = PORTFOLIO_WALLET_ADDRESS[:4] + "..." + PORTFOLIO_WALLET_ADDRESS[-4:]
+            print(f"Portfolio: fetched balance {_fetched:.2f} SOL from wallet {_short}")
+            _cfg.PORTFOLIO_TOTAL_SOL = _fetched
+            PORTFOLIO_TOTAL_SOL = _fetched
+        else:
+            print(f"Warning: Could not fetch SOL balance for wallet {PORTFOLIO_WALLET_ADDRESS}, "
+                  f"using configured PORTFOLIO_TOTAL_SOL = {PORTFOLIO_TOTAL_SOL:.2f} SOL")
 
     # Parse --report modules
     report_modules = set(args.report.split(',')) if args.report != 'all' else {'all'}
@@ -1754,8 +2015,8 @@ def main():
     if args.no_input:
         print(f"  Loaded {len(matched_positions)} position(s) from existing CSV.")
 
-    # Step 5.7: Source wallet analysis (optional, requires Phase A data)
-    if args.analyze_source:
+    # Step 5.7: Source wallet analysis (runs always, idempotent — skips already-analyzed positions)
+    if True:
         print(f"\nAnalyzing source wallet positions...")
         from valhalla.source_wallet_analyzer import SourceWalletAnalyzer
         # In --no-input mode, cache is not initialized yet — create it now
@@ -1775,6 +2036,9 @@ def main():
                 pos.source_wallet_pnl_pct = result.source_pnl_pct
                 pos.source_wallet_scenario = result.scenario
                 updated_count += 1
+            elif result and result.error:
+                # Mark as attempted so it's not retried on every run
+                pos.source_wallet_scenario = "no_data"
         cache.save()
         print(f"  Updated {updated_count} position(s) with source wallet data")
 

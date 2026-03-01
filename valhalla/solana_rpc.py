@@ -53,6 +53,37 @@ class SolanaRpcClient:
         self.rpc_url = rpc_url
         self._delay = 0.7  # seconds between requests, increases on rate limit
 
+    def get_sol_balance(self, address: str) -> Optional[float]:
+        """
+        Fetch the SOL balance for a wallet address.
+        Returns balance in SOL (float), or None on error.
+        """
+        try:
+            payload = {
+                "jsonrpc": "2.0",
+                "id": 1,
+                "method": "getBalance",
+                "params": [address]
+            }
+            req = urllib.request.Request(
+                self.rpc_url,
+                data=json.dumps(payload).encode('utf-8'),
+                headers={
+                    "Content-Type": "application/json",
+                    "User-Agent": "Mozilla/5.0",
+                }
+            )
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                data = json.loads(resp.read())
+            lamports = data.get('result', {}).get('value')
+            if lamports is None:
+                print(f"Warning: getBalance returned no value for {address}")
+                return None
+            return lamports / 1_000_000_000
+        except Exception as e:
+            print(f"Warning: Failed to fetch SOL balance for {address}: {e}")
+            return None
+
     def get_transaction(self, signature: str) -> Optional[List[str]]:
         """
         Get transaction and extract account keys.
