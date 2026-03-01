@@ -896,7 +896,7 @@ def _build_loss_detail_table(positions: List) -> str:
     include_portfolio_pct = PORTFOLIO_TOTAL_SOL > 0
     portfolio_dec = Decimal(str(PORTFOLIO_TOTAL_SOL)) if include_portfolio_pct else None
 
-    headers = ["Date", "Wallet", "Reason", "Loss (SOL)", "Loss (%)", "Source PnL (%)", "Source hold (min)", "Source action"]
+    headers = ["Open", "Close", "Wallet", "Token pair", "Reason", "Loss (SOL)", "Loss (%)", "Source PnL (%)", "Source hold (min)", "Source action"]
     if include_portfolio_pct:
         headers.append("% portfolio")
 
@@ -908,15 +908,19 @@ def _build_loss_detail_table(positions: List) -> str:
         source_hold = getattr(p, "source_wallet_hold_min", None)
         scenario = getattr(p, "source_wallet_scenario", None)
 
-        date_str = p.datetime_close[:10] if p.datetime_close else "N/A"
+        open_str = getattr(p, "datetime_open", None) or "N/A"
+        close_str = p.datetime_close if p.datetime_close else "N/A"
+        token_pair_str = getattr(p, "token_pair", None) or "N/A"
         loss_sol_str = f"-{abs(pnl):.3f}"
         loss_pct_str = f"{float(pnl_pct):.1f}%" if pnl_pct is not None else "N/A"
         src_pnl_str = f"{float(source_pnl_pct):.1f}%" if source_pnl_pct is not None else "N/A"
         src_hold_str = str(source_hold) if source_hold is not None else "N/A"
 
         row = [
-            date_str,
+            open_str,
+            close_str,
             p.target_wallet,
+            token_pair_str,
             p.close_reason,
             loss_sol_str,
             loss_pct_str,
