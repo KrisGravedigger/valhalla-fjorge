@@ -58,11 +58,9 @@ RECOMMENDATION_LOOKBACK_DAYS: int = 7
 # Set to 0.0 to disable position size checking.
 PORTFOLIO_TOTAL_SOL: float = 30.0
 
-# Your wallet address for automatic SOL balance fetching.
-# If set, PORTFOLIO_TOTAL_SOL is ignored and the actual on-chain balance is fetched
-# at parse time using the Solana RPC endpoint.
-# Set to "" to disable and use PORTFOLIO_TOTAL_SOL instead.
-PORTFOLIO_WALLET_ADDRESS: str = ""
+# Automatic SOL balance fetching is currently disabled because the on-chain balance
+# does not include SOL locked in open Meteora positions.
+# PORTFOLIO_WALLET_ADDRESS: str = "J4tkGDbTUVtAkcziKruadhRkP3A9HquvmBXK6bsSVArF"
 
 # Maximum allowed fraction of portfolio in a single position.
 # 0.125 = 1/8 of portfolio. Configurable.
