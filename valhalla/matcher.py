@@ -726,7 +726,30 @@ class PositionMatcher:
                         datetime_open="",
                         datetime_close=make_iso_datetime(ac_event.date, ac_event.timestamp),
                     ))
-                # If no Meteora and no open event, skip (nothing useful to record)
+                else:
+                    # No Meteora and no open event - create minimal placeholder so merge
+                    # can close the still_open entry (e.g. position opened in archive).
+                    matched_positions.append(MatchedPosition(
+                        target_wallet=ac_event.target,
+                        token="unknown",
+                        position_type="unknown",
+                        sol_deployed=None,
+                        sol_received=None,
+                        pnl_sol=None,
+                        pnl_pct=None,
+                        close_reason="already_closed_unknown_open",
+                        mc_at_open=0.0,
+                        jup_score=0,
+                        token_age="",
+                        token_age_days=None,
+                        token_age_hours=None,
+                        price_drop_pct=None,
+                        position_id=pid,
+                        full_address=full_addr,
+                        pnl_source="pending",
+                        datetime_open="",
+                        datetime_close=make_iso_datetime(ac_event.date, ac_event.timestamp),
+                    ))
 
         # Unmatched opens = opens whose position_id was never closed
         unmatched_opens = [o for o in self.parser.open_events if o.position_id not in matched_ids]
