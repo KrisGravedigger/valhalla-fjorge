@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 
 from .models import (
     OpenEvent, CloseEvent, RugEvent, SkipEvent, FailsafeEvent,
-    AddLiquidityEvent, SwapEvent, InsufficientBalanceEvent, short_id
+    AddLiquidityEvent, SwapEvent, InsufficientBalanceEvent, AlreadyClosedEvent, short_id
 )
 from .readers import ParsedMessage
 
@@ -47,6 +47,10 @@ class EventParser:
     POSITION_ADDRESS_PATTERN = r'Position:\s*(\S+)'
     PAIR_PATTERN = r'Pair:\s*(\S+)'
 
+    # Already-closed event patterns
+    ALREADY_CLOSED_PATTERN = r'Your position\s+(\S+)\s+was already closed\s+\((\w+)\)'
+    ALREADY_CLOSED_TARGET_PATTERN = r'Target:\s*(\S+)'
+
     # Skip event markers
     SKIP_REASON_AGE_MARKER = 'Skipping position due to token age restriction'
     SKIP_REASON_JUP_MARKER = 'Skipping position due to low Jupiter organic score restriction'
@@ -84,6 +88,7 @@ class EventParser:
         self.failsafe_events: List[FailsafeEvent] = []
         self.add_liquidity_events: List[AddLiquidityEvent] = []
         self.insufficient_balance_events: List[InsufficientBalanceEvent] = []
+        self.already_closed_events: List[AlreadyClosedEvent] = []
         self.base_date = base_date
         self.current_date = base_date
 
@@ -127,10 +132,6 @@ class EventParser:
                                     target_wallet_address: Optional[str] = None,
                                     target_tx_signatures: Optional[List[str]] = None) -> None:
         """Classify message type and parse accordingly"""
-        # Skip "already closed" messages
-        if "was already closed" in message:
-            return
-
         # Check for each event type
         if "Opened New DLMM Position!" in message:
             event = self._parse_open_event(timestamp, message, tx_signatures,
@@ -162,6 +163,12 @@ class EventParser:
             if event:
                 event.date = self.current_date or ""
                 self.add_liquidity_events.append(event)
+
+        elif "was already closed" in message:
+            event = self._parse_already_closed_event(timestamp, message, tx_signatures)
+            if event:
+                event.date = self.current_date or ""
+                self.already_closed_events.append(event)
 
         elif "Rug Check Stop Loss Executed" in message:
             event = self._parse_rug_event(timestamp, message)
@@ -399,6 +406,27 @@ class EventParser:
             )
         except (ValueError, AttributeError) as e:
             print(f"Warning: Failed to parse rug event: {e}")
+            return None
+
+    def _parse_already_closed_event(self, timestamp: str, message: str, tx_signatures: List[str]) -> Optional[AlreadyClosedEvent]:
+        """Parse 'Your position X was already closed (short_id)' event"""
+        try:
+            match = re.search(self.ALREADY_CLOSED_PATTERN, message)
+            if not match:
+                return None
+            position_address = match.group(1)
+            position_id = match.group(2)
+            target_match = re.search(self.ALREADY_CLOSED_TARGET_PATTERN, message)
+            target = target_match.group(1) if target_match else ""
+            return AlreadyClosedEvent(
+                timestamp=timestamp,
+                position_id=position_id,
+                position_address=position_address,
+                target=target,
+                tx_signatures=tx_signatures,
+            )
+        except (ValueError, AttributeError) as e:
+            print(f"Warning: Failed to parse already_closed event: {e}")
             return None
 
     def _parse_skip_event(self, timestamp: str, message: str) -> Optional[SkipEvent]:

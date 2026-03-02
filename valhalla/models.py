@@ -211,6 +211,17 @@ class FailsafeEvent:
 
 
 @dataclass
+class AlreadyClosedEvent:
+    """Position was already closed when bot tried to process the close."""
+    timestamp: str
+    position_id: str        # short ID e.g. "xyxChLQd"
+    position_address: str   # full Solana address
+    target: str             # wallet ID
+    tx_signatures: List[str] = field(default_factory=list)
+    date: str = ""
+
+
+@dataclass
 class AddLiquidityEvent:
     timestamp: str
     position_id: str

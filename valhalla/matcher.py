@@ -8,7 +8,7 @@ from typing import Dict, List, Tuple
 
 from .models import (
     MatchedPosition, MeteoraPnlResult, OpenEvent, AddLiquidityEvent,
-    FailsafeEvent, make_iso_datetime, normalize_token_age
+    FailsafeEvent, AlreadyClosedEvent, make_iso_datetime, normalize_token_age
 )
 from .event_parser import EventParser
 
@@ -617,6 +617,116 @@ class PositionMatcher:
                         datetime_open="",
                         datetime_close=make_iso_datetime(failsafe_event.date, failsafe_event.timestamp)
                     ))
+
+        # Handle already-closed events (lowest priority - only match if not already matched)
+        for ac_event in self.parser.already_closed_events:
+            pid = ac_event.position_id
+            if pid in matched_ids:
+                continue  # Already matched by close or rug event
+
+            matched_ids.add(pid)
+
+            # Register full address if available
+            if ac_event.position_address and pid not in resolved_addresses:
+                resolved_addresses[pid] = ac_event.position_address
+
+            if pid in open_by_id:
+                open_event = open_by_id[pid]
+                sol_deployed = Decimal(str(open_event.your_sol))
+                for liq in liquidity_by_id.get(pid, []):
+                    sol_deployed += Decimal(str(liq.amount_sol))
+
+                full_addr = resolved_addresses.get(pid, "")
+                meteora_result = meteora_results.get(pid)
+
+                if meteora_result:
+                    meteora_pnl = meteora_result.pnl_sol
+                    meteora_pnl_pct = (meteora_pnl / meteora_result.deposited_sol * Decimal('100')) if meteora_result.deposited_sol > 0 else Decimal('0')
+                    matched_positions.append(MatchedPosition(
+                        target_wallet=ac_event.target,
+                        token=open_event.token_name,
+                        position_type=open_event.position_type,
+                        sol_deployed=meteora_result.deposited_sol,
+                        sol_received=meteora_result.withdrawn_sol,
+                        pnl_sol=meteora_pnl,
+                        pnl_pct=meteora_pnl_pct,
+                        close_reason="already_closed",
+                        mc_at_open=open_event.market_cap,
+                        jup_score=open_event.jup_score,
+                        token_age=open_event.token_age,
+                        token_age_days=normalize_token_age(open_event.token_age)[0],
+                        token_age_hours=normalize_token_age(open_event.token_age)[1],
+                        price_drop_pct=None,
+                        position_id=pid,
+                        full_address=full_addr,
+                        pnl_source="meteora",
+                        meteora_deposited=meteora_result.deposited_sol,
+                        meteora_withdrawn=meteora_result.withdrawn_sol,
+                        meteora_fees=meteora_result.fees_sol,
+                        meteora_pnl=meteora_pnl,
+                        datetime_open=make_iso_datetime(open_event.date, open_event.timestamp),
+                        datetime_close=make_iso_datetime(ac_event.date, ac_event.timestamp),
+                        target_wallet_address=open_event.target_wallet_address,
+                        target_tx_signature=open_event.target_tx_signatures[0] if open_event.target_tx_signatures else None
+                    ))
+                else:
+                    # No Meteora data - leave PnL as None (pending)
+                    matched_positions.append(MatchedPosition(
+                        target_wallet=ac_event.target,
+                        token=open_event.token_name,
+                        position_type=open_event.position_type,
+                        sol_deployed=None,
+                        sol_received=None,
+                        pnl_sol=None,
+                        pnl_pct=None,
+                        close_reason="already_closed",
+                        mc_at_open=open_event.market_cap,
+                        jup_score=open_event.jup_score,
+                        token_age=open_event.token_age,
+                        token_age_days=normalize_token_age(open_event.token_age)[0],
+                        token_age_hours=normalize_token_age(open_event.token_age)[1],
+                        price_drop_pct=None,
+                        position_id=pid,
+                        full_address=full_addr,
+                        pnl_source="pending",
+                        datetime_open=make_iso_datetime(open_event.date, open_event.timestamp),
+                        datetime_close=make_iso_datetime(ac_event.date, ac_event.timestamp),
+                        target_wallet_address=open_event.target_wallet_address,
+                        target_tx_signature=open_event.target_tx_signatures[0] if open_event.target_tx_signatures else None
+                    ))
+            else:
+                # No matching open event
+                full_addr = resolved_addresses.get(pid, ac_event.position_address)
+                meteora_result = meteora_results.get(pid)
+                if meteora_result:
+                    meteora_pnl = meteora_result.pnl_sol
+                    meteora_pnl_pct = (meteora_pnl / meteora_result.deposited_sol * Decimal('100')) if meteora_result.deposited_sol > 0 else Decimal('0')
+                    matched_positions.append(MatchedPosition(
+                        target_wallet=ac_event.target,
+                        token="unknown",
+                        position_type="unknown",
+                        sol_deployed=meteora_result.deposited_sol,
+                        sol_received=meteora_result.withdrawn_sol,
+                        pnl_sol=meteora_pnl,
+                        pnl_pct=meteora_pnl_pct,
+                        close_reason="already_closed_unknown_open",
+                        mc_at_open=0.0,
+                        jup_score=0,
+                        token_age="",
+                        token_age_days=None,
+                        token_age_hours=None,
+                        price_drop_pct=None,
+                        position_id=pid,
+                        full_address=full_addr,
+                        pnl_source="meteora",
+                        meteora_deposited=meteora_result.deposited_sol,
+                        meteora_withdrawn=meteora_result.withdrawn_sol,
+                        meteora_fees=meteora_result.fees_sol,
+                        meteora_pnl=meteora_pnl,
+                        datetime_open="",
+                        datetime_close=make_iso_datetime(ac_event.date, ac_event.timestamp),
+                    ))
+                # If no Meteora and no open event, skip (nothing useful to record)
 
         # Unmatched opens = opens whose position_id was never closed
         unmatched_opens = [o for o in self.parser.open_events if o.position_id not in matched_ids]
