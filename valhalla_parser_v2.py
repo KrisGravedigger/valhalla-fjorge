@@ -1820,6 +1820,7 @@ def main():
             event_parser.swap_events.extend(file_parser.swap_events)
             event_parser.add_liquidity_events.extend(file_parser.add_liquidity_events)
             event_parser.insufficient_balance_events.extend(file_parser.insufficient_balance_events)
+            event_parser.already_closed_events.extend(file_parser.already_closed_events)
             if dedup_count:
                 print(f"  Skipped {dedup_count} duplicate events (already seen in earlier file)")
 
