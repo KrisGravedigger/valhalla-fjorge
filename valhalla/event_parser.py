@@ -30,6 +30,7 @@ class EventParser:
     # Position ID patterns
     OPEN_POSITION_ID_PATTERN = r'Opened New DLMM Position!\s*\((\w+)\)'
     CLOSE_POSITION_ID_PATTERN = r'Closed DLMM Position!\s*\((\w+)\)'
+    CLOSE_SUCCESSFUL_POSITION_ID_PATTERN = r'Position Closed Successfully \(DLMM\)\s*\((\w+)\)'
     FAILSAFE_POSITION_ID_PATTERN = r'Failsafe Activated \(DLMM\)\s*\((\w+)\)'
     ADD_LIQUIDITY_POSITION_ID_PATTERN = r'Added DLMM Liquidity\s*\((\w+)\)'
     LIQUIDITY_AMOUNT_PATTERN = r'Amount:\s*([\d.]+)\s*SOL'
@@ -148,6 +149,12 @@ class EventParser:
 
         elif "Closed DLMM Position!" in message:
             event = self._parse_close_event(timestamp, message, tx_signatures)
+            if event:
+                event.date = self.current_date or ""
+                self.close_events.append(event)
+
+        elif "Position Closed Successfully (DLMM)" in message:
+            event = self._parse_close_successful_event(timestamp, message, tx_signatures)
             if event:
                 event.date = self.current_date or ""
                 self.close_events.append(event)
@@ -287,6 +294,31 @@ class EventParser:
             )
         except (ValueError, AttributeError) as e:
             print(f"Warning: Failed to parse close event: {e}")
+            return None
+
+    def _parse_close_successful_event(self, timestamp: str, message: str, tx_signatures: List[str]) -> Optional[CloseEvent]:
+        """Parse 'Position Closed Successfully (DLMM) (short_id)' — manual close without SOL balance data."""
+        try:
+            position_id_match = re.search(self.CLOSE_SUCCESSFUL_POSITION_ID_PATTERN, message)
+            if not position_id_match:
+                return None
+            position_id = position_id_match.group(1)
+            # No target, starting_sol, ending_sol in this format — leave at 0.0 (pending PnL)
+            target_match = re.search(self.TARGET_PATTERN, message)
+            target = target_match.group(1) if target_match else ""
+            return CloseEvent(
+                timestamp=timestamp,
+                target=target,
+                starting_sol=0.0,
+                starting_usd=0.0,
+                ending_sol=0.0,
+                ending_usd=0.0,
+                position_id=position_id,
+                tx_signatures=tx_signatures,
+                close_type="normal",
+            )
+        except (ValueError, AttributeError) as e:
+            print(f"Warning: Failed to parse close_successful event: {e}")
             return None
 
     def _parse_tp_sl_event(self, timestamp: str, message: str, tx_signatures: List[str],
