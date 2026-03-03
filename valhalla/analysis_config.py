@@ -16,6 +16,11 @@ SCORECARD_MIN_POSITIONS: int = 30
 # Days without a closed position to mark a wallet as inactive.
 SCORECARD_INACTIVE_DAYS: int = 7
 
+# Days lookback for Wallet Scorecard table: only show wallets that opened
+# at least one position within this window (counting back from the most
+# recent datetime_open across all positions).
+SCORECARD_RECENT_DAYS: int = 2
+
 # Thresholds for "increase_capital" status (all must be met):
 SCORECARD_INCREASE_WR_ALL: float = 60.0    # minimum overall win rate (%)
 SCORECARD_INCREASE_WR_7D: float = 65.0     # minimum 7-day win rate (%)
@@ -56,7 +61,7 @@ RECOMMENDATION_LOOKBACK_DAYS: int = 7
 
 # Your total portfolio value in SOL.
 # Set to 0.0 to disable position size checking.
-PORTFOLIO_TOTAL_SOL: float = 30.0
+PORTFOLIO_TOTAL_SOL: float = 54.0
 
 # Automatic SOL balance fetching is currently disabled because the on-chain balance
 # does not include SOL locked in open Meteora positions.

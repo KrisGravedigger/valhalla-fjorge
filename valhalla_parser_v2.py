@@ -25,6 +25,7 @@ from valhalla.analysis_config import (
     REDUCE_CAPITAL_CONSECUTIVE_DAYS,
     LOSS_DETAIL_MIN_SOL,
     LOSS_DETAIL_LOOKBACK_DAYS,
+    SCORECARD_RECENT_DAYS,
 )
 from valhalla.models import extract_date_from_filename, MeteoraPnlResult, parse_iso_datetime
 from valhalla.readers import PlainTextReader, HtmlReader, detect_input_format
@@ -816,6 +817,49 @@ def _fmt_mc(val: float) -> str:
     return f"${val:.0f}"
 
 
+def _scorecard_action_hints(wallet: str, action_items: List[str]) -> str:
+    """Return brief comma-separated action hints for a wallet from the action items list."""
+    hints: List[str] = []
+    for item in action_items:
+        if not (item.startswith(f"{wallet}:") or item.startswith(f"WARN {wallet}:")):
+            continue
+        il = item.lower()
+        if "portfolio limit" in il:
+            if "↓ size" not in hints:
+                hints.append("↓ size")
+        elif "candidate for replacement" in il or "consider replacing" in il or "poor performance" in il:
+            if "replace" not in hints:
+                hints.append("replace")
+        elif "win rate declining" in il:
+            if "↓ WR" not in hints:
+                hints.append("↓ WR")
+        elif "high rug rate" in il:
+            if "high rug" not in hints:
+                hints.append("high rug")
+        elif "increasing capital" in il or "increase capital" in il:
+            if "↑ capital" not in hints:
+                hints.append("↑ capital")
+        elif "reduce capital" in il or "reducing capital" in il:
+            if "↓ capital" not in hints:
+                hints.append("↓ capital")
+        elif "insufficient balance" in il:
+            if "↑ SOL" not in hints:
+                hints.append("↑ SOL")
+        elif "sweet spot" in il or "tightening" in il:
+            if "tighten filter" not in hints:
+                hints.append("tighten filter")
+        elif "verify or change" in il or "no activity" in il:
+            if "verify" not in hints:
+                hints.append("verify")
+        elif "pos/day" in il:
+            if "low activity" not in hints:
+                hints.append("low activity")
+        elif "deteriorating" in il:
+            if "↑ SL" not in hints:
+                hints.append("↑ SL")
+    return ", ".join(hints) if hints else "—"
+
+
 def _md_table(headers: List[str], rows: List[List[str]]) -> str:
     """Render a markdown table string."""
     col_widths = [len(h) for h in headers]
@@ -1133,13 +1177,34 @@ def _generate_loss_report(
     if not result.wallet_scorecards:
         lines.append("_No scorecard data (no closed positions)._")
     else:
+        from datetime import timedelta
+
+        # Determine which wallets had any position opened within SCORECARD_RECENT_DAYS
+        open_dates_by_wallet: Dict[str, datetime] = {}
+        for pos in positions:
+            dt_open = parse_iso_datetime(pos.datetime_open)
+            if dt_open is not None:
+                w = pos.target_wallet
+                if w not in open_dates_by_wallet or dt_open > open_dates_by_wallet[w]:
+                    open_dates_by_wallet[w] = dt_open
+
+        if open_dates_by_wallet:
+            reference_open = max(open_dates_by_wallet.values())
+            cutoff_open = reference_open - timedelta(days=SCORECARD_RECENT_DAYS)
+            recent_wallets = {w for w, d in open_dates_by_wallet.items() if d >= cutoff_open}
+        else:
+            recent_wallets = None  # no date info — show all
+
         sc_rows = []
         for sc in result.wallet_scorecards:
             if sc.wallet in inactive_wallets:
                 continue
+            if recent_wallets is not None and sc.wallet not in recent_wallets:
+                continue
             wr_7d_str = f"{sc.win_rate_7d_pct:.0f}%" if sc.win_rate_7d_pct is not None else "N/A"
             hold_str = f"{sc.avg_hold_minutes:.0f}m" if sc.avg_hold_minutes is not None else "N/A"
             trend_str = f"{sc.win_rate_trend_pp:+.0f}pp" if sc.win_rate_trend_pp is not None else "N/A"
+            hint_str = _scorecard_action_hints(sc.wallet, action_items)
             sc_rows.append([
                 sc.wallet,
                 str(sc.closed_positions),
@@ -1151,12 +1216,24 @@ def _generate_loss_report(
                 hold_str,
                 trend_str,
                 sc.status,
+                hint_str,
             ])
-        lines.append(_md_table(
-            ["Wallet", "Pos.", "WR%", "WR 7d%", "PnL (SOL)", "SOL/day",
-             "Rug Rate", "Avg Hold", "Trend", "Status"],
-            sc_rows,
-        ))
+
+        ref_date_str = reference_open.strftime("%Y-%m-%d %H:%M") if open_dates_by_wallet else "N/A"
+        lines.append(
+            f"_Showing wallets active in last {SCORECARD_RECENT_DAYS}d "
+            f"(last open: {ref_date_str}). "
+            f"Change `SCORECARD_RECENT_DAYS` in analysis_config.py to adjust._"
+        )
+        lines.append("")
+        if sc_rows:
+            lines.append(_md_table(
+                ["Wallet", "Pos.", "WR%", "WR 7d%", "PnL (SOL)", "SOL/day",
+                 "Rug Rate", "Avg Hold", "Trend", "Status", "Action"],
+                sc_rows,
+            ))
+        else:
+            lines.append("_No wallets with recent activity._")
     lines.append("")
 
     # ------------------------------------------------------------------
