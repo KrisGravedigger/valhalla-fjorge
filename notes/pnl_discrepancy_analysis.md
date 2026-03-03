@@ -5,27 +5,41 @@
 After full cross-reference of 1196 matched positions (Feb 15-27, 2026):
 
 - **Fees: MATCH** - 0.1% difference (23.45 vs 23.42 SOL)
-- **PnL after all fixes**: 1.18 SOL difference (excl. DSc936vC outlier)
-- **Root cause of remaining difference**: mark-to-market on memecoins
-- **78% of positions match within 0.001 SOL** per-position
-
-Our calculator is correct for **realized PnL**. lpagent shows **unrealized mark-to-market**.
+- **PnL after bug fixes**: 1.18 SOL remaining difference (excl. DSc936vC)
+- **Root cause**: different token-to-SOL valuation methodology (not yet fully understood)
+- **79% of positions match within 0.001 SOL** per-position
 
 ---
 
-## Two Different PnL Definitions
+## What We Know
 
-| Method | Token Valuation | Changes Over Time? | Measures |
+### Our calculation method
+
+We use the **Meteora DLMM API** (`/position/{addr}/deposits`, `/withdraws`, `/claim_fees`).
+Each transaction returns `token_x_usd_amount` and `token_y_usd_amount` - USD values
+presumably based on the DLMM bin price at time of transaction.
+
+We derive SOL price from the SOL-side USD (`sol_price = sol_usd / sol_amount`), then
+convert the token-side USD to SOL equivalent (`token_sol_equiv = token_usd / sol_price`).
+
+PnL = withdrawn_sol_equiv + fees_sol_equiv - deposited_sol_equiv
+
+### What lpagent uses
+
+Unknown. Their PnL values are **stable** (confirmed by observation - they do not change
+on page refresh or over time). So they use a fixed price, but from a different source
+or methodology than the DLMM API USD amounts we use.
+
+### On-chain swap verification (Feb 21)
+
+For 2 positions, we fetched the actual swap TX from Solana RPC:
+
+| Position | Our price (DLMM API) | Actual swap price | Ratio |
 |---|---|---|---|
-| **valhalla-fjorge** | Historical at transaction | NO - fixed at close | "What SOL did this position actually realize?" |
-| **lpagent** | Current market price | YES - changes daily | "What would this be worth if I sold now?" |
-| **Ground truth** | Actual on-chain swap price | n/a | "What SOL did the wallet actually receive?" |
+| 3KSCw7vD (automaton) | 1.064e-05 | 1.047e-05 | our is 1.6% higher |
+| 5QYhYU6GD5 (Punch) | 3.547e-04 | 3.496e-04 | our is 1.5% higher |
 
-Our calc is within 1-4% of actual on-chain swap prices (verified for 2 positions via
-Solana RPC). lpagent systematically diverges as token prices move after position close.
-
-For memecoins that typically **lose value** after LP close, mark-to-market makes
-lpagent show **lower** PnL than historical realized.
+Our DLMM-API-derived prices are slightly above actual swap prices (slippage).
 
 ---
 
@@ -38,15 +52,14 @@ lpagent show **lower** PnL than historical realized.
 | lpagent CSV | 1212 | Extracted via browser script, Feb 15 - Feb 27 |
 | Our positions.csv | 1461 | Feb 11 - Feb 27 |
 | Matched | 1196 | By position address prefix+suffix |
-| lpagent only | 16 | Very recent (minutes/hours old, not yet parsed) |
+| lpagent only | 16 | Very recent, not yet in our data |
 | Our data only | 243 | Feb 11-14 (older than lpagent CSV retention) |
 
-### Final Aggregate Numbers (1196 matched positions)
+### Final Numbers (1196 matched positions)
 
 | Metric | lpagent (from %) | Ours | Diff |
 |---|---|---|---|
 | **Fees** | 23.42 SOL | 23.45 SOL | +0.03 SOL (0.1%) |
-| **PnL (all)** | 2.40 SOL | 6.58 SOL | +4.18 SOL |
 | **PnL (excl DSc936vC)** | 5.40 SOL | 6.58 SOL | **+1.18 SOL** |
 
 ### Per-Position Accuracy
@@ -59,7 +72,33 @@ lpagent show **lower** PnL than historical realized.
 | > 0.05 SOL | 12 | 1% |
 
 Direction: 184 positions we're higher, 70 lower, 942 close match.
-Net: +5.01 higher / -0.83 lower = mark-to-market bias on depreciating memecoins.
+
+---
+
+## Key Position Comparisons
+
+All positions have matching fees but divergent PnL. The difference is in how
+the token side is valued in SOL equivalents.
+
+### Positions where we are HIGHER than lpagent
+
+| Position | Token | Our PnL | lp PnL | Diff | Notes |
+|---|---|---|---|---|---|
+| CL6N3Ve3 | Tastecoin | +0.3335 | +0.1294 | +0.2041 | Even deposits differ (5.35 vs 5.46) |
+| BvapUjjU | Lobstar | -0.4192 | -0.5164 | +0.0972 | Token-only withdrawal |
+| 3KSCw7vD | automaton | -0.5991 | -0.6708 | +0.0717 | On-chain verified |
+| 5etffR8f | automaton | -0.0275 | -0.0781 | +0.0506 | BidAsk, mixed withdrawal |
+| ABZp12yw | TOTO | -0.0696 | -0.1145 | +0.0449 | Spot, token+SOL withdrawal |
+
+### Positions where we are LOWER than lpagent
+
+| Position | Token | Our PnL | lp PnL | Diff | Notes |
+|---|---|---|---|---|---|
+| 9Q3Tk7PW | MUSHU | -0.4070 | -0.3157 | -0.0913 | BidAsk, token-only withdrawal |
+| Azsxa6HU | Jellycat | -0.3584 | -0.2797 | -0.0787 | BidAsk, token-only withdrawal |
+
+Notably, positions where we're LOWER are both BidAsk strategy with token-only
+withdrawals. Our valuation of those tokens comes out lower than lpagent's.
 
 ---
 
@@ -67,70 +106,54 @@ Net: +5.01 higher / -0.83 lower = mark-to-market bias on depreciating memecoins.
 
 ### Bug #1: Phantom Deposit (token-only first deposit)
 
-**Root cause**: When the first deposit transaction is token-only (0 SOL), the
-`running_sol_price` starts at 0, so the token-side USD amount cannot be converted
-to SOL equivalent. Result: deposit valued at 0 SOL, inflating PnL.
+When the first deposit is token-only (0 SOL), `running_sol_price` starts at 0, so
+the token USD can't be converted to SOL. Result: deposit = 0, inflating PnL.
 
-**Fix**: Pre-scan ALL transactions (deposits + withdrawals + fees) to find an
-initial SOL price before processing. Committed on `claude/fix-pnl-sol-price-fallback`.
+**Fix**: Pre-scan all transactions to find initial SOL price before processing.
 
-**Impact**: 1 position (2jPS4rTv) had the bug in calculated meteora data.
-14 more were stuck as `pnl_source=pending` due to the same root cause. After fix
-+ recalculation: 12 successfully recalculated, 2 remain unfixable (all transactions
-token-only in both directions), 1 is a non-SOL pair (arc/USDC).
+After fix + recalculation of 14 pending positions: our total dropped from 8.39 to 6.58 SOL.
+3 positions remain unfixable (manually overridden with lpagent estimates,
+`pnl_source=lpagent_estimate`).
 
-The 3 unfixable positions were manually overridden with lpagent estimates
-(`pnl_source=lpagent_estimate`).
+### DSc936vC (Lobstar, 3.0 SOL)
 
-### DSc936vC (Lobstar, 3.0 SOL deployed)
-
-Meteora API confirms: 3.0 SOL deposited, 3.0 SOL withdrawn, 0 tokens.
-Our calc: PnL = 0.00. lpagent shows -3.00 (100% loss) but **excludes** this
-from its displayed total (marked as suspicious with a warning icon).
-
-Both tools effectively skip this position. Not a real discrepancy.
+Meteora API: 3.0 SOL in, 3.0 SOL out, 0 tokens, PnL = 0.
+lpagent shows -3.0 (100% loss) but excludes it from displayed total.
+Both tools skip this position. Not a real discrepancy.
 
 ---
 
-## On-Chain Verification (Feb 21)
+## Open Questions
 
-Fetched actual swap transactions from Solana RPC for 2 positions:
+1. **What price source does lpagent use?** Not DLMM API bin price (we'd match).
+   Possibly Jupiter aggregator, CoinGecko, or actual swap quotes.
 
-| Position | Actual swap price | Meteora DLMM price | Ratio |
-|---|---|---|---|
-| 3KSCok (automaton) | 1.047e-05 | 1.064e-05 | 0.98x |
-| 5QYhYU (Punch) | 3.496e-04 | 3.547e-04 | 0.99x |
+2. **Why is CL6N3Ve3 deposit different?** The third deposit includes tokens.
+   Our token valuation = 1.539 SOL, lpagent implies 1.654 SOL (+7.5%).
+   Same tokens, different SOL equivalent.
 
-Actual prices are 1-2% BELOW Meteora DLMM (slippage). Our calc slightly overestimates
-vs actual realized, but by a negligible amount.
+3. **Why are some positions lower?** 9Q3Tk7PW and Azsxa6HU show us LOWER than
+   lpagent, meaning our token valuation is sometimes below lpagent's.
+   Both are BidAsk with token-only withdrawals.
 
----
-
-## Methodology Notes
-
-### lpagent CSV Precision Issue
-
-lpagent UI shows "< 0.01 SOL" for small values. The extraction script captures this
-as "0.01", affecting 65% of fee values and 72% of PnL values. **Solution**: use
-`pnl_pct` and `sol_deployed` to calculate precise PnL instead of `pnl_sol` field.
-
-Formula: `lpagent_pnl = sign(pnl_sol) * pnl_pct / 100 * sol_deployed`
-
-### 243 Phantom Positions (Feb 11-14)
-
-Our data has 243 positions from Feb 11-14 (+2.48 SOL total PnL) that are outside
-lpagent's CSV retention window. These are real positions, verified via Meteora API.
-They contribute to our total but cannot be compared with lpagent.
+4. **Is the DLMM API bin price the right price?** On-chain verification shows
+   actual swap prices are 1-2% below DLMM bin prices (slippage), but the
+   per-position PnL differences often exceed 1-2%.
 
 ---
 
-## Conclusion
+## Archived: Earlier Hypotheses
 
-1. **Fee calculation: validated** - 0.1% difference across 1196 positions
-2. **PnL accuracy: validated** - 1.18 SOL (22%) remaining difference is pure
-   mark-to-market effect on depreciating memecoins
-3. **Per-position**: 79% match within 0.001 SOL, 95% within 0.01 SOL
-4. **On-chain verified**: our prices are within 1-2% of actual swap prices
-5. Our tool measures **realized PnL** (what was actually earned). lpagent measures
-   **unrealized MtM** (what it would be worth at current prices). Both are valid
-   for different purposes.
+### Mark-to-market hypothesis (Feb 21, first session)
+
+Initially concluded that lpagent uses current market prices (mark-to-market) that
+change daily. This was inferred from 4 positions where tokens had appreciated since
+close, and lpagent showed higher PnL. **Disproven**: user confirmed lpagent values
+are stable and do not change over time. The explanation was circumstantial.
+
+### Revised mark-to-market (Feb 27, second session)
+
+Relabeled the remaining difference as "mark-to-market" without verifying. This was
+incorrect - "mark-to-market" implies fluctuating values, which contradicts user
+observation. The correct label is "different token valuation methodology" - both
+tools use fixed prices, just from different sources.
