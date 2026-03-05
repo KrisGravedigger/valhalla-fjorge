@@ -1783,7 +1783,14 @@ def _run_track_mode(output_dir: str) -> None:
         print("No recommendations to track.")
         return
 
-    _tracker.run_interactive_tracker(action_items, state_path)
+    updates = _tracker.run_interactive_tracker(action_items, state_path)
+
+    if updates > 0:
+        print("\nRegenerating loss_analysis.md...")
+        insuf_csv_str = str(insuf_csv) if insuf_csv.exists() else None
+        output_md = str(output_path / "loss_analysis.md")
+        _generate_loss_report(matched_positions, output_md, insuf_csv_str)
+        print(f"Report updated: {output_md}")
 
 
 def main():

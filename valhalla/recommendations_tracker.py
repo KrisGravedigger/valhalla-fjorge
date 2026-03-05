@@ -149,29 +149,36 @@ def annotate_items(
 # Interactive tracker CLI
 # ---------------------------------------------------------------------------
 
-def run_interactive_tracker(items: List[str], state_path: str) -> None:
+def run_interactive_tracker(items: List[str], state_path: str) -> int:
     """
     Run an interactive CLI session for marking recommendation statuses.
 
-    Displays all items with their current status and allows the user to
-    mark each as done (d), ignored (i), or reset to new (n).
+    Default view shows only 'new' items. Type 'done' or 'ignore' to switch
+    to those views; 'new' to return to the default view.
 
-    Args:
-        items: List of recommendation strings (e.g., from _build_action_items).
-        state_path: Path to the JSON state file.
+    Commands:
+        NUMBER + d/i/n  — mark item in current view (e.g. 3d = mark #3 as done)
+        done            — switch to 'done' view
+        ignore          — switch to 'ignored' view
+        new             — switch to 'new' view
+        q / Enter       — quit
+
+    Returns:
+        Number of items whose status was updated (0 if no changes).
     """
     state = load_state(state_path)
     annotated = annotate_items(items, state)
 
     if not annotated:
         print("No recommendations to track.")
-        return
+        return 0
 
-    _print_tracker_list(annotated)
+    current_view = STATUS_NEW
+    _print_tracker_list(annotated, current_view)
 
-    print()
-    print("Commands: NUMBER + d (done) | i (ignore) | n (new)   — e.g. 3d")
-    print("Press Enter or q to quit without changes to that item.")
+    print("Commands: NUMBER + d (done) | i (ignore) | n (new)  — e.g. 3d")
+    print("Views:    'done' | 'ignore' | 'new'  — switch filter")
+    print("'q' or Enter to quit.")
     print()
 
     updates = 0
@@ -185,19 +192,37 @@ def run_interactive_tracker(items: List[str], state_path: str) -> None:
         if inp in ("q", "quit", ""):
             break
 
+        # View switching
+        if inp in ("new", "done", "ignore", "ignored"):
+            if inp == "done":
+                current_view = STATUS_DONE
+            elif inp in ("ignore", "ignored"):
+                current_view = STATUS_IGNORED
+            else:
+                current_view = STATUS_NEW
+            _print_tracker_list(annotated, current_view)
+            continue
+
+        # Action command: Nd, Ni, Nn — operate on currently visible items
         m = re.match(r"^(\d+)([din])$", inp)
         if not m:
-            print("  Invalid command. Use NUMBER+d/i/n (e.g. 3d). Enter or q to quit.")
+            print("  Invalid: use NUMBER+d/i/n (e.g. 3d) or 'done'/'ignore'/'new' to switch view.")
             continue
 
-        idx = int(m.group(1)) - 1
+        visible = [
+            (orig_i, item, rec_id, status)
+            for orig_i, (item, rec_id, status) in enumerate(annotated)
+            if status == current_view
+        ]
+
+        idx_in_view = int(m.group(1)) - 1
         action = m.group(2)
 
-        if idx < 0 or idx >= len(annotated):
-            print(f"  No item #{idx + 1}.")
+        if idx_in_view < 0 or idx_in_view >= len(visible):
+            print(f"  No item #{idx_in_view + 1} in current view.")
             continue
 
-        item, rec_id, _ = annotated[idx]
+        orig_i, item, rec_id, _ = visible[idx_in_view]
         status_map = {"d": STATUS_DONE, "i": STATUS_IGNORED, "n": STATUS_NEW}
         new_status = status_map[action]
 
@@ -206,10 +231,13 @@ def run_interactive_tracker(items: List[str], state_path: str) -> None:
             "updated": str(date.today()),
             "text_preview": item[:120],
         }
-        annotated[idx] = (item, rec_id, new_status)
+        annotated[orig_i] = (item, rec_id, new_status)
         badge = STATUS_BADGE[new_status]
         print(f"  ✓ {rec_id} → {badge}")
         updates += 1
+
+        # Auto-refresh the current view (item may have left it)
+        _print_tracker_list(annotated, current_view)
 
     if updates > 0:
         save_state(state_path, state)
@@ -217,15 +245,24 @@ def run_interactive_tracker(items: List[str], state_path: str) -> None:
     else:
         print("\nNo changes made.")
 
+    return updates
 
-def _print_tracker_list(annotated: List[Tuple[str, str, str]]) -> None:
-    """Print the numbered list of recommendations with IDs and status badges."""
+
+def _print_tracker_list(
+    annotated: List[Tuple[str, str, str]],
+    view_filter: str = STATUS_NEW,
+) -> None:
+    """Print the filtered list of recommendations for the given status view."""
     MAX_WIDTH = 90
+    visible = [t for t in annotated if t[2] == view_filter]
+    badge_label = STATUS_BADGE.get(view_filter, view_filter)
     print()
-    print("Recommendation Tracker")
+    print(f"Recommendation Tracker — {badge_label} ({len(visible)} items)")
     print("=" * 70)
-    for idx, (item, rec_id, status) in enumerate(annotated, 1):
+    for idx, (item, rec_id, status) in enumerate(visible, 1):
         badge = STATUS_BADGE.get(status, "[?]")
         truncated = item[:MAX_WIDTH] + "…" if len(item) > MAX_WIDTH else item
         print(f"[{idx:2d}] {rec_id}  {badge}  {truncated}")
+    if not visible:
+        print("  (none)")
     print()
