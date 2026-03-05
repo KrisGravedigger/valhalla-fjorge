@@ -26,6 +26,8 @@ from valhalla.analysis_config import (
     LOSS_DETAIL_MIN_SOL,
     LOSS_DETAIL_LOOKBACK_DAYS,
     SCORECARD_RECENT_DAYS,
+    MIN_FILTER_GAIN_SOL,
+    MIN_POSITIONS_FOR_FILTER_REC,
 )
 from valhalla.models import extract_date_from_filename, MeteoraPnlResult, parse_iso_datetime
 from valhalla.readers import PlainTextReader, HtmlReader, detect_input_format
@@ -563,6 +565,8 @@ def _generate_wallet_recommendations(positions: List) -> List[str]:
                     best_idx = i
             if best_idx is None or best_idx == 0:
                 continue  # sweet spot is already at lowest threshold — no recommendation
+            if best_impact < Decimal(str(MIN_FILTER_GAIN_SOL)):
+                continue  # net gain too small to be material
             sweet_threshold = bt_rows[best_idx].threshold
             min_threshold = bt_rows[0].threshold
             param_display = PARAM_DISPLAY_D.get(param, param)
@@ -574,7 +578,7 @@ def _generate_wallet_recommendations(positions: List) -> List[str]:
             )
         return rule_d_recs
 
-    # Per-wallet Rule D (10+ closed positions)
+    # Per-wallet Rule D (MIN_POSITIONS_FOR_FILTER_REC+ closed positions)
     for wallet in daily_by_wallet:
         wallet_all_positions = [
             p for p in positions
@@ -584,7 +588,7 @@ def _generate_wallet_recommendations(positions: List) -> List[str]:
             p for p in wallet_all_positions
             if p.close_reason not in ("still_open", "unknown_open")
         ]
-        if len(closed_wallet_d) < 10:
+        if len(closed_wallet_d) < MIN_POSITIONS_FOR_FILTER_REC:
             continue
         recommendations.extend(_run_rule_d(wallet, wallet_all_positions))
 
@@ -857,6 +861,11 @@ def _scorecard_action_hints(wallet: str, action_items: List[str]) -> str:
         elif "deteriorating" in il:
             if "↑ SL" not in hints:
                 hints.append("↑ SL")
+    # Resolve contradictory capital signals
+    if "↑ capital" in hints and "↓ capital" in hints:
+        hints = [h for h in hints if h not in ("↑ capital", "↓ capital")]
+        hints.append("⚠️ mixed capital signal")
+
     return ", ".join(hints) if hints else "—"
 
 
@@ -1034,10 +1043,15 @@ def _generate_loss_report(
     from valhalla.loss_analyzer import (
         LossAnalyzer, FilterBacktester, LOSS_REASONS,
     )
+    from valhalla import recommendations_tracker as _tracker
 
     analyzer = LossAnalyzer()
     result = analyzer.analyze(positions)
     inactive_wallets = {sc.wallet for sc in result.wallet_scorecards if sc.status == "inactive"}
+
+    # Load persistent recommendation state
+    state_path = str(Path(output_path).parent / ".recommendations_state.json")
+    rec_state = _tracker.load_state(state_path)
     wallet_recs = _generate_wallet_recommendations(positions)
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
     date_str = datetime.now().strftime("%Y-%m-%d")
@@ -1155,11 +1169,18 @@ def _generate_loss_report(
     action_items = _build_action_items(result, positions, wallet_recs, insuf_events)
     action_items = [item for item in action_items if not any(item.startswith(w) for w in inactive_wallets)]
 
+    # Annotate each action item with its persistent status
+    annotated_items = _tracker.annotate_items(action_items, rec_state)
+    # Items considered "active" (not yet done/ignored) drive the Scorecard Action column
+    active_action_items = [item for item, _id, status in annotated_items
+                           if status == _tracker.STATUS_NEW]
+
     if not action_items:
         lines.append("_No urgent actions._")
     else:
-        for idx, item in enumerate(action_items, start=1):
-            lines.append(f"{idx}. {item}")
+        for idx, (item, rec_id, status) in enumerate(annotated_items, start=1):
+            badge = _tracker.STATUS_BADGE[status]
+            lines.append(f"{idx}. `{rec_id}` {badge} {item}")
     lines.append("")
 
     # ------------------------------------------------------------------
@@ -1204,7 +1225,7 @@ def _generate_loss_report(
             wr_7d_str = f"{sc.win_rate_7d_pct:.0f}%" if sc.win_rate_7d_pct is not None else "N/A"
             hold_str = f"{sc.avg_hold_minutes:.0f}m" if sc.avg_hold_minutes is not None else "N/A"
             trend_str = f"{sc.win_rate_trend_pp:+.0f}pp" if sc.win_rate_trend_pp is not None else "N/A"
-            hint_str = _scorecard_action_hints(sc.wallet, action_items)
+            hint_str = _scorecard_action_hints(sc.wallet, active_action_items)
             sc_rows.append([
                 sc.wallet,
                 str(sc.closed_positions),
@@ -1244,7 +1265,8 @@ def _generate_loss_report(
 
     filter_recs = [
         r for r in wallet_recs
-        if "sweet spot" in r.lower() or "tightening" in r.lower()
+        if ("sweet spot" in r.lower() or "tightening" in r.lower())
+        and not any(r.startswith(w) for w in inactive_wallets)
     ]
 
     if not filter_recs:
@@ -1675,6 +1697,102 @@ def _run_custom_backtest(
         _print_backtest_table(param, rows)
 
 
+def _run_track_mode(output_dir: str) -> None:
+    """
+    Load positions from existing positions.csv, rebuild action items, and
+    run the interactive recommendation tracker CLI.
+
+    Called when --track flag is passed. Exits after tracker session ends.
+    """
+    from valhalla import recommendations_tracker as _tracker
+    from valhalla.loss_analyzer import LossAnalyzer, InsufficientBalanceAnalyzer
+
+    output_path = Path(output_dir)
+    positions_csv = output_path / "positions.csv"
+    insuf_csv = output_path / "insufficient_balance.csv"
+    state_path = str(output_path / ".recommendations_state.json")
+
+    if not positions_csv.exists():
+        print(f"Error: {positions_csv} not found. Run the parser first to generate it.")
+        return
+
+    # Load positions from CSV
+    import csv as _csv
+    from valhalla.models import MatchedPosition
+
+    print(f"Loading positions from {positions_csv}...")
+    try:
+        matched_positions = []
+        with open(positions_csv, "r", encoding="utf-8") as f:
+            reader = _csv.DictReader(f)
+            for row in reader:
+                def _dec(key):
+                    v = row.get(key, "").strip()
+                    return Decimal(v) if v else None
+
+                def _float(key):
+                    v = row.get(key, "").strip()
+                    return float(v) if v else None
+
+                pos = MatchedPosition(
+                    target_wallet=row.get("target_wallet", ""),
+                    token=row.get("token", ""),
+                    position_type=row.get("position_type", ""),
+                    sol_deployed=_dec("sol_deployed"),
+                    sol_received=_dec("sol_received"),
+                    pnl_sol=_dec("pnl_sol"),
+                    pnl_pct=_dec("pnl_pct"),
+                    close_reason=row.get("close_reason", ""),
+                    mc_at_open=float(row["mc_at_open"]) if row.get("mc_at_open", "").strip() else 0.0,
+                    jup_score=int(row["jup_score"]) if row.get("jup_score", "").strip() else 0,
+                    token_age=row.get("token_age", ""),
+                    token_age_days=int(row["token_age_days"]) if row.get("token_age_days", "").strip() else None,
+                    token_age_hours=int(row["token_age_hours"]) if row.get("token_age_hours", "").strip() else None,
+                    price_drop_pct=_float("price_drop_pct"),
+                    position_id=row.get("position_id", ""),
+                    full_address=row.get("full_address", ""),
+                    pnl_source=row.get("pnl_source", "pending"),
+                    meteora_deposited=_dec("meteora_deposited"),
+                    meteora_withdrawn=_dec("meteora_withdrawn"),
+                    meteora_fees=_dec("meteora_fees"),
+                    meteora_pnl=_dec("meteora_pnl"),
+                    datetime_open=row.get("datetime_open", ""),
+                    datetime_close=row.get("datetime_close", ""),
+                    target_wallet_address=row.get("target_wallet_address") or None,
+                    target_tx_signature=row.get("target_tx_signature") or None,
+                    source_wallet_hold_min=int(row["source_wallet_hold_min"]) if row.get("source_wallet_hold_min", "").strip() else None,
+                    source_wallet_pnl_pct=_dec("source_wallet_pnl_pct"),
+                    source_wallet_scenario=row.get("source_wallet_scenario") or None,
+                )
+                matched_positions.append(pos)
+    except Exception as e:
+        print(f"Error loading positions CSV: {e}")
+        return
+
+    print(f"  Loaded {len(matched_positions)} positions.")
+
+    # Build action items (same logic as report generation)
+    result = LossAnalyzer().analyze(matched_positions)
+    inactive_wallets = {sc.wallet for sc in result.wallet_scorecards if sc.status == "inactive"}
+    wallet_recs = _generate_wallet_recommendations(matched_positions)
+    insuf_events = _load_insuf_balance_csv(str(insuf_csv)) if insuf_csv.exists() else []
+    action_items = _build_action_items(result, matched_positions, wallet_recs, insuf_events)
+    action_items = [item for item in action_items if not any(item.startswith(w) for w in inactive_wallets)]
+
+    if not action_items:
+        print("No recommendations to track.")
+        return
+
+    updates = _tracker.run_interactive_tracker(action_items, state_path)
+
+    if updates > 0:
+        print("\nRegenerating loss_analysis.md...")
+        insuf_csv_str = str(insuf_csv) if insuf_csv.exists() else None
+        output_md = str(output_path / "loss_analysis.md")
+        _generate_loss_report(matched_positions, output_md, insuf_csv_str)
+        print(f"Report updated: {output_md}")
+
+
 def main():
     parser = argparse.ArgumentParser(
         description='Parse Valhalla Bot Discord DM logs and generate PnL analysis with Meteora API.'
@@ -1714,8 +1832,16 @@ def main():
     parser.add_argument('--report', default='all',
                        help='Comma-separated list of report modules to generate. '
                             'Options: loss,per-wallet,source,charts,recommendations,all (default: all)')
+    parser.add_argument('--track', action='store_true',
+                       help='Interactively mark recommendation statuses (done/ignored/new). '
+                            'Loads positions from output/positions.csv and shows current items.')
 
     args = parser.parse_args()
+
+    # --track mode: interactive recommendation status editor
+    if args.track:
+        _run_track_mode(args.output_dir)
+        return
 
     # NOTE: Auto-fetch of on-chain SOL balance is intentionally disabled.
     # The on-chain balance excludes SOL locked in open Meteora positions, which

@@ -56,6 +56,19 @@ INSUF_BALANCE_RATE_THRESHOLD: float = 0.10
 RECOMMENDATION_LOOKBACK_DAYS: int = 7
 
 # ---------------------------------------------------------------------------
+# Recommendation quality filters
+# ---------------------------------------------------------------------------
+
+# Minimum net gain (SOL) for a filter tightening recommendation to appear.
+# Recommendations below this threshold are omitted as not material enough.
+MIN_FILTER_GAIN_SOL: float = 0.01
+
+# Minimum number of closed positions a wallet must have for filter
+# tightening recommendations (Rule D) to be generated.
+# Small samples produce unreliable backtest results.
+MIN_POSITIONS_FOR_FILTER_REC: int = 100
+
+# ---------------------------------------------------------------------------
 # Portfolio-level position size guard (Feature 1)
 # ---------------------------------------------------------------------------
 
