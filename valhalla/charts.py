@@ -8,6 +8,7 @@ from datetime import date, timedelta
 from collections import defaultdict
 
 from .models import MatchedPosition, parse_iso_datetime
+from .analysis_config import SCORECARD_INACTIVE_DAYS
 
 # Optional matplotlib for chart generation
 try:
@@ -599,12 +600,12 @@ def generate_charts(positions: List[MatchedPosition], output_dir: str) -> None:
         print("  No date/wallet data for charts")
         return
 
-    # Apply wallet retirement filter (7-day gap)
+    # Apply wallet retirement filter (inactive wallets hidden after SCORECARD_INACTIVE_DAYS)
     _apply_wallet_retirement(
         [pnl_data, entries_data, winrate_data, rugs_data, pnl_pct_data],
         dates,
         wallets,
-        gap_days=7
+        gap_days=SCORECARD_INACTIVE_DAYS
     )
 
     # Fill zeros for active wallet ranges on PnL and entries charts

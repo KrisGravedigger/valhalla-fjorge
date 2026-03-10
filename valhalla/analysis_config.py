@@ -14,7 +14,8 @@ All values can be adjusted to match your trading setup and risk tolerance.
 SCORECARD_MIN_POSITIONS: int = 30
 
 # Days without a closed position to mark a wallet as inactive.
-SCORECARD_INACTIVE_DAYS: int = 7
+# Also controls the chart retirement filter (wallets inactive > this many days are hidden).
+SCORECARD_INACTIVE_DAYS: int = 3
 
 # Days lookback for Wallet Scorecard table: only show wallets that opened
 # at least one position within this window (counting back from the most
