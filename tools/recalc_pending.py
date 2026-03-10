@@ -70,8 +70,28 @@ def main():
             print(f"OK dep={result.deposited_sol:.4f} pnl={result.pnl_sol:+.4f}")
             success += 1
         else:
-            print("FAILED (API error or 404)")
-            failed += 1
+            # Fallback: use price_drop_pct if available
+            drop_pct_str = r.get('price_drop_pct', '')
+            sol_dep_str = r.get('sol_deployed', '')
+            if drop_pct_str and sol_dep_str:
+                try:
+                    drop_pct = float(drop_pct_str)
+                    sol_dep = float(sol_dep_str)
+                    estimated_loss = sol_dep * drop_pct / 100
+                    pnl_sol = -estimated_loss
+                    sol_received = sol_dep + pnl_sol
+                    rows[idx]['pnl_sol'] = f"{pnl_sol:.4f}"
+                    rows[idx]['pnl_pct'] = f"{-drop_pct:.2f}"
+                    rows[idx]['sol_received'] = f"{sol_received:.4f}"
+                    rows[idx]['pnl_source'] = 'discord_estimate'
+                    print(f"OK (price_drop estimate: -{drop_pct:.2f}%)")
+                    success += 1
+                except (ValueError, ZeroDivisionError):
+                    print("FAILED (API error or 404)")
+                    failed += 1
+            else:
+                print("FAILED (API error or 404)")
+                failed += 1
 
         time.sleep(1)  # rate limit
 

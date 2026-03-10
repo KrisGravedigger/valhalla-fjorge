@@ -8,6 +8,7 @@ from datetime import date, timedelta
 from collections import defaultdict
 
 from .models import MatchedPosition, parse_iso_datetime
+from .analysis_config import SCORECARD_INACTIVE_DAYS
 
 # Optional matplotlib for chart generation
 try:
@@ -498,22 +499,21 @@ def _apply_wallet_retirement(
     dates: List[date],
     wallets: List[str],
     gap_days: int = 7
-) -> None:
+) -> set:
     """
-    Apply wallet retirement filter: mark wallets as retired if they have a gap
-    longer than gap_days between their last active date and timeline end.
-
-    When a wallet is retired, all data points after its last active date are
-    set to None (removed from the data dicts).
+    Apply wallet retirement filter: completely remove wallets that have been
+    inactive for more than gap_days since the timeline end.
 
     Args:
         data_dicts: List of data dictionaries to modify in place
         dates: List of all dates in timeline
         wallets: List of all wallets
         gap_days: Minimum gap (in days) to trigger retirement
+    Returns:
+        Set of retired wallet names (to be filtered from wallets list by caller)
     """
     if not dates:
-        return
+        return set()
 
     timeline_end = max(dates)
 
@@ -528,18 +528,18 @@ def _apply_wallet_retirement(
         if wallet_dates:
             last_active[wallet] = max(wallet_dates)
 
-    # Apply retirement: remove data for dates after last_active if gap > gap_days
+    # Retire wallets with gap > gap_days: remove ALL their data
+    retired = set()
     for wallet, last_date in last_active.items():
         gap = (timeline_end - last_date).days
         if gap > gap_days:
-            # Wallet is retired - remove all data points after last_date
+            retired.add(wallet)
             for data_dict in data_dicts:
-                keys_to_remove = [
-                    (w, d) for (w, d) in data_dict.keys()
-                    if w == wallet and d > last_date
-                ]
+                keys_to_remove = [(w, d) for (w, d) in data_dict.keys() if w == wallet]
                 for key in keys_to_remove:
                     del data_dict[key]
+
+    return retired
 
 
 def generate_charts(positions: List[MatchedPosition], output_dir: str) -> None:
@@ -599,13 +599,19 @@ def generate_charts(positions: List[MatchedPosition], output_dir: str) -> None:
         print("  No date/wallet data for charts")
         return
 
-    # Apply wallet retirement filter (7-day gap)
-    _apply_wallet_retirement(
+    # Apply wallet retirement filter: completely hide wallets inactive > SCORECARD_INACTIVE_DAYS
+    retired = _apply_wallet_retirement(
         [pnl_data, entries_data, winrate_data, rugs_data, pnl_pct_data],
         dates,
         wallets,
-        gap_days=7
+        gap_days=SCORECARD_INACTIVE_DAYS
     )
+    if retired:
+        print(f"  Hiding {len(retired)} inactive wallet(s) from charts: {', '.join(sorted(retired))}")
+    wallets = [w for w in wallets if w not in retired]
+    if not wallets:
+        print("  No active wallets remaining after retirement filter, skipping charts")
+        return
 
     # Fill zeros for active wallet ranges on PnL and entries charts
     _fill_zeros_for_active_range(pnl_data, dates, wallets)

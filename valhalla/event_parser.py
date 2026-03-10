@@ -19,7 +19,7 @@ class EventParser:
     # Regex patterns (from v1)
     TIMESTAMP_PATTERN = r'\[((?:\d{4}-\d{2}-\d{2}T)?\d{2}:\d{2})\]'
     TARGET_PATTERN = r'Target:\s*(\S+)'
-    POSITION_TYPE_PATTERN = r'(Spot|BidAsk|Curve)\s+\d+-Sided Position\s*\|\s*(\S+)-(\S+)'
+    POSITION_TYPE_PATTERN = r'(Spot|BidAsk|Curve)\s+\d+-Sided Position\s*\|\s*(.+?)-(\S+)'
     MARKET_CAP_PATTERN = r'MC:\s*\$([\d,]+\.?\d*)'
     TOKEN_AGE_PATTERN = r'Age:\s*(.+?)(?:\n|$)'
     JUP_SCORE_PATTERN = r'Jup Score:\s*(\d+)'
