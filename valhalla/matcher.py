@@ -344,7 +344,7 @@ class PositionMatcher:
                             target_wallet=rug_event.target,
                             token=open_event.token_name,
                             position_type=open_event.position_type,
-                            sol_deployed=None,
+                            sol_deployed=sol_deployed,
                             sol_received=None,
                             pnl_sol=None,
                             pnl_pct=None,
