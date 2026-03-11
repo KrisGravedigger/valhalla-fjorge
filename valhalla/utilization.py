@@ -105,8 +105,9 @@ def check_low_utilization_days(
     Returns True if the last `consecutive_days` full calendar days each had
     average hourly utilization below threshold_pct * portfolio_sol.
 
-    A "full calendar day" = a day for which all 24 hours appear in points.
-    If fewer than `consecutive_days` full days exist, returns False.
+    A "full calendar day" = a day for which at least 20 hours appear in points
+    (allows partial first/last day of the lookback window).
+    If fewer than `consecutive_days` such days exist, returns False.
 
     Args:
         points: List of HourlyUtilizationPoint (sorted oldest-first).
@@ -126,8 +127,8 @@ def check_low_utilization_days(
     for pt in points:
         by_date[pt.hour.date()].append(pt)
 
-    # Keep only full days (exactly 24 data points)
-    full_days = {d: pts for d, pts in by_date.items() if len(pts) == 24}
+    # Keep only sufficiently complete days (>= 20 data points out of 24)
+    full_days = {d: pts for d, pts in by_date.items() if len(pts) >= 20}
 
     if len(full_days) < consecutive_days:
         return False

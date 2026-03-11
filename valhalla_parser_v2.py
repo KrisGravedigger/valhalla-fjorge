@@ -668,6 +668,7 @@ def _build_action_items(
     positions: List,
     wallet_recs: object = None,
     insufficient_balance_events: List = None,
+    util_points: List = None,
 ) -> List[str]:
     """
     Build a prioritized list of action item strings for the report.
@@ -771,11 +772,8 @@ def _build_action_items(
 
     # Utilization-based suggestion (Doc 009)
     utilization_items: List[str] = []
-    if PORTFOLIO_TOTAL_SOL > 0:
-        from valhalla.utilization import (
-            compute_hourly_utilization, check_low_utilization_days,
-        )
-        util_points = compute_hourly_utilization(positions, UTILIZATION_LOOKBACK_HOURS)
+    if PORTFOLIO_TOTAL_SOL > 0 and util_points is not None:
+        from valhalla.utilization import check_low_utilization_days
         low_util = check_low_utilization_days(
             util_points,
             Decimal(str(PORTFOLIO_TOTAL_SOL)),
@@ -799,13 +797,12 @@ def _build_action_items(
                     sc.wallet for sc in result.wallet_scorecards
                     if sc.status == "increase_capital"
                 ]
-                if ic_wallets:
+                for w in ic_wallets:
                     utilization_items.append(
-                        f"Portfolio: capital utilization below "
+                        f"{w}: capital utilization below "
                         f"{UTILIZATION_LOW_THRESHOLD*100:.0f}% for "
                         f"{UTILIZATION_CONSECUTIVE_DAYS} consecutive days — "
-                        f"consider increasing capital per position for: "
-                        + ", ".join(ic_wallets)
+                        f"consider increasing capital per position"
                     )
 
     # Position size guard warnings (Feature 1) — highest priority
@@ -1216,7 +1213,12 @@ def _generate_loss_report(
     lines.append("")
 
     insuf_events = _load_insuf_balance_csv(insufficient_balance_csv) if insufficient_balance_csv else []
-    action_items = _build_action_items(result, positions, wallet_recs, insuf_events)
+    # Compute utilization once for both chart and action items
+    _util_points = None
+    if PORTFOLIO_TOTAL_SOL > 0:
+        from valhalla.utilization import compute_hourly_utilization
+        _util_points = compute_hourly_utilization(positions, UTILIZATION_LOOKBACK_HOURS)
+    action_items = _build_action_items(result, positions, wallet_recs, insuf_events, _util_points)
     action_items = [item for item in action_items if not any(item.startswith(w) for w in inactive_wallets)]
 
     # Annotate each action item with its persistent status
@@ -1826,7 +1828,11 @@ def _run_track_mode(output_dir: str) -> None:
     inactive_wallets = {sc.wallet for sc in result.wallet_scorecards if sc.status == "inactive"}
     wallet_recs = _generate_wallet_recommendations(matched_positions)
     insuf_events = _load_insuf_balance_csv(str(insuf_csv)) if insuf_csv.exists() else []
-    action_items = _build_action_items(result, matched_positions, wallet_recs, insuf_events)
+    _util_points = None
+    if PORTFOLIO_TOTAL_SOL > 0:
+        from valhalla.utilization import compute_hourly_utilization
+        _util_points = compute_hourly_utilization(matched_positions, UTILIZATION_LOOKBACK_HOURS)
+    action_items = _build_action_items(result, matched_positions, wallet_recs, insuf_events, _util_points)
     action_items = [item for item in action_items if not any(item.startswith(w) for w in inactive_wallets)]
 
     if not action_items:
