@@ -784,13 +784,23 @@ def _build_action_items(
             # Count insuf-balance events in last 24h
             insuf_24h = 0
             if insufficient_balance_events:
-                cutoff = datetime.now() - timedelta(hours=24)
+                cutoff_dt = datetime.now() - timedelta(hours=24)
+                cutoff_date = cutoff_dt.date()
                 for ev in insufficient_balance_events:
-                    ev_dt = parse_iso_datetime(
-                        make_iso_datetime(ev.date, ev.timestamp) if ev.date else ev.timestamp
-                    )
-                    if ev_dt and ev_dt >= cutoff:
-                        insuf_24h += 1
+                    # Support both InsufficientBalanceEvent (.date/.timestamp)
+                    # and _InsuFEvent (.event_date) from CSV loader
+                    ev_date = getattr(ev, "event_date", None)
+                    if ev_date is not None:
+                        # _InsuFEvent: event_date is datetime.date
+                        if ev_date >= cutoff_date:
+                            insuf_24h += 1
+                    else:
+                        # InsufficientBalanceEvent: has .date and .timestamp
+                        ev_dt = parse_iso_datetime(
+                            make_iso_datetime(ev.date, ev.timestamp) if ev.date else ev.timestamp
+                        )
+                        if ev_dt and ev_dt >= cutoff_dt:
+                            insuf_24h += 1
             if insuf_24h <= UTILIZATION_MAX_INSUF_EVENTS_24H:
                 # Find wallets with status "increase_capital"
                 ic_wallets = [
