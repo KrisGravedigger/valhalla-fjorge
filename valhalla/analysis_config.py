@@ -102,3 +102,21 @@ LOSS_DETAIL_MIN_SOL: float = 0.1
 
 # Lookback window (in days) for the loss detail table.
 LOSS_DETAIL_LOOKBACK_DAYS: int = 3
+
+# ---------------------------------------------------------------------------
+# Hourly Capital Utilization (Doc 009)
+# ---------------------------------------------------------------------------
+
+# Lookback window for the utilization chart (hours).
+UTILIZATION_LOOKBACK_HOURS: int = 72
+
+# Utilization below this fraction of PORTFOLIO_TOTAL_SOL triggers a suggestion.
+# 0.80 = 80% of portfolio must be deployed to be considered "well utilized".
+UTILIZATION_LOW_THRESHOLD: float = 0.80
+
+# Number of consecutive days below threshold before triggering the suggestion.
+UTILIZATION_CONSECUTIVE_DAYS: int = 3
+
+# Maximum insufficient-balance events in the last 24 hours before suppressing
+# the "increase capital" suggestion (if SOL is thin, don't suggest deploying more).
+UTILIZATION_MAX_INSUF_EVENTS_24H: int = 10

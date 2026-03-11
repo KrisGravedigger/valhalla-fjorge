@@ -13,7 +13,7 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Dict, List, Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 
 # Import from valhalla package
@@ -28,8 +28,12 @@ from valhalla.analysis_config import (
     SCORECARD_RECENT_DAYS,
     MIN_FILTER_GAIN_SOL,
     MIN_POSITIONS_FOR_FILTER_REC,
+    UTILIZATION_LOOKBACK_HOURS,
+    UTILIZATION_LOW_THRESHOLD,
+    UTILIZATION_CONSECUTIVE_DAYS,
+    UTILIZATION_MAX_INSUF_EVENTS_24H,
 )
-from valhalla.models import extract_date_from_filename, MeteoraPnlResult, parse_iso_datetime
+from valhalla.models import extract_date_from_filename, make_iso_datetime, MeteoraPnlResult, parse_iso_datetime
 from valhalla.readers import PlainTextReader, HtmlReader, detect_input_format
 from valhalla.event_parser import EventParser
 from valhalla.solana_rpc import AddressCache, SolanaRpcClient, PositionResolver
@@ -765,6 +769,45 @@ def _build_action_items(
                 f"— consider increasing SOL balance or decreasing position size"
             )
 
+    # Utilization-based suggestion (Doc 009)
+    utilization_items: List[str] = []
+    if PORTFOLIO_TOTAL_SOL > 0:
+        from valhalla.utilization import (
+            compute_hourly_utilization, check_low_utilization_days,
+        )
+        util_points = compute_hourly_utilization(positions, UTILIZATION_LOOKBACK_HOURS)
+        low_util = check_low_utilization_days(
+            util_points,
+            Decimal(str(PORTFOLIO_TOTAL_SOL)),
+            UTILIZATION_LOW_THRESHOLD,
+            UTILIZATION_CONSECUTIVE_DAYS,
+        )
+        if low_util:
+            # Count insuf-balance events in last 24h
+            insuf_24h = 0
+            if insufficient_balance_events:
+                cutoff = datetime.now() - timedelta(hours=24)
+                for ev in insufficient_balance_events:
+                    ev_dt = parse_iso_datetime(
+                        make_iso_datetime(ev.date, ev.timestamp) if ev.date else ev.timestamp
+                    )
+                    if ev_dt and ev_dt >= cutoff:
+                        insuf_24h += 1
+            if insuf_24h <= UTILIZATION_MAX_INSUF_EVENTS_24H:
+                # Find wallets with status "increase_capital"
+                ic_wallets = [
+                    sc.wallet for sc in result.wallet_scorecards
+                    if sc.status == "increase_capital"
+                ]
+                if ic_wallets:
+                    utilization_items.append(
+                        f"Portfolio: capital utilization below "
+                        f"{UTILIZATION_LOW_THRESHOLD*100:.0f}% for "
+                        f"{UTILIZATION_CONSECUTIVE_DAYS} consecutive days — "
+                        f"consider increasing capital per position for: "
+                        + ", ".join(ic_wallets)
+                    )
+
     # Position size guard warnings (Feature 1) — highest priority
     size_guard_items = _check_position_size_guard(positions, PORTFOLIO_TOTAL_SOL, MAX_POSITION_FRACTION)
 
@@ -787,7 +830,11 @@ def _build_action_items(
         if wf.flag == "deteriorating"
     ]
 
-    all_items = size_guard_items + replacing + increasing + reduce_capital_items + insuf_items + filter_recs + inactive_items + deteriorating_recs + other_recs
+    all_items = (
+        size_guard_items + replacing + increasing + reduce_capital_items
+        + insuf_items + utilization_items + filter_recs
+        + inactive_items + deteriorating_recs + other_recs
+    )
     return all_items
 
 
@@ -840,6 +887,9 @@ def _scorecard_action_hints(wallet: str, action_items: List[str]) -> str:
         elif "high rug rate" in il:
             if "high rug" not in hints:
                 hints.append("high rug")
+        elif "capital utilization below" in il:
+            if "↑ capital (util)" not in hints:
+                hints.append("↑ capital (util)")
         elif "increasing capital" in il or "increase capital" in il:
             if "↑ capital" not in hints:
                 hints.append("↑ capital")
@@ -2293,6 +2343,14 @@ def main():
         generate_charts(matched_positions, str(output_dir))
         insuf_csv = output_dir / 'insufficient_balance.csv'
         generate_insufficient_balance_chart(str(insuf_csv), str(output_dir))
+        # Doc 009: Hourly capital utilization chart
+        if PORTFOLIO_TOTAL_SOL > 0:
+            from valhalla.utilization import (
+                compute_hourly_utilization, generate_utilization_chart,
+            )
+            util_points = compute_hourly_utilization(matched_positions, UTILIZATION_LOOKBACK_HOURS)
+            generate_utilization_chart(util_points, Decimal(str(PORTFOLIO_TOTAL_SOL)), str(output_dir))
+            print(f"  Saved: {output_dir}/hourly_utilization.png")
 
     # Step 6.6: Export to JSON if requested
     if args.export_json:
