@@ -950,23 +950,22 @@ def _build_loss_detail_table(positions: List) -> str:
     """
     Build a markdown table of recent large losses.
 
-    Filters: close_reason in LOSS_REASONS, abs(pnl_sol) >= LOSS_DETAIL_MIN_SOL,
+    Filters: pnl_sol <= -LOSS_DETAIL_MIN_SOL (any close_reason except still_open),
     datetime_close within last LOSS_DETAIL_LOOKBACK_DAYS days.
     Sorted by pnl_sol ascending (largest loss first).
     """
-    from valhalla.loss_analyzer import LOSS_REASONS as _LOSS_REASONS
     from datetime import timedelta
 
     header = "## 3. Recent Large Losses {#large-losses}"
     min_sol = Decimal(str(LOSS_DETAIL_MIN_SOL))
 
-    # Collect qualifying positions
+    # Collect qualifying positions: any closed position with loss >= threshold
     candidates = []
     for p in positions:
-        if p.close_reason not in _LOSS_REASONS:
+        if p.close_reason == "still_open":
             continue
         pnl = getattr(p, "pnl_sol", None)
-        if pnl is None or abs(pnl) < min_sol:
+        if pnl is None or pnl > -min_sol:
             continue
         dt_close = getattr(p, "datetime_close", None)
         if not dt_close:

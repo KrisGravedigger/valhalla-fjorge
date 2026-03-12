@@ -73,7 +73,8 @@ def _aggregate_daily_data(dated_positions: List[Tuple[MatchedPosition, date]]) -
     Dict[Tuple[str, date], int],    # rugs_data
     Dict[Tuple[str, date], float],  # pnl_pct_data
     List[date],                      # sorted_dates
-    List[str]                        # sorted_wallets
+    List[str],                       # sorted_wallets
+    Dict[Tuple[str, date], int],    # sl_data
 ]:
     """
     Aggregate position data by (wallet, date).
@@ -90,6 +91,7 @@ def _aggregate_daily_data(dated_positions: List[Tuple[MatchedPosition, date]]) -
         - pnl_pct_data: {(wallet, date): pnl_pct (ROI)}
         - sorted_dates: List of unique dates sorted
         - sorted_wallets: List of unique wallets sorted
+        - sl_data: {(wallet, date): stop_loss_count}
     """
     # Group positions by (wallet, date)
     grouped = defaultdict(list)
@@ -104,6 +106,10 @@ def _aggregate_daily_data(dated_positions: List[Tuple[MatchedPosition, date]]) -
     winrate_data = {}
     rugs_data = {}
     pnl_pct_data = {}
+    sl_data = {}
+
+    _RUG_REASONS = {"rug", "rug_unknown_open"}
+    _SL_REASONS = {"stop_loss", "stop_loss_unknown_open"}
 
     for (wallet, dt), positions in grouped.items():
         # PnL sum
@@ -131,15 +137,22 @@ def _aggregate_daily_data(dated_positions: List[Tuple[MatchedPosition, date]]) -
         # Rug count
         rug_count = sum(
             1 for p in positions
-            if p.close_reason in ("rug", "rug_unknown_open")
+            if p.close_reason in _RUG_REASONS
         )
         rugs_data[(wallet, dt)] = rug_count
+
+        # Stop-loss count
+        sl_count = sum(
+            1 for p in positions
+            if p.close_reason in _SL_REASONS
+        )
+        sl_data[(wallet, dt)] = sl_count
 
     # Extract unique dates and wallets
     all_dates = sorted(set(dt for _, dt in grouped.keys()))
     all_wallets = sorted(set(wallet for wallet, _ in grouped.keys()))
 
-    return pnl_data, entries_data, winrate_data, rugs_data, pnl_pct_data, all_dates, all_wallets
+    return pnl_data, entries_data, winrate_data, rugs_data, pnl_pct_data, all_dates, all_wallets, sl_data
 
 
 def _fill_zeros_for_active_range(
@@ -429,41 +442,47 @@ def _chart_daily_winrate(
     print("  Generated: daily_winrate.png")
 
 
-def _chart_daily_rugs(
+def _chart_daily_losses(
     rugs_data: Dict[Tuple[str, date], int],
+    sl_data: Dict[Tuple[str, date], int],
     dates: List[date],
     wallets: List[str],
     wallet_colors: Dict[str, str],
     output_dir: str
 ) -> None:
     """
-    Generate daily rug count line chart.
+    Generate daily rug + stop-loss count line chart.
 
     Each wallet is represented by a colored line.
-    Only includes wallets with at least one rug in the last 7 days.
+    Only includes wallets with at least one rug or stop-loss in the last 7 days.
     """
-    # Filter wallets: only include those with any rug count > 0 in the last 7 days
+    # Combine rugs and stop-losses per (wallet, date)
+    total_losses_data: Dict[Tuple[str, date], int] = {}
+    for key in set(list(rugs_data.keys()) + list(sl_data.keys())):
+        total_losses_data[key] = rugs_data.get(key, 0) + sl_data.get(key, 0)
+
+    # Filter wallets: only include those with any loss > 0 in the last 7 days
     cutoff_date = max(dates) - timedelta(days=7)
     active_wallets = []
     for wallet in wallets:
-        has_recent_rug = any(
-            rugs_data.get((wallet, d), 0) > 0
+        has_recent_loss = any(
+            total_losses_data.get((wallet, d), 0) > 0
             for d in dates
             if d >= cutoff_date
         )
-        if has_recent_rug:
+        if has_recent_loss:
             active_wallets.append(wallet)
 
-    # Skip chart generation if no recent rugs
+    # Skip chart generation if no recent losses
     if not active_wallets:
-        print("  Skipping daily_rugs.png (no rugs in last 7 days)")
+        print("  Skipping daily_rugs.png (no rugs or stop-losses in last 7 days)")
         return
 
     fig, ax = plt.subplots(figsize=(12, 6))
 
     # Plot each active wallet as a line
     for wallet in active_wallets:
-        values = [rugs_data.get((wallet, d)) for d in dates]
+        values = [total_losses_data.get((wallet, d)) for d in dates]
 
         ax.plot(
             dates,
@@ -477,7 +496,7 @@ def _chart_daily_rugs(
         )
 
     # Formatting
-    ax.set_title('Daily Rug Count per Wallet', fontsize=14, fontweight='bold')
+    ax.set_title('Daily Rug + Stop-Loss Count per Wallet', fontsize=14, fontweight='bold')
     ax.set_ylabel('Count', fontsize=11)
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%m-%d'))
     ax.xaxis.set_major_locator(mdates.DayLocator())
@@ -542,16 +561,99 @@ def _apply_wallet_retirement(
     return retired
 
 
+def _chart_portfolio_cumulative(
+    pnl_data: Dict[Tuple[str, date], float],
+    dates: List[date],
+    wallets: List[str],
+    output_dir: str
+) -> None:
+    """
+    Generate portfolio daily PnL bar chart with cumulative PnL line overlay.
+
+    Bars are green for positive daily PnL and red for negative.
+    An orange line shows running cumulative PnL.
+
+    Args:
+        pnl_data: {(wallet, date): pnl_sol}
+        dates: Sorted list of dates
+        wallets: List of active wallet identifiers
+        output_dir: Directory to save the chart
+    """
+    from pathlib import Path
+
+    if not dates:
+        return
+
+    # Compute daily totals across all wallets
+    daily_totals = []
+    for d in dates:
+        total = sum(pnl_data[(w, d)] for w in wallets if (w, d) in pnl_data)
+        daily_totals.append(total)
+
+    # Compute running cumulative
+    cumulative = []
+    running = 0.0
+    for v in daily_totals:
+        running += v
+        cumulative.append(running)
+
+    # Build bar colors
+    bar_colors = ['#26a69a' if v >= 0 else '#ef5350' for v in daily_totals]
+
+    fig, ax = plt.subplots(figsize=(14, 7))
+    fig.patch.set_facecolor('#1a1a1a')
+    ax.set_facecolor('#1a1a1a')
+
+    # Bar chart for daily PnL
+    ax.bar(dates, daily_totals, color=bar_colors, width=0.8, alpha=0.85, zorder=2)
+
+    # Cumulative line on the same axis
+    ax.plot(
+        dates,
+        cumulative,
+        color='#ff9800',
+        linewidth=2,
+        linestyle='-',
+        label='Cumulative PnL',
+        zorder=3
+    )
+
+    # Formatting
+    ax.set_title('Portfolio Daily PnL & Cumulative', fontsize=14, fontweight='bold', color='white')
+    ax.set_ylabel('SOL', fontsize=11, color='white')
+    ax.tick_params(colors='white')
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%m-%d'))
+    ax.xaxis.set_major_locator(mdates.DayLocator())
+    plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right', color='white')
+    ax.axhline(y=0, color='white', linewidth=0.6, linestyle='-', alpha=0.3)
+    ax.spines['bottom'].set_color('#555555')
+    ax.spines['left'].set_color('#555555')
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.grid(True, alpha=0.15, axis='y', color='white')
+    ax.yaxis.set_major_locator(plt.MaxNLocator(nbins=12))
+    ax.legend(fontsize='small', facecolor='#2a2a2a', labelcolor='white', framealpha=0.8)
+
+    fig.tight_layout()
+
+    fig.savefig(Path(output_dir) / 'portfolio_cumulative.png', dpi=120)
+    plt.close(fig)
+    print("  Generated: portfolio_cumulative.png")
+
+
 def generate_charts(positions: List[MatchedPosition], output_dir: str) -> None:
     """
     Generate PNG chart files from position data.
 
-    Creates 5 line charts:
+    Creates charts:
     - daily_pnl.png: Daily PnL per wallet
     - daily_pnl_pct.png: Daily PnL % per wallet (ROI)
     - daily_entries.png: Daily positions opened per wallet
     - daily_winrate.png: Daily win rate per wallet
-    - daily_rugs.png: Daily rug count per wallet
+    - daily_rugs.png: Daily rug + stop-loss count per wallet
+    - daily_pnl_rolling_3d.png: 3-day rolling average PnL
+    - daily_pnl_rolling_7d.png: 7-day rolling average PnL
+    - portfolio_cumulative.png: Portfolio daily PnL bars + cumulative line
 
     Args:
         positions: List of MatchedPosition objects
@@ -575,8 +677,8 @@ def generate_charts(positions: List[MatchedPosition], output_dir: str) -> None:
         print("  Not enough dated positions for charts (need 1+)")
         return
 
-    # Aggregate data (uses close dates for PnL, winrate, rugs)
-    pnl_data, entries_data_close, winrate_data, rugs_data, pnl_pct_data, dates, wallets = _aggregate_daily_data(dated)
+    # Aggregate data (uses close dates for PnL, winrate, rugs, stop-losses)
+    pnl_data, entries_data_close, winrate_data, rugs_data, pnl_pct_data, dates, wallets, sl_data = _aggregate_daily_data(dated)
 
     # Build separate entries data based on OPEN dates (not close dates)
     entries_data = {}
@@ -601,7 +703,7 @@ def generate_charts(positions: List[MatchedPosition], output_dir: str) -> None:
 
     # Apply wallet retirement filter: completely hide wallets inactive > SCORECARD_INACTIVE_DAYS
     retired = _apply_wallet_retirement(
-        [pnl_data, entries_data, winrate_data, rugs_data, pnl_pct_data],
+        [pnl_data, entries_data, winrate_data, rugs_data, pnl_pct_data, sl_data],
         dates,
         wallets,
         gap_days=SCORECARD_INACTIVE_DAYS
@@ -626,9 +728,10 @@ def generate_charts(positions: List[MatchedPosition], output_dir: str) -> None:
     _chart_daily_pnl_pct(pnl_pct_data, dates, wallets, wallet_colors, output_dir)
     _chart_daily_entries(entries_data, dates, wallets, wallet_colors, output_dir)
     _chart_daily_winrate(winrate_data, dates, wallets, wallet_colors, output_dir)
-    _chart_daily_rugs(rugs_data, dates, wallets, wallet_colors, output_dir)
+    _chart_daily_losses(rugs_data, sl_data, dates, wallets, wallet_colors, output_dir)
     _chart_rolling_avg_pnl(pnl_data, dates, wallets, wallet_colors, output_dir, window=3)
     _chart_rolling_avg_pnl(pnl_data, dates, wallets, wallet_colors, output_dir, window=7)
+    _chart_portfolio_cumulative(pnl_data, dates, wallets, output_dir)
 
 
 def _chart_rolling_avg_pnl(
