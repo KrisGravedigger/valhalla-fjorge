@@ -56,6 +56,11 @@ class EventParser:
     SKIP_REASON_AGE_MARKER = 'Skipping position due to token age restriction'
     SKIP_REASON_JUP_MARKER = 'Skipping position due to low Jupiter organic score restriction'
     SKIP_REASON_SOL_ONLY_MARKER = 'Skipping position due to SOL-only deposit restriction'
+    SKIP_REASON_MCAP_MARKER = 'Skipping position due to low market cap restriction'
+    SKIP_AGE_VALUE_PATTERN = r'less than your required age of (\d+)h'
+    SKIP_AGE_ACTUAL_PATTERN = r'\(Age:\s*(\d+)(?:h|min)\s*ago\)'
+    SKIP_JUP_SCORE_PATTERN = r'Current:\s*(\d+)\s*is below\s*(\d+)'
+    SKIP_MCAP_DETAIL_PATTERN = r'Jupiter MC is \$([\d,.]+).*minimum of \$([\d,]+)'
     SKIP_TOKEN_PATTERN = r'Token\s+([^:]+?):\s*(\S+)'
 
     # Swap pattern
@@ -476,6 +481,8 @@ class EventParser:
                 reason = "token age restriction"
             elif self.SKIP_REASON_JUP_MARKER in message:
                 reason = "low Jupiter organic score"
+            elif self.SKIP_REASON_MCAP_MARKER in message:
+                reason = "low market cap"
             elif self.SKIP_REASON_SOL_ONLY_MARKER in message:
                 reason = "SOL-only deposit restriction"
             else:
@@ -490,12 +497,43 @@ class EventParser:
                 token_name = "unknown"
                 token_address = "unknown"
 
+            # Extract metric values per reason type
+            metric_value = None
+            threshold_value = None
+
+            if reason == "token age restriction":
+                threshold_match = re.search(self.SKIP_AGE_VALUE_PATTERN, message)
+                if threshold_match:
+                    threshold_value = float(threshold_match.group(1))
+                actual_match = re.search(self.SKIP_AGE_ACTUAL_PATTERN, message)
+                if actual_match:
+                    val = float(actual_match.group(1))
+                    unit = actual_match.group(0)
+                    if 'min' in unit:
+                        metric_value = val / 60.0
+                    else:
+                        metric_value = val
+
+            elif reason == "low Jupiter organic score":
+                jup_match = re.search(self.SKIP_JUP_SCORE_PATTERN, message)
+                if jup_match:
+                    metric_value = float(jup_match.group(1))
+                    threshold_value = float(jup_match.group(2))
+
+            elif reason == "low market cap":
+                mc_match = re.search(self.SKIP_MCAP_DETAIL_PATTERN, message)
+                if mc_match:
+                    metric_value = float(mc_match.group(1).replace(',', ''))
+                    threshold_value = float(mc_match.group(2).replace(',', ''))
+
             return SkipEvent(
                 timestamp=timestamp,
                 target=target,
                 reason=reason,
                 token_name=token_name,
-                token_address=token_address
+                token_address=token_address,
+                metric_value=metric_value,
+                threshold_value=threshold_value,
             )
         except (ValueError, AttributeError) as e:
             print(f"Warning: Failed to parse skip event: {e}")

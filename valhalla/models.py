@@ -199,6 +199,8 @@ class SkipEvent:
     reason: str
     token_name: str
     token_address: str
+    metric_value: Optional[float] = None   # actual value (e.g. age=1h → 1.0, jup=0, mc=1816812)
+    threshold_value: Optional[float] = None # configured threshold (e.g. age=4h → 4.0, jup=50, mc=3000000)
     date: str = ""          # "YYYY-MM-DD" format
 
 

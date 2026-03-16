@@ -370,3 +370,56 @@ class CsvWriter:
             ])
             for row in all_rows:
                 writer.writerow(row)
+
+    def generate_skip_events_csv(self, events: List[SkipEvent],
+                                  output_path: str) -> None:
+        """Generate skip_events.csv, merging with existing data."""
+        from pathlib import Path
+
+        # Read existing rows
+        existing_rows = []
+        if Path(output_path).exists():
+            with open(output_path, 'r', newline='', encoding='utf-8') as f:
+                reader = csv.reader(f)
+                next(reader, None)  # skip header
+                for row in reader:
+                    if row:
+                        existing_rows.append(tuple(row))
+
+        # Convert new events to rows
+        new_rows = set()
+        for event in events:
+            dt = make_iso_datetime(event.date, event.timestamp)
+            row = (
+                event.date,
+                dt,
+                event.target,
+                event.reason,
+                event.token_name,
+                event.token_address,
+                str(event.metric_value) if event.metric_value is not None else "",
+                str(event.threshold_value) if event.threshold_value is not None else "",
+            )
+            new_rows.add(row)
+
+        # Deduplicate by (datetime, target_wallet, token_address, reason)
+        seen = set()
+        all_rows = []
+        for row in list(existing_rows) + list(new_rows):
+            key = (row[1], row[2], row[5], row[3])  # datetime, target, token_address, reason
+            if key not in seen:
+                seen.add(key)
+                all_rows.append(row)
+
+        # Sort by datetime
+        all_rows.sort(key=lambda r: r[1] if r[1] else '')
+
+        # Write
+        with open(output_path, 'w', newline='', encoding='utf-8') as f:
+            writer = csv.writer(f)
+            writer.writerow([
+                'date', 'datetime', 'target_wallet', 'reason',
+                'token_name', 'token_address', 'metric_value', 'threshold_value'
+            ])
+            for row in all_rows:
+                writer.writerow(row)

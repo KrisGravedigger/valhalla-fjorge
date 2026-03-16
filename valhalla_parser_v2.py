@@ -2319,6 +2319,12 @@ def main():
         )
         print(f"  {insuf_csv}")
 
+    # Generate skip events CSV
+    if event_parser.skip_events:
+        skip_csv = output_dir / 'skip_events.csv'
+        csv_writer.generate_skip_events_csv(event_parser.skip_events, str(skip_csv))
+        print(f"  {skip_csv}")
+
     print(f"  {positions_csv}")
     print(f"  {summary_csv}")
 
@@ -2355,7 +2361,7 @@ def main():
     # Step 6.5: Generate charts
     if not args.skip_charts and (want_all or 'charts' in report_modules):
         print(f"\nGenerating charts...")
-        generate_charts(matched_positions, str(output_dir))
+        generate_charts(matched_positions, str(output_dir), skip_events=event_parser.skip_events)
         insuf_csv = output_dir / 'insufficient_balance.csv'
         generate_insufficient_balance_chart(str(insuf_csv), str(output_dir))
         # Doc 009: Hourly capital utilization chart
@@ -2504,7 +2510,7 @@ def main():
 
                 # Regenerate charts
                 if not args.skip_charts and (want_all or 'charts' in report_modules):
-                    generate_charts(matched_positions, str(output_dir))
+                    generate_charts(matched_positions, str(output_dir), skip_events=event_parser.skip_events)
 
                 # Regenerate loss report with updated positions
                 if not args.no_loss_analysis and (want_all or 'loss' in report_modules):

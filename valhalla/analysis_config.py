@@ -104,6 +104,13 @@ LOSS_DETAIL_MIN_SOL: float = 0.1
 LOSS_DETAIL_LOOKBACK_DAYS: int = 3
 
 # ---------------------------------------------------------------------------
+# Daily PnL Breakdown chart (stacked bar per wallet per day)
+# ---------------------------------------------------------------------------
+
+# Number of days to show in the daily_pnl_breakdown.png chart.
+PNL_BREAKDOWN_LOOKBACK_DAYS: int = 3
+
+# ---------------------------------------------------------------------------
 # Hourly Capital Utilization (Doc 009)
 # ---------------------------------------------------------------------------
 
@@ -120,3 +127,8 @@ UTILIZATION_CONSECUTIVE_DAYS: int = 3
 # Maximum insufficient-balance events in the last 24 hours before suppressing
 # the "increase capital" suggestion (if SOL is thin, don't suggest deploying more).
 UTILIZATION_MAX_INSUF_EVENTS_24H: int = 10
+
+# ---------------------------------------------------------------------------
+# Filter Impact Analysis Chart
+# ---------------------------------------------------------------------------
+FILTER_IMPACT_LOOKBACK_DAYS: int = 3
