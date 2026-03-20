@@ -5,8 +5,8 @@ backfill_source_tx.py — Backfill missing target_tx_signature values in positio
 Older positions in output/positions.csv may have target_tx_signature empty even though
 the original Discord logs (now in archive/) contained the Target Tx data.
 
-This script re-parses all archive files and fills in any missing signatures for loss
-positions (stop_loss, rug, failsafe, etc.).
+This script re-parses all archive files and fills in any missing signatures for
+positions with losses exceeding the SOURCE_WALLET_MIN_LOSS_PCT threshold.
 
 Algorithm:
   1. Read output/positions.csv
@@ -25,16 +25,12 @@ import os
 import tempfile
 from pathlib import Path
 
+from decimal import Decimal
+
+from valhalla.analysis_config import SOURCE_WALLET_MIN_LOSS_PCT
 from valhalla.models import extract_date_from_filename
 from valhalla.readers import PlainTextReader, HtmlReader, detect_input_format
 from valhalla.event_parser import EventParser
-
-# Same set used by loss_analyzer to define "loss" positions
-LOSS_REASONS = {
-    "stop_loss", "rug", "rug_unknown_open",
-    "failsafe", "failsafe_unknown_open",
-    "stop_loss_unknown_open",
-}
 
 
 def _parse_archive_file(filepath: Path) -> EventParser:
@@ -100,15 +96,30 @@ def main() -> None:
     print(f"  Loaded {len(rows)} position(s).")
 
     # ------------------------------------------------------------------
-    # Step 2: Find positions missing target_tx_signature with loss reasons
+    # Step 2: Find positions missing target_tx_signature (by PnL threshold)
     # ------------------------------------------------------------------
+    threshold = Decimal(str(SOURCE_WALLET_MIN_LOSS_PCT)) if SOURCE_WALLET_MIN_LOSS_PCT is not None else None
+
     missing_ids: set = set()
     for row in rows:
-        close_reason = row.get("close_reason", "").strip()
         tx_sig = row.get("target_tx_signature", "").strip()
         position_id = row.get("position_id", "").strip()
-        if close_reason in LOSS_REASONS and not tx_sig and position_id:
-            missing_ids.add(position_id)
+        close_reason = row.get("close_reason", "").strip()
+        pnl_pct_str = row.get("pnl_pct", "").strip()
+
+        if tx_sig or not position_id or close_reason == "still_open":
+            continue
+
+        # Filter by PnL threshold (same logic as source_wallet_analyzer)
+        if threshold is not None:
+            try:
+                pnl_pct = Decimal(pnl_pct_str) if pnl_pct_str else None
+            except Exception:
+                pnl_pct = None
+            if pnl_pct is None or pnl_pct > threshold:
+                continue
+
+        missing_ids.add(position_id)
 
     if not missing_ids:
         print("No positions with missing target_tx_signature found. Nothing to do.")

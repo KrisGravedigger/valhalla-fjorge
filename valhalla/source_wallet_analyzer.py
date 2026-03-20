@@ -277,6 +277,11 @@ class SourceWalletAnalyzer:
         if exclude_addresses:
             excluded.update(exclude_addresses)
 
+        # Always exclude the first account key (fee payer / signer = source wallet)
+        # This is critical when target_wallet_address is not available
+        if account_keys:
+            excluded.add(account_keys[0])
+
         # Filter out known programs, excluded addresses, and short keys
         candidates = [
             key for key in account_keys
