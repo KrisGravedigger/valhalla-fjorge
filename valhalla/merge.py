@@ -184,6 +184,12 @@ def merge_with_existing_csv(
                         "take_profit", "stop_loss",
                         "take_profit_unknown_open", "stop_loss_unknown_open")):
                 existing_pos.close_reason = new_matched_pos.close_reason.replace("_unknown_open", "")
+            # Recover target_wallet if it ended up as 'unknown' (e.g. failsafe was matched before
+            # the open event was available, and close_reason was later enriched to drop _unknown_open
+            # suffix, locking it into Rule 1 before target_wallet could be updated).
+            if existing_pos.target_wallet == 'unknown' and new_matched_pos:
+                if new_matched_pos.target_wallet and new_matched_pos.target_wallet != 'unknown':
+                    existing_pos.target_wallet = new_matched_pos.target_wallet
             merged_matched.append(existing_pos)
             kept_complete_count += 1
             continue

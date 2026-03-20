@@ -998,13 +998,13 @@ def _build_loss_detail_table(positions: List) -> str:
     if not recent_losses:
         return empty_msg
 
-    # Sort by pnl_sol ascending (largest loss first)
-    recent_losses.sort(key=lambda x: x[0].pnl_sol)
+    # Sort by datetime_open ascending (chronological order)
+    recent_losses.sort(key=lambda x: getattr(x[0], "datetime_open", "") or "")
 
     include_portfolio_pct = PORTFOLIO_TOTAL_SOL > 0
     portfolio_dec = Decimal(str(PORTFOLIO_TOTAL_SOL)) if include_portfolio_pct else None
 
-    headers = ["Open", "Close", "Wallet", "Token", "Reason", "Loss (SOL)", "Loss (%)", "Source PnL (%)", "Source hold (min)", "Source action"]
+    headers = ["Open", "Close", "Wallet", "Token", "ID", "Reason", "Loss (SOL)", "Loss (%)", "Source PnL (%)", "Source hold (min)", "Source action"]
     if include_portfolio_pct:
         headers.append("% portfolio")
 
@@ -1019,6 +1019,7 @@ def _build_loss_detail_table(positions: List) -> str:
         open_str = getattr(p, "datetime_open", None) or "N/A"
         close_str = p.datetime_close if p.datetime_close else "N/A"
         token_pair_str = p.token if p.token else "N/A"
+        position_id_str = p.position_id[:8] if getattr(p, "position_id", None) else "N/A"
         loss_sol_str = f"-{abs(pnl):.3f}"
         loss_pct_str = f"{float(pnl_pct):.1f}%" if pnl_pct is not None else "N/A"
         src_pnl_str = f"{float(source_pnl_pct):.1f}%" if source_pnl_pct is not None else "N/A"
@@ -1029,6 +1030,7 @@ def _build_loss_detail_table(positions: List) -> str:
             close_str,
             p.target_wallet,
             token_pair_str,
+            position_id_str,
             p.close_reason,
             loss_sol_str,
             loss_pct_str,
