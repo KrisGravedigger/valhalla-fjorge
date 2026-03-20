@@ -54,7 +54,7 @@ INSUF_BALANCE_RATE_THRESHOLD: float = 0.10
 #   - filter sweet-spot backtest (Rule D)
 #   - wallet status classification (increase_capital / consider_replacing)
 # Set to 0 to use all historical data.
-RECOMMENDATION_LOOKBACK_DAYS: int = 7
+RECOMMENDATION_LOOKBACK_DAYS: int = 5
 
 # ---------------------------------------------------------------------------
 # Recommendation quality filters
@@ -62,7 +62,7 @@ RECOMMENDATION_LOOKBACK_DAYS: int = 7
 
 # Minimum net gain (SOL) for a filter tightening recommendation to appear.
 # Recommendations below this threshold are omitted as not material enough.
-MIN_FILTER_GAIN_SOL: float = 0.01
+MIN_FILTER_GAIN_SOL: float = 0.02
 
 # Minimum number of closed positions a wallet must have for filter
 # tightening recommendations (Rule D) to be generated.
@@ -127,6 +127,15 @@ UTILIZATION_CONSECUTIVE_DAYS: int = 3
 # Maximum insufficient-balance events in the last 24 hours before suppressing
 # the "increase capital" suggestion (if SOL is thin, don't suggest deploying more).
 UTILIZATION_MAX_INSUF_EVENTS_24H: int = 10
+
+# ---------------------------------------------------------------------------
+# Source Wallet Analysis
+# ---------------------------------------------------------------------------
+
+# Minimum loss (%) for a position to be eligible for source wallet analysis.
+# Only positions with pnl_pct <= this value are analyzed (e.g. -5.0 means 5%+ loss).
+# Set to 0.0 to analyze all losing positions, or None to analyze everything.
+SOURCE_WALLET_MIN_LOSS_PCT: float = -5.0
 
 # ---------------------------------------------------------------------------
 # Filter Impact Analysis Chart
