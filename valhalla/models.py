@@ -282,6 +282,7 @@ class MatchedPosition:
     source_wallet_hold_min: Optional[int] = field(default=None)  # Phase C: source wallet hold duration in minutes
     source_wallet_pnl_pct: Optional[Decimal] = field(default=None)  # Phase C: source wallet PnL %
     source_wallet_scenario: Optional[str] = field(default=None)  # Phase C: scenario classification
+    original_wallet: str = ""  # Alias system: immutable original wallet ID (set once by alias_resolver)
 
 
 @dataclass

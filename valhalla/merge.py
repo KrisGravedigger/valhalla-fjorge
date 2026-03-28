@@ -53,12 +53,12 @@ def merge_with_existing_csv(
     def parse_int(val: str) -> int:
         if not val or val.strip() == '':
             return 0
-        return int(val)
+        return int(float(val))
 
     def parse_optional_int(val: str) -> Optional[int]:
         if not val or val.strip() == '':
             return None
-        return int(val)
+        return int(float(val))
 
     def parse_float(val: str) -> float:
         if not val or val.strip() == '':
@@ -108,7 +108,8 @@ def merge_with_existing_csv(
             target_tx_signature=row.get('target_tx_signature') or None,
             source_wallet_hold_min=parse_optional_int(row.get('source_wallet_hold_min', '')),
             source_wallet_pnl_pct=parse_optional_decimal(row.get('source_wallet_pnl_pct', '')),
-            source_wallet_scenario=row.get('source_wallet_scenario') or None
+            source_wallet_scenario=row.get('source_wallet_scenario') or None,
+            original_wallet=row.get('original_wallet', '')
         )
 
         existing_by_id[position_id] = existing_pos
@@ -190,6 +191,13 @@ def merge_with_existing_csv(
             if existing_pos.target_wallet == 'unknown' and new_matched_pos:
                 if new_matched_pos.target_wallet and new_matched_pos.target_wallet != 'unknown':
                     existing_pos.target_wallet = new_matched_pos.target_wallet
+            # Backfill target_wallet_address and target_tx_signature if missing.
+            # These are parsed from the open event and were not always captured in older runs.
+            if new_matched_pos:
+                if not existing_pos.target_wallet_address and new_matched_pos.target_wallet_address:
+                    existing_pos.target_wallet_address = new_matched_pos.target_wallet_address
+                if not existing_pos.target_tx_signature and new_matched_pos.target_tx_signature:
+                    existing_pos.target_tx_signature = new_matched_pos.target_tx_signature
             merged_matched.append(existing_pos)
             kept_complete_count += 1
             continue
@@ -426,12 +434,12 @@ def merge_positions_csvs(csv_paths: List[str], output_dir: str) -> None:
     def parse_int(val: str) -> int:
         if not val or val.strip() == '':
             return 0
-        return int(val)
+        return int(float(val))
 
     def parse_optional_int(val: str) -> Optional[int]:
         if not val or val.strip() == '':
             return None
-        return int(val)
+        return int(float(val))
 
     def parse_float(val: str) -> float:
         if not val or val.strip() == '':
@@ -478,7 +486,8 @@ def merge_positions_csvs(csv_paths: List[str], output_dir: str) -> None:
             target_tx_signature=row.get('target_tx_signature') or None,
             source_wallet_hold_min=parse_optional_int(row.get('source_wallet_hold_min', '')),
             source_wallet_pnl_pct=parse_optional_decimal(row.get('source_wallet_pnl_pct', '')),
-            source_wallet_scenario=row.get('source_wallet_scenario') or None
+            source_wallet_scenario=row.get('source_wallet_scenario') or None,
+            original_wallet=row.get('original_wallet', '')
         ))
 
     # Write merged positions.csv

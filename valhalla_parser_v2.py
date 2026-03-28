@@ -43,6 +43,7 @@ from valhalla.csv_writer import CsvWriter
 from valhalla.json_io import export_to_json, import_from_json, merge_with_imported
 from valhalla.merge import merge_with_existing_csv, merge_positions_csvs
 from valhalla.charts import generate_charts, generate_insufficient_balance_chart
+from valhalla.alias_resolver import apply_aliases
 
 
 def _detect_coverage_gaps(positions_csv_path):
@@ -1440,13 +1441,24 @@ def _generate_loss_report(
     lines.append("### 5c. Source Wallet Comparison")
     lines.append("")
 
-    # Only consider loss positions
-    loss_positions_all = [p for p in positions if p.close_reason in LOSS_REASONS]
-    loss_total = len(loss_positions_all)
+    # Consider positions eligible for source wallet analysis (by PnL threshold)
+    from valhalla.analysis_config import SOURCE_WALLET_MIN_LOSS_PCT
+    if SOURCE_WALLET_MIN_LOSS_PCT is not None:
+        sw_threshold = Decimal(str(SOURCE_WALLET_MIN_LOSS_PCT))
+        sw_eligible_all = [
+            p for p in positions
+            if p.close_reason != "still_open"
+            and p.pnl_pct is not None and p.pnl_pct <= sw_threshold
+        ]
+        threshold_label = f"positions with loss > {abs(SOURCE_WALLET_MIN_LOSS_PCT):.0f}%"
+    else:
+        sw_eligible_all = [p for p in positions if p.close_reason != "still_open"]
+        threshold_label = "closed positions"
+    sw_eligible_total = len(sw_eligible_all)
 
     # Positions with source_wallet_scenario populated (excluding failed attempts)
     with_scenario = [
-        p for p in loss_positions_all
+        p for p in sw_eligible_all
         if getattr(p, 'source_wallet_scenario', None)
         and p.source_wallet_scenario != "no_data"
     ]
@@ -1456,7 +1468,7 @@ def _generate_loss_report(
     else:
         scenario_count = len(with_scenario)
         lines.append(
-            f"Source wallet data available for {scenario_count} of {loss_total} loss positions."
+            f"Source wallet data available for {scenario_count} of {sw_eligible_total} {threshold_label}."
         )
         lines.append("")
 
@@ -2330,6 +2342,12 @@ def main():
     print(f"  {positions_csv}")
     print(f"  {summary_csv}")
 
+    # Step 6.5a: Apply wallet aliases
+    apply_aliases(
+        csv_path=positions_csv,
+        aliases_path=Path("wallet_aliases.json")
+    )
+
     # Step 6.5b: Generate loss analysis report
     if not args.no_loss_analysis and (want_all or 'loss' in report_modules):
         loss_report_path = output_dir / 'loss_analysis.md'
@@ -2508,6 +2526,13 @@ def main():
                 csv_writer = CsvWriter()
                 csv_writer.generate_positions_csv(matched_positions, unmatched_opens, str(positions_csv))
                 csv_writer.generate_summary_csv(matched_positions, event_parser.skip_events, str(summary_csv))
+
+                # Re-apply wallet aliases after CSV regeneration
+                apply_aliases(
+                    csv_path=positions_csv,
+                    aliases_path=Path("wallet_aliases.json")
+                )
+
                 print(f"  Updated {positions_csv}")
 
                 # Regenerate charts

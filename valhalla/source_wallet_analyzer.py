@@ -1,9 +1,9 @@
 """
 Source wallet analyzer for Phase C.
 
-For each loss position with a target_tx_signature, resolves the source wallet's
+For each position with a target_tx_signature, resolves the source wallet's
 DLMM position address and fetches its PnL via the Meteora API. Classifies the
-scenario to explain why the bot lost while copying the source wallet.
+scenario to explain how the bot performed compared to the source wallet.
 """
 
 import time
@@ -12,7 +12,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import List, Optional
 
-from .loss_analyzer import LOSS_REASONS
+from .analysis_config import SOURCE_WALLET_MIN_LOSS_PCT
 from .meteora import MeteoraPnlCalculator
 from .models import KNOWN_PROGRAMS, MatchedPosition, parse_iso_datetime
 from .solana_rpc import AddressCache, SolanaRpcClient
@@ -62,7 +62,7 @@ class SourceWalletResult:
 
 class SourceWalletAnalyzer:
     """
-    Analyze source wallet positions for loss positions that have a
+    Analyze source wallet positions for all positions that have a
     target_tx_signature populated (Phase A data required).
     """
 
@@ -212,16 +212,18 @@ class SourceWalletAnalyzer:
 
         Eligible means:
         - has target_tx_signature
-        - close_reason in LOSS_REASONS
+        - pnl_pct <= SOURCE_WALLET_MIN_LOSS_PCT (filters by actual loss, not close_reason)
         - source_wallet_scenario not already set (idempotent)
 
         Prints progress. Returns list of results (only eligible positions).
         """
+        threshold = Decimal(str(SOURCE_WALLET_MIN_LOSS_PCT)) if SOURCE_WALLET_MIN_LOSS_PCT is not None else None
+
         eligible = [
             p for p in positions
             if p.target_tx_signature
-            and p.close_reason in LOSS_REASONS
             and not p.source_wallet_scenario
+            and (threshold is None or (p.pnl_pct is not None and p.pnl_pct <= threshold))
         ]
 
         if max_positions is not None:
@@ -274,6 +276,11 @@ class SourceWalletAnalyzer:
         excluded = set(KNOWN_PROGRAMS)
         if exclude_addresses:
             excluded.update(exclude_addresses)
+
+        # Always exclude the first account key (fee payer / signer = source wallet)
+        # This is critical when target_wallet_address is not available
+        if account_keys:
+            excluded.add(account_keys[0])
 
         # Filter out known programs, excluded addresses, and short keys
         candidates = [
