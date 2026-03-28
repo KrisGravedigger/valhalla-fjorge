@@ -11,6 +11,7 @@ test_output/
 !tsconfig.json
 !.eslintrc.json
 !vercel.json
+!wallet_aliases.json
 *.png
 .env
 *.valhalla.json

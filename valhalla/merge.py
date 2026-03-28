@@ -53,12 +53,12 @@ def merge_with_existing_csv(
     def parse_int(val: str) -> int:
         if not val or val.strip() == '':
             return 0
-        return int(val)
+        return int(float(val))
 
     def parse_optional_int(val: str) -> Optional[int]:
         if not val or val.strip() == '':
             return None
-        return int(val)
+        return int(float(val))
 
     def parse_float(val: str) -> float:
         if not val or val.strip() == '':
@@ -108,7 +108,8 @@ def merge_with_existing_csv(
             target_tx_signature=row.get('target_tx_signature') or None,
             source_wallet_hold_min=parse_optional_int(row.get('source_wallet_hold_min', '')),
             source_wallet_pnl_pct=parse_optional_decimal(row.get('source_wallet_pnl_pct', '')),
-            source_wallet_scenario=row.get('source_wallet_scenario') or None
+            source_wallet_scenario=row.get('source_wallet_scenario') or None,
+            original_wallet=row.get('original_wallet', '')
         )
 
         existing_by_id[position_id] = existing_pos
@@ -433,12 +434,12 @@ def merge_positions_csvs(csv_paths: List[str], output_dir: str) -> None:
     def parse_int(val: str) -> int:
         if not val or val.strip() == '':
             return 0
-        return int(val)
+        return int(float(val))
 
     def parse_optional_int(val: str) -> Optional[int]:
         if not val or val.strip() == '':
             return None
-        return int(val)
+        return int(float(val))
 
     def parse_float(val: str) -> float:
         if not val or val.strip() == '':
@@ -485,7 +486,8 @@ def merge_positions_csvs(csv_paths: List[str], output_dir: str) -> None:
             target_tx_signature=row.get('target_tx_signature') or None,
             source_wallet_hold_min=parse_optional_int(row.get('source_wallet_hold_min', '')),
             source_wallet_pnl_pct=parse_optional_decimal(row.get('source_wallet_pnl_pct', '')),
-            source_wallet_scenario=row.get('source_wallet_scenario') or None
+            source_wallet_scenario=row.get('source_wallet_scenario') or None,
+            original_wallet=row.get('original_wallet', '')
         ))
 
     # Write merged positions.csv

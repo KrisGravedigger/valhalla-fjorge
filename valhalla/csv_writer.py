@@ -45,7 +45,8 @@ class CsvWriter:
                 'full_address', 'pnl_source', 'meteora_deposited', 'meteora_withdrawn',
                 'meteora_fees', 'meteora_pnl',
                 'target_wallet_address', 'target_tx_signature',
-                'source_wallet_hold_min', 'source_wallet_pnl_pct', 'source_wallet_scenario'
+                'source_wallet_hold_min', 'source_wallet_pnl_pct', 'source_wallet_scenario',
+                'original_wallet'
             ])
 
             for pos in sorted_positions:
@@ -77,7 +78,8 @@ class CsvWriter:
                     pos.target_tx_signature if pos.target_tx_signature else "",
                     str(pos.source_wallet_hold_min) if pos.source_wallet_hold_min is not None else "",
                     f"{pos.source_wallet_pnl_pct:.2f}" if pos.source_wallet_pnl_pct is not None else "",
-                    pos.source_wallet_scenario if pos.source_wallet_scenario else ""
+                    pos.source_wallet_scenario if pos.source_wallet_scenario else "",
+                    pos.original_wallet  # preserved through merge; alias_resolver seeds on first run
                 ])
 
             # Add still-open positions
@@ -113,7 +115,8 @@ class CsvWriter:
                     "",  # No target_tx_signature (only first sig, not applicable for still-open display)
                     "",  # No source_wallet_hold_min
                     "",  # No source_wallet_pnl_pct
-                    ""   # No source_wallet_scenario
+                    "",  # No source_wallet_scenario
+                    ""   # original_wallet: filled by alias_resolver on first run
                 ])
 
     def generate_summary_csv(self, matched_positions: List[MatchedPosition],
