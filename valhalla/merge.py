@@ -190,6 +190,13 @@ def merge_with_existing_csv(
             if existing_pos.target_wallet == 'unknown' and new_matched_pos:
                 if new_matched_pos.target_wallet and new_matched_pos.target_wallet != 'unknown':
                     existing_pos.target_wallet = new_matched_pos.target_wallet
+            # Backfill target_wallet_address and target_tx_signature if missing.
+            # These are parsed from the open event and were not always captured in older runs.
+            if new_matched_pos:
+                if not existing_pos.target_wallet_address and new_matched_pos.target_wallet_address:
+                    existing_pos.target_wallet_address = new_matched_pos.target_wallet_address
+                if not existing_pos.target_tx_signature and new_matched_pos.target_tx_signature:
+                    existing_pos.target_tx_signature = new_matched_pos.target_tx_signature
             merged_matched.append(existing_pos)
             kept_complete_count += 1
             continue
