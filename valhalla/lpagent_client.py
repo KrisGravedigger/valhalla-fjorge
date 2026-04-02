@@ -140,34 +140,36 @@ class LpAgentClient:
                 time.sleep(RATE_LIMIT_SLEEP)
 
             params = {
-                "wallet": self._wallet,
-                "status": "Close",
+                "owner": self._wallet,
                 "from_date": date_str,
                 "to_date": date_str,
                 "page": str(page),
-                "pageSize": str(PAGE_SIZE),
             }
             query_string = "&".join(f"{k}={urllib.parse.quote(v)}" for k, v in params.items())
-            url = f"{API_BASE}/positions?{query_string}"
+            url = f"{API_BASE}/lp-positions/historical?{query_string}"
 
             logger.debug("GET %s (page %d)", url, page)
-            data = self._lpagent_get(url)
+            raw = self._lpagent_get(url)
 
-            page_data = data.get("data", [])
+            # Response shape: {"status":"success","data":{"data":[...],"pagination":{...}}}
+            inner = raw.get("data", {})
+            page_data = inner.get("data", [])
+            pagination = inner.get("pagination") or {}
             if total is None:
-                total = data.get("total", 0)
+                total = pagination.get("totalCount") or 0
+                total_pages = pagination.get("totalPages") or 1
                 logger.info(
-                    "API: date=%s total=%d, fetching page %d/%d",
+                    "API: date=%s total=%d pages=%d",
                     date_str,
                     total,
-                    page,
-                    max(1, (total + PAGE_SIZE - 1) // PAGE_SIZE),
+                    total_pages,
                 )
 
             all_positions.extend(page_data)
 
             # Pagination check: stop when we've fetched all pages
-            if (page - 1) * PAGE_SIZE + len(page_data) >= total:
+            total_pages_known = pagination.get("totalPages") or 1
+            if page >= total_pages_known or not page_data:
                 break
 
             page += 1
@@ -189,7 +191,7 @@ class LpAgentClient:
         req = urllib.request.Request(
             url,
             headers={
-                "Authorization": f"Bearer {self._api_key}",
+                "x-api-key": self._api_key,
                 "Content-Type": "application/json",
                 "Accept": "application/json",
                 # Mimic a browser to avoid Cloudflare bot detection on the API domain

@@ -4,6 +4,8 @@ Valhalla Bot Discord DM Log Parser v2
 Parses Discord DM plain text logs and calculates per-position PnL using Meteora DLMM API.
 """
 
+import json
+import os
 import re
 import argparse
 import csv
@@ -44,6 +46,85 @@ from valhalla.json_io import export_to_json, import_from_json, merge_with_import
 from valhalla.merge import merge_with_existing_csv, merge_positions_csvs
 from valhalla.charts import generate_charts, generate_insufficient_balance_chart
 from valhalla.alias_resolver import apply_aliases
+
+
+# ---------------------------------------------------------------------------
+# LpAgent cross-check helpers
+# ---------------------------------------------------------------------------
+
+_LPAGENT_WATERMARK_DEFAULT = "2026-02-11"
+
+
+def _read_watermark(output_dir: str) -> str:
+    """Read last_synced_date from lpagent_sync.json.
+
+    Returns the stored YYYY-MM-DD string, or the hardcoded default
+    (2026-02-11, the first day of tracking) if the file does not exist.
+    """
+    sync_path = Path(output_dir) / "lpagent_sync.json"
+    if not sync_path.exists():
+        return _LPAGENT_WATERMARK_DEFAULT
+    try:
+        data = json.loads(sync_path.read_text(encoding="utf-8"))
+        return data.get("last_synced_date", _LPAGENT_WATERMARK_DEFAULT)
+    except (json.JSONDecodeError, OSError):
+        return _LPAGENT_WATERMARK_DEFAULT
+
+
+def _write_watermark(output_dir: str, date: str) -> None:
+    """Write last_synced_date to output/lpagent_sync.json."""
+    sync_path = Path(output_dir) / "lpagent_sync.json"
+    try:
+        sync_path.write_text(
+            json.dumps({"last_synced_date": date}, indent=2) + "\n",
+            encoding="utf-8",
+        )
+    except OSError as e:
+        print(f"  Warning: could not write lpagent_sync.json: {e}")
+
+
+def _run_cross_check(
+    from_date: str,
+    to_date: str,
+    positions_csv_path: str,
+    output_dir: str,
+    silent_if_empty: bool = False,
+) -> int:
+    """Run full cross-check: fetch from LpAgent, compare, append missing rows.
+
+    Returns the count of missing positions found (and backfilled).
+    Raises ValueError if LPAGENT_API_KEY is not set.
+    """
+    from valhalla.lpagent_client import LpAgentClient, DEFAULT_WALLET
+    from valhalla.cross_check import CrossChecker
+
+    api_key = os.environ.get("LPAGENT_API_KEY", "")
+    if not api_key:
+        raise ValueError(
+            "LPAGENT_API_KEY is required but not set. "
+            "Add it to .env or set it as an environment variable."
+        )
+    wallet = os.environ.get("LPAGENT_WALLET", DEFAULT_WALLET)
+
+    client = LpAgentClient(
+        api_key=api_key,
+        wallet=wallet,
+        cache_dir=str(Path(output_dir) / "lpagent_cache"),
+    )
+    raw_positions = client.fetch_range(from_date, to_date)
+
+    checker = CrossChecker(positions_csv_path)
+    missing = checker.find_missing(raw_positions)
+
+    if not missing and silent_if_empty:
+        return 0
+
+    checker.report(missing)
+
+    if missing:
+        checker.backfill(missing)
+
+    return len(missing)
 
 
 def _detect_coverage_gaps(positions_csv_path):
@@ -1914,12 +1995,64 @@ def main():
     parser.add_argument('--track', action='store_true',
                        help='Interactively mark recommendation statuses (done/ignored/new). '
                             'Loads positions from output/positions.csv and shows current items.')
+    parser.add_argument('--cross-check', nargs='*', metavar='DATE',
+                       help='Run lpagent cross-check. Optional: FROM_DATE [TO_DATE] in YYYY-MM-DD format. '
+                            'If no dates given, uses watermark to yesterday. '
+                            'Skips normal log processing.')
 
     args = parser.parse_args()
+
+    # Load .env so LPAGENT_API_KEY / LPAGENT_WALLET are available via os.environ
+    try:
+        from dotenv import load_dotenv
+        load_dotenv()
+    except ImportError:
+        pass  # python-dotenv not installed; rely on env vars already set
 
     # --track mode: interactive recommendation status editor
     if args.track:
         _run_track_mode(args.output_dir)
+        return
+
+    # --cross-check mode: skip normal pipeline, run lpagent cross-check only
+    if args.cross_check is not None:
+        output_dir = Path(args.output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
+        positions_csv = str(output_dir / "positions.csv")
+
+        yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+
+        dates = args.cross_check
+        if len(dates) == 0:
+            # No dates given: use watermark to yesterday
+            watermark = _read_watermark(str(output_dir))
+            from_date = (
+                datetime.strptime(watermark, "%Y-%m-%d") + timedelta(days=1)
+            ).strftime("%Y-%m-%d")
+            to_date = yesterday
+        elif len(dates) == 1:
+            from_date = to_date = dates[0]
+        else:
+            from_date, to_date = dates[0], dates[1]
+
+        if from_date > to_date:
+            print(f"[Cross-check] Nothing to sync: from_date {from_date} > to_date {to_date}")
+            return
+
+        print(f"[Cross-check] {from_date} -> {to_date}")
+        try:
+            count = _run_cross_check(
+                from_date, to_date, positions_csv, str(output_dir), silent_if_empty=False
+            )
+            if count > 0:
+                _write_watermark(str(output_dir), to_date)
+                print(f"  Watermark updated to {to_date}")
+            else:
+                # Also update watermark when sync is clean (avoid re-querying)
+                _write_watermark(str(output_dir), to_date)
+                print(f"  Watermark updated to {to_date}")
+        except ValueError as e:
+            print(f"[Cross-check] Error: {e}")
         return
 
     # NOTE: Auto-fetch of on-chain SOL balance is intentionally disabled.
@@ -2558,6 +2691,34 @@ def main():
             if still_failed:
                 print(f"\n  Still failed: {', '.join(still_failed)}")
                 print(f"  These positions will appear as 'pending' in CSV.")
+
+    # Auto-run lpagent cross-check (after positions.csv is written)
+    # Skip in --merge mode. Fully silent when API key is not configured.
+    if not args.merge:
+        _lpagent_api_key = os.environ.get("LPAGENT_API_KEY", "")
+        if _lpagent_api_key:
+            try:
+                yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+                watermark = _read_watermark(str(output_dir))
+                next_day = (
+                    datetime.strptime(watermark, "%Y-%m-%d") + timedelta(days=1)
+                ).strftime("%Y-%m-%d")
+                if next_day <= yesterday:
+                    print(f"\n[Cross-check] Syncing {next_day} -> {yesterday}...")
+                    count = _run_cross_check(
+                        next_day,
+                        yesterday,
+                        str(positions_csv),
+                        str(output_dir),
+                        silent_if_empty=True,
+                    )
+                    # Always update watermark on successful sync (avoids re-querying clean days)
+                    _write_watermark(str(output_dir), yesterday)
+                    if count > 0:
+                        print(f"  Watermark updated to {yesterday}")
+            except Exception as e:
+                # Never crash the main pipeline due to cross-check errors
+                print(f"\n[Cross-check] Warning: auto-run failed: {e}")
 
     print(f"\nDone!")
 
