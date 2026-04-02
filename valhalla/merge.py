@@ -171,6 +171,7 @@ def merge_with_existing_csv(
     upgraded_count = 0
     new_count = 0
     kept_from_existing_count = 0
+    lpagent_replaced_count = 0
 
     # Process existing positions
     for position_id, existing_pos in existing_by_id.items():
@@ -259,6 +260,34 @@ def merge_with_existing_csv(
         if existing_pos.pnl_source == "meteora":
             merged_matched.append(existing_pos)
             kept_complete_count += 1
+            continue
+
+        # Rule 3.5: lpagent backfill row — replaceable placeholder
+        # Discord data arriving later should fully replace the lpagent row.
+        # Meteora financial fields from lpagent are preserved as fallback if Discord
+        # doesn't carry them.
+        if existing_pos.pnl_source == "lpagent":
+            if new_matched_pos:
+                # Discord data arrived — replace entirely, but keep lpagent financial
+                # fields as fallback if the incoming row doesn't have them.
+                new_matched_pos.meteora_deposited = (
+                    new_matched_pos.meteora_deposited or existing_pos.meteora_deposited
+                )
+                new_matched_pos.meteora_withdrawn = (
+                    new_matched_pos.meteora_withdrawn or existing_pos.meteora_withdrawn
+                )
+                new_matched_pos.meteora_fees = (
+                    new_matched_pos.meteora_fees or existing_pos.meteora_fees
+                )
+                new_matched_pos.meteora_pnl = (
+                    new_matched_pos.meteora_pnl or existing_pos.meteora_pnl
+                )
+                merged_matched.append(new_matched_pos)
+                lpagent_replaced_count += 1
+            else:
+                # No Discord data yet — keep lpagent backfill row as-is
+                merged_matched.append(existing_pos)
+                kept_from_existing_count += 1
             continue
 
         # Rule 4: No Meteora PnL (pending/discord) - upgrade if we have better data
@@ -368,6 +397,7 @@ def merge_with_existing_csv(
     print(f"    - Kept complete (open+close+meteora): {kept_complete_count}")
     print(f"    - Enriched (added open data to meteora positions): {enriched_count}")
     print(f"    - Upgraded (pending/discord -> better data): {upgraded_count}")
+    print(f"    - Replaced (lpagent backfill -> Discord data): {lpagent_replaced_count}")
     print(f"    - New positions: {new_count}")
     print(f"    - Kept from existing (no new data): {kept_from_existing_count}")
     print(f"    - Total merged: {len(merged_matched)} matched, {len(merged_still_open)} still open")
