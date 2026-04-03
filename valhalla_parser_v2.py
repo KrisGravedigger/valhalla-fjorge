@@ -2720,6 +2720,9 @@ def main():
                 # Never crash the main pipeline due to cross-check errors
                 print(f"\n[Cross-check] Warning: auto-run failed: {e}")
 
+    from valhalla.discord_gaps import report_discord_gaps
+    report_discord_gaps(str(positions_csv))
+
     print(f"\nDone!")
 
 
