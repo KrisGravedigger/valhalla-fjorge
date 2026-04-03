@@ -16,8 +16,9 @@ class MeteoraPnlCalculator:
     """Calculate PnL using Meteora DLMM API"""
 
     def __init__(self):
-        self.base_url = "https://dlmm-api.meteora.ag"
+        self.base_url = "https://dlmm.datapi.meteora.ag"
         self._pair_cache: Dict[str, Tuple[bool, bool, str]] = {}  # pair_addr -> (sol_is_x, sol_is_y, token_mint)
+        self._events_cache: Dict[str, list] = {}  # position_addr -> events list
 
     def _get_sol_side(self, pair_address: str) -> Optional[Tuple[bool, bool]]:
         """Determine which token (x or y) is SOL for a pair. Returns (sol_is_x, sol_is_y)."""
@@ -25,12 +26,12 @@ class MeteoraPnlCalculator:
             sol_is_x, sol_is_y, _ = self._pair_cache[pair_address]
             return (sol_is_x, sol_is_y)
 
-        pair_info = self._meteora_get(f"/pair/{pair_address}")
+        pair_info = self._meteora_get(f"/pools/{pair_address}")
         if not pair_info:
             return None
 
-        mint_x = pair_info.get('mint_x', '')
-        mint_y = pair_info.get('mint_y', '')
+        mint_x = pair_info.get('token_x', {}).get('address', '')
+        mint_y = pair_info.get('token_y', {}).get('address', '')
         sol_is_x = (mint_x == SOL_MINT)
         sol_is_y = (mint_y == SOL_MINT)
 
@@ -55,19 +56,28 @@ class MeteoraPnlCalculator:
         Returns MeteoraPnlResult or None if failed.
         """
         try:
-            # Get position info to find pair_address
-            pos_info = self._meteora_get(f"/position/{address}")
-            if not pos_info:
+            # Fetch all events in one call — replaces separate deposits/withdraws/claim_fees calls
+            historical = self._meteora_get(f"/positions/{address}/historical")
+            if not historical:
                 return None
 
-            pair_address = pos_info.get('pair_address', '')
+            all_events = historical.get('events', [])
+            if not all_events:
+                print(f"  Warning: No events for {short_id(address)}")
+                return None
+
+            # Cache events so get_position_timestamps() can reuse them
+            self._events_cache[address] = all_events
+
+            # Derive pool address from first event (replaces dead /position/{addr} call)
+            pair_address = all_events[0].get('poolAddress', '')
             if not pair_address:
-                print(f"  Warning: No pair_address for {short_id(address)}")
+                print(f"  Warning: No poolAddress in events for {short_id(address)}")
                 return None
 
             time.sleep(0.3)
 
-            # Get mint info from pair to determine which token is SOL
+            # Get mint info from pool to determine which token is SOL
             sol_side = self._get_sol_side(pair_address)
             if not sol_side:
                 print(f"  Warning: No SOL token found in pair for {short_id(address)}")
@@ -77,23 +87,27 @@ class MeteoraPnlCalculator:
 
             time.sleep(0.3)
 
-            LAMPORTS = Decimal('1000000000')
+            # Split events by type — new API returns all events in one array.
+            # Ignore claim_reward events.
+            deposits = [e for e in all_events if e.get('eventType') == 'add']
+            withdraws = [e for e in all_events if e.get('eventType') == 'remove']
+            fees_list = [e for e in all_events if e.get('eventType') == 'claim_fee']
 
             # Helper: compute SOL equivalent for a transaction entry.
             # Converts the non-SOL token to SOL using the per-transaction SOL price
             # derived from the SOL-side USD amount.
+            # NOTE: new API returns amounts as decimal strings (e.g. "3.1100433"),
+            # NOT lamports — no division by LAMPORTS needed.
             def _tx_sol_equiv(
                 entry,
                 fallback_sol_price: Decimal,
             ) -> tuple[Decimal, Decimal, Decimal, Decimal]:
                 """Returns (sol_amount, sol_equiv_total, total_usd, sol_price_used)"""
-                sol_key = 'token_x_amount' if sol_is_x else 'token_y_amount'
-                tok_key = 'token_y_amount' if sol_is_x else 'token_x_amount'
-                sol_usd_key = 'token_x_usd_amount' if sol_is_x else 'token_y_usd_amount'
-                tok_usd_key = 'token_y_usd_amount' if sol_is_x else 'token_x_usd_amount'
+                sol_key = 'amountX' if sol_is_x else 'amountY'
+                sol_usd_key = 'amountXUsd' if sol_is_x else 'amountYUsd'
+                tok_usd_key = 'amountYUsd' if sol_is_x else 'amountXUsd'
 
-                sol_raw = Decimal(str(entry.get(sol_key, entry.get(sol_key.replace('_', 'X_' if sol_is_x else 'Y_'), 0))))
-                sol_amt = sol_raw / LAMPORTS
+                sol_amt = Decimal(str(entry.get(sol_key, 0)))
                 sol_usd = Decimal(str(entry.get(sol_usd_key, 0)))
                 tok_usd = Decimal(str(entry.get(tok_usd_key, 0)))
 
@@ -113,36 +127,15 @@ class MeteoraPnlCalculator:
                 total_usd = sol_usd + tok_usd
                 return sol_amt, total_sol_equiv, total_usd, sol_price
 
-            # Fetch all three data sets first, then process
-            deposits = self._meteora_get(f"/position/{address}/deposits")
-            if deposits is None:
-                print(f"  API error on deposits for {short_id(address)}")
-                return None
-
-            time.sleep(0.3)
-
-            withdraws = self._meteora_get(f"/position/{address}/withdraws")
-            if withdraws is None:
-                print(f"  API error on withdraws for {short_id(address)}")
-                return None
-
-            time.sleep(0.3)
-
-            fees_list = self._meteora_get(f"/position/{address}/claim_fees")
-            if fees_list is None:
-                print(f"  API error on claim_fees for {short_id(address)}")
-                return None
-
             # Pre-scan ALL transactions to find an initial SOL price.
             # This prevents token-only deposits from being valued at 0
             # when they appear before any SOL-bearing transaction.
-            sol_amount_key = 'token_x_amount' if sol_is_x else 'token_y_amount'
-            sol_usd_amount_key = 'token_x_usd_amount' if sol_is_x else 'token_y_usd_amount'
+            sol_key = 'amountX' if sol_is_x else 'amountY'
+            sol_usd_key = 'amountXUsd' if sol_is_x else 'amountYUsd'
             initial_sol_price = Decimal('0')
             for entry in (deposits or []) + (withdraws or []) + (fees_list or []):
-                raw = Decimal(str(entry.get(sol_amount_key, 0)))
-                amt = raw / LAMPORTS
-                usd = Decimal(str(entry.get(sol_usd_amount_key, 0)))
+                amt = Decimal(str(entry.get(sol_key, 0)))
+                usd = Decimal(str(entry.get(sol_usd_key, 0)))
                 if amt > 0 and usd > 0:
                     initial_sol_price = usd / amt
                     break  # use the first available SOL price
@@ -150,36 +143,30 @@ class MeteoraPnlCalculator:
             running_sol_price = initial_sol_price
 
             # Process deposits
-            dep_sol_total = Decimal('0')
             dep_sol_equiv = Decimal('0')
             dep_usd = Decimal('0')
             for dep in deposits:
-                sol_amt, equiv, usd, price = _tx_sol_equiv(dep, running_sol_price)
-                dep_sol_total += sol_amt
+                _, equiv, usd, price = _tx_sol_equiv(dep, running_sol_price)
                 dep_sol_equiv += equiv
                 dep_usd += usd
                 if price > 0:
                     running_sol_price = price
 
             # Process withdrawals
-            wdr_sol_total = Decimal('0')
             wdr_sol_equiv = Decimal('0')
             wdr_usd = Decimal('0')
             for w in withdraws:
-                sol_amt, equiv, usd, price = _tx_sol_equiv(w, running_sol_price)
-                wdr_sol_total += sol_amt
+                _, equiv, usd, price = _tx_sol_equiv(w, running_sol_price)
                 wdr_sol_equiv += equiv
                 wdr_usd += usd
                 if price > 0:
                     running_sol_price = price
 
             # Process claimed fees
-            fee_sol_total = Decimal('0')
             fee_sol_equiv = Decimal('0')
             fee_usd = Decimal('0')
             for f_entry in fees_list:
-                sol_amt, equiv, usd, price = _tx_sol_equiv(f_entry, running_sol_price)
-                fee_sol_total += sol_amt
+                _, equiv, usd, price = _tx_sol_equiv(f_entry, running_sol_price)
                 fee_sol_equiv += equiv
                 fee_usd += usd
                 if price > 0:
@@ -204,28 +191,37 @@ class MeteoraPnlCalculator:
             print(f"  Meteora API error for {short_id(address)}: {e}")
             return None
 
-    def get_position_timestamps(self, address: str) -> Optional[Tuple[datetime, datetime]]:
+    def get_position_timestamps(
+        self, address: str, events: Optional[list] = None
+    ) -> Optional[Tuple[datetime, datetime]]:
         """
         Return (open_time, close_time) from position transaction history.
 
-        Calls /position/{address} and extracts min/max onchain_timestamp
-        from the transactions array. Returns None if not available.
+        If `events` is provided, uses them directly (avoids duplicate API call).
+        Otherwise fetches /positions/{address}/historical.
+        blockTime is in milliseconds — divide by 1000.
+        Returns None if not available.
         """
-        pos_info = self._meteora_get(f"/position/{address}")
-        if not pos_info:
-            return None
-        transactions = pos_info.get('transactions', [])
-        if not transactions:
+        if events is None:
+            # Check cache first (populated by calculate_pnl)
+            events = self._events_cache.pop(address, None)
+        if events is None:
+            historical = self._meteora_get(f"/positions/{address}/historical")
+            if not historical:
+                return None
+            events = historical.get('events', [])
+        if not events:
             return None
         timestamps = [
-            t.get('onchain_timestamp')
-            for t in transactions
-            if t.get('onchain_timestamp')
+            e.get('blockTime')
+            for e in events
+            if e.get('blockTime')
         ]
         if not timestamps:
             return None
-        open_ts = datetime.fromtimestamp(min(timestamps))
-        close_ts = datetime.fromtimestamp(max(timestamps))
+        # blockTime is milliseconds in new API — convert to seconds for fromtimestamp()
+        open_ts = datetime.fromtimestamp(min(timestamps) / 1000)
+        close_ts = datetime.fromtimestamp(max(timestamps) / 1000)
         return open_ts, close_ts
 
     def _meteora_get(self, path: str):

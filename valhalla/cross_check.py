@@ -36,7 +36,7 @@ def _parse_lpagent_datetime(s: str) -> str:
         cleaned = cleaned.split(".")[0]
     try:
         dt = datetime.fromisoformat(cleaned)
-        return dt.strftime("%Y-%m-%dT%H:%M")
+        return dt.strftime("%Y-%m-%dT%H:%M:%S")
     except (ValueError, TypeError) as e:
         logger.warning("Failed to parse lpagent datetime %r: %s", s, e)
         return ""
