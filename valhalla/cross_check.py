@@ -89,7 +89,7 @@ def _lpagent_to_position(raw: dict) -> MatchedPosition:
         token_age_days=None,
         token_age_hours=None,
         price_drop_pct=None,
-        position_id=token_id[:8] if token_id else "",
+        position_id=(token_id[:4] + token_id[-4:]) if len(token_id) >= 8 else token_id,
         full_address=token_id,
         pnl_source="lpagent",
         meteora_deposited=sol_deployed,

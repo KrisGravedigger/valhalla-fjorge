@@ -118,6 +118,16 @@ def merge_with_existing_csv(
     new_matched_by_id = {p.position_id: p for p in new_matched if p.position_id}
     new_still_open_by_id = {e.position_id: e for e in new_still_open if e.position_id}
 
+    # Secondary index for lpagent rows stored with old position_id format (addr[:8]).
+    # Discord uses addr[:4]+addr[-4:], so old lpagent rows never match on position_id.
+    # Build a mapping: discord_format_id -> existing_pos for all lpagent rows.
+    lpagent_by_discord_id: dict = {}
+    for pos in existing_by_id.values():
+        if pos.pnl_source == "lpagent" and pos.full_address and len(pos.full_address) >= 8:
+            discord_id = pos.full_address[:4] + pos.full_address[-4:]
+            if discord_id != pos.position_id:  # only if format actually differs
+                lpagent_by_discord_id[discord_id] = pos
+
     # Helper: check if position is fully complete (has open + close + meteora PnL)
     def is_fully_complete(pos: MatchedPosition) -> bool:
         has_open = pos.close_reason not in (
@@ -176,6 +186,11 @@ def merge_with_existing_csv(
     # Process existing positions
     for position_id, existing_pos in existing_by_id.items():
         new_matched_pos = new_matched_by_id.get(position_id)
+        # Fallback: lpagent rows stored with old addr[:8] format — try addr[:4]+addr[-4:]
+        if new_matched_pos is None and existing_pos.pnl_source == "lpagent":
+            discord_id = existing_pos.full_address[:4] + existing_pos.full_address[-4:] if len(existing_pos.full_address) >= 8 else ""
+            if discord_id:
+                new_matched_pos = new_matched_by_id.get(discord_id)
         new_still_open_event = new_still_open_by_id.get(position_id)
 
         # Rule 1: Fully complete (open + close + meteora) - keep as-is
@@ -270,6 +285,18 @@ def merge_with_existing_csv(
             if new_matched_pos:
                 # Discord data arrived — replace entirely, but keep lpagent financial
                 # fields as fallback if the incoming row doesn't have them.
+                new_matched_pos.sol_deployed = (
+                    new_matched_pos.sol_deployed or existing_pos.sol_deployed
+                )
+                new_matched_pos.sol_received = (
+                    new_matched_pos.sol_received or existing_pos.sol_received
+                )
+                new_matched_pos.pnl_sol = (
+                    new_matched_pos.pnl_sol or existing_pos.pnl_sol
+                )
+                new_matched_pos.pnl_pct = (
+                    new_matched_pos.pnl_pct or existing_pos.pnl_pct
+                )
                 new_matched_pos.meteora_deposited = (
                     new_matched_pos.meteora_deposited or existing_pos.meteora_deposited
                 )
@@ -282,6 +309,9 @@ def merge_with_existing_csv(
                 new_matched_pos.meteora_pnl = (
                     new_matched_pos.meteora_pnl or existing_pos.meteora_pnl
                 )
+                # Preserve pnl_source=meteora if lpagent had full Meteora data
+                if new_matched_pos.pnl_source == "pending" and existing_pos.meteora_deposited:
+                    new_matched_pos.pnl_source = "meteora"
                 merged_matched.append(new_matched_pos)
                 lpagent_replaced_count += 1
             else:
