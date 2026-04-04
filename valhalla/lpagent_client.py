@@ -97,12 +97,17 @@ class LpAgentClient:
                 f"from_date ({from_date}) must not be after to_date ({to_date})"
             )
 
+        total_days = (end - start).days + 1
         all_positions: List[dict] = []
         current = start
+        day_num = 0
         while current <= end:
+            day_num += 1
             day_str = current.strftime("%Y-%m-%d")
+            print(f"  [{day_num}/{total_days}] {day_str}...", end="", flush=True)
             positions = self.fetch_day(day_str)
             all_positions.extend(positions)
+            print(f" {len(positions)} pos")
             current += timedelta(days=1)
 
         logger.info(

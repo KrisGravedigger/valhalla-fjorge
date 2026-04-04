@@ -2340,6 +2340,22 @@ def main():
                     resolved_addresses[event.position_id] = cached
             print(f"  Loaded {len(resolved_addresses)} addresses from cache")
 
+        # Seed resolved_addresses from existing lpagent rows in positions.csv.
+        # Without this, lpagent_backfill positions that appear in a new Discord
+        # archive file can't have Meteora called (no cache hit, no tx_sig from Discord)
+        # → Discord merge produces pnl_source=pending with empty full_address.
+        if positions_csv.exists():
+            lpagent_seeded = 0
+            with open(positions_csv, 'r', encoding='utf-8') as _f:
+                for _row in csv.DictReader(_f):
+                    _pid = _row.get('position_id', '').strip()
+                    _addr = _row.get('full_address', '').strip()
+                    if _pid and _addr and _row.get('pnl_source') == 'lpagent' and _pid not in resolved_addresses:
+                        resolved_addresses[_pid] = _addr
+                        lpagent_seeded += 1
+            if lpagent_seeded:
+                print(f"  Seeded {lpagent_seeded} address(es) from lpagent_backfill rows")
+
         # Step 4: Calculate Meteora PnL
         meteora_results: Dict[str, MeteoraPnlResult] = {}
         meteora_failed: Dict[str, str] = {}  # pid -> full_addr for retry
