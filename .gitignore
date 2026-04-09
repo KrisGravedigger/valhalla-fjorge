@@ -19,3 +19,10 @@ test_output/
 web/
 pic/
 archive/
+docs/
+test_output_backup/
+2026_03_30_list_do_turka.md
+analysis_plan_done.md
+own_bot_project.md
+lpagent_closed_positions.csv
+*.csv
