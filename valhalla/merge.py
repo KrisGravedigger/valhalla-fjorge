@@ -192,6 +192,11 @@ def merge_with_existing_csv(
             if discord_id:
                 new_matched_pos = new_matched_by_id.get(discord_id)
         new_still_open_event = new_still_open_by_id.get(position_id)
+        # Fallback: same old-format lpagent id fix for still_open events
+        if new_still_open_event is None and existing_pos.pnl_source == "lpagent":
+            discord_id = existing_pos.full_address[:4] + existing_pos.full_address[-4:] if len(existing_pos.full_address) >= 8 else ""
+            if discord_id:
+                new_still_open_event = new_still_open_by_id.get(discord_id)
 
         # Rule 1: Fully complete (open + close + meteora) - keep as-is
         if is_fully_complete(existing_pos):
@@ -204,9 +209,11 @@ def merge_with_existing_csv(
             # Recover target_wallet if it ended up as 'unknown' (e.g. failsafe was matched before
             # the open event was available, and close_reason was later enriched to drop _unknown_open
             # suffix, locking it into Rule 1 before target_wallet could be updated).
-            if existing_pos.target_wallet == 'unknown' and new_matched_pos:
-                if new_matched_pos.target_wallet and new_matched_pos.target_wallet != 'unknown':
+            if existing_pos.target_wallet == 'unknown':
+                if new_matched_pos and new_matched_pos.target_wallet and new_matched_pos.target_wallet != 'unknown':
                     existing_pos.target_wallet = new_matched_pos.target_wallet
+                elif new_still_open_event and new_still_open_event.target:
+                    existing_pos.target_wallet = new_still_open_event.target
             # Backfill target_wallet_address and target_tx_signature if missing.
             # These are parsed from the open event and were not always captured in older runs.
             if new_matched_pos:
@@ -314,6 +321,35 @@ def merge_with_existing_csv(
                     new_matched_pos.pnl_source = "meteora"
                 merged_matched.append(new_matched_pos)
                 lpagent_replaced_count += 1
+            elif new_still_open_event:
+                # Open event arrived for lpagent position — enrich with open-side data,
+                # keep lpagent financial fields (Meteora PnL data).
+                open_as_matched = MatchedPosition(
+                    target_wallet=new_still_open_event.target,
+                    token=new_still_open_event.token_name,
+                    position_type=new_still_open_event.position_type,
+                    sol_deployed=Decimal(str(new_still_open_event.your_sol)) if new_still_open_event.your_sol else None,
+                    sol_received=None, pnl_sol=None, pnl_pct=None,
+                    close_reason='', mc_at_open=new_still_open_event.market_cap,
+                    jup_score=new_still_open_event.jup_score,
+                    token_age=new_still_open_event.token_age,
+                    token_age_days=None, token_age_hours=None,
+                    price_drop_pct=None, position_id=position_id,
+                    full_address='', pnl_source='',
+                    meteora_deposited=None, meteora_withdrawn=None,
+                    meteora_fees=None, meteora_pnl=None,
+                    datetime_open=make_iso_datetime(new_still_open_event.date, new_still_open_event.timestamp) if new_still_open_event.timestamp else '',
+                    datetime_close=''
+                )
+                if new_still_open_event.token_age:
+                    days, hours = normalize_token_age(new_still_open_event.token_age)
+                    open_as_matched.token_age_days = days
+                    open_as_matched.token_age_hours = hours
+                enriched = enrich_existing_with_open(existing_pos, open_as_matched)
+                # Mark as recovered-from-Discord-open but still awaiting Meteora close data
+                enriched.pnl_source = "pending_need_meteora_close"
+                merged_matched.append(enriched)
+                lpagent_replaced_count += 1
             else:
                 # No Discord data yet — keep lpagent backfill row as-is
                 merged_matched.append(existing_pos)
@@ -338,7 +374,8 @@ def merge_with_existing_csv(
                 new_matched_pos.token_age = existing_pos.token_age
                 new_matched_pos.token_age_days = existing_pos.token_age_days
                 new_matched_pos.token_age_hours = existing_pos.token_age_hours
-            if not new_matched_pos.target_wallet and existing_pos.target_wallet:
+            if ((not new_matched_pos.target_wallet or new_matched_pos.target_wallet == 'unknown')
+                    and existing_pos.target_wallet and existing_pos.target_wallet != 'unknown'):
                 new_matched_pos.target_wallet = existing_pos.target_wallet
             # Fix close_reason if we now have open data
             if new_matched_pos.datetime_open and new_matched_pos.close_reason in (

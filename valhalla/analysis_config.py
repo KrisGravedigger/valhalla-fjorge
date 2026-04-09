@@ -75,7 +75,7 @@ MIN_POSITIONS_FOR_FILTER_REC: int = 100
 
 # Your total portfolio value in SOL.
 # Set to 0.0 to disable position size checking.
-PORTFOLIO_TOTAL_SOL: float = 54.0
+PORTFOLIO_TOTAL_SOL: float = 58.0
 
 # Automatic SOL balance fetching is currently disabled because the on-chain balance
 # does not include SOL locked in open Meteora positions.
