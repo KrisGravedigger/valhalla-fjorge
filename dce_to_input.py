@@ -6,12 +6,15 @@ Converts a DCE JSON export (DiscordChatExporter -f Json) into the plain-text
 format expected by valhalla_parser_v2.py / PlainTextReader.
 
 Expected output format per message:
-    [YYYY-MM-DDTHH:MM] Author name:\n
+    [YYYY-MM-DDTHH:MM] APL. Valhalla Bot:
     message body with markdown links expanded to: text [url]
+
+    [attachment url]
 
 Usage:
     python dce_to_input.py <path_to_dce_export.json>
     python dce_to_input.py <path_to_dce_export.json> --out input/custom_name.txt
+    python dce_to_input.py <path_to_dce_export.json> --author-prefix ""
 
 Output file is written to input/dce_YYYYMMDD_HHMMSS_discord.txt by default.
   YYYYMMDD = date of the first message in the export
@@ -31,17 +34,31 @@ from pathlib import Path
 # Regex patterns
 # ---------------------------------------------------------------------------
 
-# Discord markdown masked links: [text](url) → text [url]
-_MD_LINK_RE = re.compile(r'\[([^\]]+)\]\((https?://[^)]+)\)')
+# Triple backtick code blocks: ```text``` → text\n
+# DOTALL so . matches newlines; non-greedy to avoid swallowing multiple blocks.
+_TRIPLE_BACKTICK_RE = re.compile(r'```(.*?)```', re.DOTALL)
+
+# Inline code: `text` → text
+# Excludes backtick itself inside the group (no nested backticks).
+_INLINE_CODE_RE = re.compile(r'`([^`]+)`')
+
+# Discord masked links with optional <> around URL (both variants):
+#   [text](url)    → text [url]
+#   [text](<url>) → text [url]
+_MD_LINK_RE = re.compile(r'\[([^\]]+)\]\(<?([^)>\s]+)>?\)')
+
+# Bare URL wrapped in <> to suppress embed preview (after masked links are
+# already handled, so remaining <url> are plain bare URLs):
+#   <https://...> → url [url]
+_BARE_URL_RE = re.compile(r'<(https?://[^>\s]+)>')
 
 # Discord custom emoji: <:name:id> or <a:name:id> (animated)
-# These appear as raw syntax in DCE JSON content and should be removed.
 _CUSTOM_EMOJI_RE = re.compile(r'<a?:[A-Za-z0-9_]+:\d+>')
 
-# Collapse multiple spaces (but not newlines)
+# Collapse multiple spaces/tabs (but not newlines)
 _MULTI_SPACE_RE = re.compile(r'[ \t]{2,}')
 
-# Max one blank line between messages
+# Max one blank line between content lines
 _MULTI_BLANK_RE = re.compile(r'\n{3,}')
 
 
@@ -51,8 +68,6 @@ _MULTI_BLANK_RE = re.compile(r'\n{3,}')
 
 def _parse_timestamp(ts_str: str) -> datetime:
     """Parse ISO 8601 timestamp with offset (DCE format) to local datetime."""
-    # Python 3.7+ fromisoformat doesn't handle trailing 'Z' or all offset forms
-    # well before 3.11, so normalise manually.
     ts_str = ts_str.strip()
     # Replace trailing Z with +00:00
     if ts_str.endswith('Z'):
@@ -67,9 +82,35 @@ def _format_timestamp(dt: datetime) -> str:
     return dt.strftime('[%Y-%m-%dT%H:%M]')
 
 
+def _strip_triple_backticks(text: str) -> str:
+    """Replace ```text``` code blocks with text followed by newline.
+
+    Discord bots use triple backtick blocks for message headers, e.g.:
+        ```🔐 Closed DLMM Position! (BGmny1NF)```...rest
+    becomes:
+        🔐 Closed DLMM Position! (BGmny1NF)
+        ...rest
+    """
+    return _TRIPLE_BACKTICK_RE.sub(lambda m: m.group(1).strip() + '\n', text)
+
+
+def _strip_inline_code(text: str) -> str:
+    """Replace `text` inline code with plain text."""
+    return _INLINE_CODE_RE.sub(lambda m: m.group(1), text)
+
+
 def _expand_md_links(text: str) -> str:
-    """Replace markdown [text](url) with text [url]."""
+    """Replace markdown [text](url) and [text](<url>) with text [url]."""
     return _MD_LINK_RE.sub(lambda m: f'{m.group(1)} [{m.group(2)}]', text)
+
+
+def _expand_bare_urls(text: str) -> str:
+    """Replace <https://...> bare URLs with url [url] (matching PS1 output).
+
+    The old PS1 pipeline received HTML from Discord's clipboard, where
+    bare <url> rendered as <a href="url">url</a>, producing "url [url]".
+    """
+    return _BARE_URL_RE.sub(lambda m: f'{m.group(1)} [{m.group(1)}]', text)
 
 
 def _strip_custom_emoji(text: str) -> str:
@@ -98,12 +139,36 @@ def _author_name(author: dict) -> str:
     return nickname if nickname else name
 
 
+def _process_content(content: str) -> str:
+    """Apply all content transformations in correct order.
+
+    Order matters:
+    1. Strip triple backtick blocks first (may contain bare ``` ` ```)
+    2. Strip inline code
+    3. Expand masked markdown links (handles both [t](url) and [t](<url>))
+    4. Expand remaining bare <url> (those not part of masked links)
+    5. Strip custom emoji tokens
+    """
+    content = _strip_triple_backticks(content)
+    content = _strip_inline_code(content)
+    content = _expand_md_links(content)
+    content = _expand_bare_urls(content)
+    content = _strip_custom_emoji(content)
+    return content
+
+
 # ---------------------------------------------------------------------------
 # Core conversion
 # ---------------------------------------------------------------------------
 
-def convert_dce_json(json_path: Path) -> tuple[str, str]:
+def convert_dce_json(json_path: Path, author_prefix: str = 'APL. ') -> tuple[str, str]:
     """Convert DCE JSON export to plain-text log string.
+
+    Args:
+        json_path: Path to the DCE JSON export file.
+        author_prefix: String prepended to author name in header lines.
+            Default 'APL. ' matches the save_clipboard.ps1 output format.
+            Pass '' to omit the prefix.
 
     Returns:
         (output_text, first_message_date_str)
@@ -139,35 +204,40 @@ def convert_dce_json(json_path: Path) -> tuple[str, str]:
 
         # --- Content ---
         content = msg.get('content', '') or ''
+        content = _process_content(content)
 
-        # Expand markdown links before any other processing
-        content = _expand_md_links(content)
+        # --- Attachments ---
+        # Append attachment URLs after the message body.
+        # output-*.jpeg filenames from cdn.discordapp.com contain the full
+        # 46-char position ID (vs 8-char short ID in message text), which
+        # the parser uses for position enrichment.
+        attachments = msg.get('attachments', []) or []
+        attachment_lines = [f'[{att["url"]}]' for att in attachments if att.get('url')]
 
-        # Remove custom emoji tokens
-        content = _strip_custom_emoji(content)
+        # --- Embeds: skip entirely ---
+        # Embeds contain metlex performance charts (images) — irrelevant to
+        # the text parser. Omitted intentionally.
 
-        # --- Embeds: skip entirely per spec ---
-        # Embeds contain images (metlex performance charts etc.) that are
-        # irrelevant to the text parser. Omitted intentionally.
-
-        # --- Attachments: skip entirely per spec ---
-        # Attachments from the Valhalla signal bot are typically images.
-        # TODO: if you ever see non-image attachments (e.g. .txt files) in
-        # DCE exports from this channel, consider extracting their content here.
-
-        # --- Skip empty messages ---
-        if not content.strip():
+        # --- Skip messages with no content AND no attachments ---
+        body = content.strip()
+        if not body and not attachment_lines:
             continue
 
         # --- Author ---
-        # PlainTextReader.AUTHOR_PATTERN expects "[timestamp] Author:\n" as the
-        # first line of each message block, and filters on 'valhalla' in author.
-        # Include author so the existing reader can apply its valhalla filter.
         author = _author_name(msg.get('author', {}))
+        header = f'{ts_formatted} {author_prefix}{author}:'
 
-        # Build message block: header line + body
-        message_block = f'{ts_formatted} {author}:\n{content.strip()}'
-        output_lines.append(message_block)
+        # Build message block: header + body + optional attachment lines
+        parts = [header]
+        if body:
+            parts.append(body)
+        if attachment_lines:
+            # Blank line before attachments if there's a body (matching archive format)
+            if body:
+                parts.append('')
+            parts.extend(attachment_lines)
+
+        output_lines.append('\n'.join(parts))
 
     output_text = '\n\n'.join(output_lines)
     output_text = _clean_whitespace(output_text)
@@ -194,6 +264,7 @@ def main() -> None:
 Examples:
   python dce_to_input.py export.json
   python dce_to_input.py export.json --out input/custom.txt
+  python dce_to_input.py export.json --author-prefix ""
 
 Output goes to input/dce_YYYYMMDD_HHMMSS_discord.txt by default.
 YYYYMMDD = date of first message; HHMMSS = current time (for uniqueness).
@@ -203,6 +274,11 @@ YYYYMMDD = date of first message; HHMMSS = current time (for uniqueness).
     parser.add_argument(
         '--out', '-o', type=Path, default=None,
         help='Output file path (default: input/dce_YYYYMMDD_HHMMSS_discord.txt)'
+    )
+    parser.add_argument(
+        '--author-prefix', default='APL. ',
+        help='String prepended to author name in header (default: "APL. "). '
+             'Pass empty string to omit.',
     )
     args = parser.parse_args()
 
@@ -214,7 +290,10 @@ YYYYMMDD = date of first message; HHMMSS = current time (for uniqueness).
         print(f'Warning: expected a .json file, got: {args.json_path.suffix}')
 
     try:
-        output_text, first_date_str = convert_dce_json(args.json_path)
+        output_text, first_date_str = convert_dce_json(
+            args.json_path,
+            author_prefix=args.author_prefix,
+        )
     except (json.JSONDecodeError, KeyError) as e:
         print(f'Error parsing DCE JSON: {e}', file=sys.stderr)
         sys.exit(1)
