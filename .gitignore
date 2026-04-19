@@ -26,3 +26,7 @@ analysis_plan_done.md
 own_bot_project.md
 lpagent_closed_positions.csv
 *.csv
+DiscordChatExporter.Cli.win-x64/
+
+_temp/
+DiscordChatExporter.Cli.win-x64/*.json
