@@ -2014,7 +2014,7 @@ def _run_track_mode(output_dir: str) -> None:
                     pnl_pct=_dec("pnl_pct"),
                     close_reason=row.get("close_reason", ""),
                     mc_at_open=float(row["mc_at_open"]) if row.get("mc_at_open", "").strip() else 0.0,
-                    jup_score=int(row["jup_score"]) if row.get("jup_score", "").strip() else 0,
+                    jup_score=int(float(row["jup_score"])) if row.get("jup_score", "").strip() else 0,
                     token_age=row.get("token_age", ""),
                     token_age_days=int(float(row["token_age_days"])) if row.get("token_age_days", "").strip() else None,
                     token_age_hours=int(float(row["token_age_hours"])) if row.get("token_age_hours", "").strip() else None,
@@ -2030,7 +2030,7 @@ def _run_track_mode(output_dir: str) -> None:
                     datetime_close=row.get("datetime_close", ""),
                     target_wallet_address=row.get("target_wallet_address") or None,
                     target_tx_signature=row.get("target_tx_signature") or None,
-                    source_wallet_hold_min=int(row["source_wallet_hold_min"]) if row.get("source_wallet_hold_min", "").strip() else None,
+                    source_wallet_hold_min=int(float(row["source_wallet_hold_min"])) if row.get("source_wallet_hold_min", "").strip() else None,
                     source_wallet_pnl_pct=_dec("source_wallet_pnl_pct"),
                     source_wallet_scenario=row.get("source_wallet_scenario") or None,
                 )
