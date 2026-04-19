@@ -1,7 +1,0 @@
-{
-    "_comment": "Map canonical alias names to lists of wallet identifiers. Keys can be short IDs (YYYYMMDD_XXXXXXXX) or full Solana addresses (44-char base58).",
-    "20260125_2eWqo": [
-        "2eWqouq9gmiEBgLdkGqzPT61VxfS3yW5kvzUCCbazmCV",
-        "9kv8sffNFPN3Z6uFXqAXrUFpGfDcJKqRG5FY8CxQ1H3D"
-    ]
-}

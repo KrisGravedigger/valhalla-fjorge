@@ -11,7 +11,6 @@ test_output/
 !tsconfig.json
 !.eslintrc.json
 !vercel.json
-!wallet_aliases.json
 *.png
 .env
 *.valhalla.json
@@ -30,3 +29,4 @@ DiscordChatExporter.Cli.win-x64/
 
 _temp/
 DiscordChatExporter.Cli.win-x64/*.json
+TODO.md
