@@ -223,12 +223,12 @@ def generate_wallet_trend_report(
         lines.append("")
 
     _append_group(
-        f"Active ({len(active)} wallet{'s' if len(active) != 1 else ''}, sorted by SOL/day 7d)",
-        active,
+        f"Dormant — active in last 7d but no positions in last 1d ({len(dormant)})",
+        dormant,
     )
     _append_group(
-        f"Dormant — no positions in last 1d, but active in last 7d ({len(dormant)})",
-        dormant,
+        f"Active ({len(active)} wallet{'s' if len(active) != 1 else ''}, sorted by SOL/day 7d)",
+        active,
     )
     _append_group(
         f"Long-dormant — no positions in last 7d ({len(long_dormant)})",
