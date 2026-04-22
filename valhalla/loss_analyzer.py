@@ -13,6 +13,7 @@ All classes return structured data objects. No file I/O, no external calls.
 Thresholds are read from valhalla.analysis_config (edit that file to tune behaviour).
 """
 
+import statistics
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from decimal import Decimal
@@ -115,6 +116,21 @@ class WalletScorecard:
     win_rate_trend_pp: Optional[float]  # win_rate_7d_pct - win_rate_pct (pp); None if win_rate_7d_pct is None
     status: str                         # see status classification below
     days_since_last_position: Optional[int]  # None if no datetime_close available
+    # Rolling-window position counts (closed positions per window)
+    positions_7d: int = 0
+    positions_3d: int = 0
+    positions_1d: int = 0
+    # Rolling-window PnL
+    pnl_3d_sol: Decimal = field(default_factory=lambda: Decimal("0"))
+    pnl_1d_sol: Decimal = field(default_factory=lambda: Decimal("0"))
+    # Rolling-window rug rates; None when window has 0 positions (not 0%)
+    rug_rate_7d_pct: Optional[float] = None
+    rug_rate_3d_pct: Optional[float] = None
+    rug_rate_1d_pct: Optional[float] = None
+    # Median pnl_sol per trade across all closed positions; None if no closed positions
+    median_pnl_sol: Optional[Decimal] = None
+    # Sum of sol_deployed across currently open positions
+    current_exposure_sol: Decimal = field(default_factory=lambda: Decimal("0"))
 
 
 @dataclass
@@ -726,6 +742,7 @@ class WalletScorecardAnalyzer:
         cutoff_7d = reference_date - timedelta(days=7)
         cutoff_72h = reference_date - timedelta(hours=72)
         cutoff_24h = reference_date - timedelta(hours=24)
+        cutoff_3d = reference_date - timedelta(days=3)
 
         # 4. Group all positions by wallet (including still_open for total_positions)
         all_by_wallet: Dict[str, List[MatchedPosition]] = {}
@@ -851,6 +868,60 @@ class WalletScorecardAnalyzer:
             else:
                 days_since_last_position = None
 
+            # positions_Xd: count of closed positions within each rolling window
+            def _window_closed(cutoff: datetime) -> List:
+                return [
+                    p for p in wallet_closed
+                    if parse_iso_datetime(p.datetime_close) is not None
+                    and parse_iso_datetime(p.datetime_close) >= cutoff
+                ]
+
+            window_7d = _window_closed(cutoff_7d)
+            window_3d = _window_closed(cutoff_3d)
+            window_1d = _window_closed(cutoff_24h)
+
+            positions_7d = len(window_7d)
+            positions_3d = len(window_3d)
+            positions_1d = len(window_1d)
+
+            # pnl_3d_sol, pnl_1d_sol
+            pnl_3d_sol = sum(
+                (p.pnl_sol for p in window_3d if p.pnl_sol is not None),
+                Decimal("0"),
+            )
+            pnl_1d_sol = sum(
+                (p.pnl_sol for p in window_1d if p.pnl_sol is not None),
+                Decimal("0"),
+            )
+
+            # rug_rate_Xd_pct: None when window has 0 positions
+            def _rug_rate(window: List) -> Optional[float]:
+                if not window:
+                    return None
+                rugs_w = sum(1 for p in window if p.close_reason in RUG_REASONS)
+                return rugs_w / len(window) * 100.0
+
+            rug_rate_7d_pct = _rug_rate(window_7d)
+            rug_rate_3d_pct = _rug_rate(window_3d)
+            rug_rate_1d_pct = _rug_rate(window_1d)
+
+            # median_pnl_sol across all closed positions with a pnl value
+            pnl_values = [p.pnl_sol for p in wallet_closed if p.pnl_sol is not None]
+            if pnl_values:
+                sorted_vals = sorted(pnl_values)
+                n = len(sorted_vals)
+                mid = n // 2
+                median_pnl_sol = sorted_vals[mid] if n % 2 != 0 else (sorted_vals[mid - 1] + sorted_vals[mid]) / Decimal("2")
+            else:
+                median_pnl_sol = None
+
+            # current_exposure_sol: sum of sol_deployed for open positions
+            current_exposure_sol = sum(
+                (p.sol_deployed for p in wallet_all
+                 if p.close_reason == "still_open" and p.sol_deployed is not None),
+                Decimal("0"),
+            )
+
             # Status classification (priority order, first match wins)
             if (
                 days_since_last_position is not None
@@ -897,6 +968,16 @@ class WalletScorecardAnalyzer:
                 win_rate_trend_pp=win_rate_trend_pp,
                 status=status,
                 days_since_last_position=days_since_last_position,
+                positions_7d=positions_7d,
+                positions_3d=positions_3d,
+                positions_1d=positions_1d,
+                pnl_3d_sol=pnl_3d_sol,
+                pnl_1d_sol=pnl_1d_sol,
+                rug_rate_7d_pct=rug_rate_7d_pct,
+                rug_rate_3d_pct=rug_rate_3d_pct,
+                rug_rate_1d_pct=rug_rate_1d_pct,
+                median_pnl_sol=median_pnl_sol,
+                current_exposure_sol=current_exposure_sol,
             ))
 
         # 6. Sort by pnl_per_day_sol descending (Decimal comparison)

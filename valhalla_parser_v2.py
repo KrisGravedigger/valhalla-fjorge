@@ -2141,6 +2141,8 @@ def main():
                        help='Filter --backtest to a specific wallet alias')
     parser.add_argument('--no-loss-analysis', action='store_true',
                        help='Skip loss analysis report generation')
+    parser.add_argument('--no-wallet-trend', action='store_true',
+                       help='Skip wallet trend report generation (output/wallet_trend.md)')
     parser.add_argument('--no-input', action='store_true',
                        help='Skip input file processing and load from existing positions.csv. '
                             'Useful to re-run analysis without processing new logs.')
@@ -2681,6 +2683,24 @@ def main():
             print(f"  {loss_report_path}")
         except Exception as e:
             print(f"  Warning: loss analysis failed: {e}")
+
+    # Step 6.5c: Generate wallet trend report (always on by default)
+    if not args.no_wallet_trend:
+        wallet_trend_path = output_dir / 'wallet_trend.md'
+        print(f"\nGenerating wallet trend report...")
+        try:
+            from valhalla.wallet_trend_report import generate_wallet_trend_report
+            from valhalla.loss_analyzer import WalletScorecardAnalyzer
+            trend_scorecards = WalletScorecardAnalyzer().analyze(matched_positions)
+            generate_wallet_trend_report(
+                trend_scorecards,
+                matched_positions,
+                str(wallet_trend_path),
+                PORTFOLIO_TOTAL_SOL,
+            )
+            print(f"  {wallet_trend_path}")
+        except Exception as e:
+            print(f"  Warning: wallet trend report failed: {e}")
 
     # Print wallet recommendations to terminal
     if want_all or 'recommendations' in report_modules:
