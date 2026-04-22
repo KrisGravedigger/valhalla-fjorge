@@ -2234,16 +2234,29 @@ def main():
     if not args.merge and not args.no_clipboard and not args.recover_insuf and not args.no_input:
         clipboard_script = Path('save_clipboard.ps1')
         if clipboard_script.exists():
-            print("Running save_clipboard.ps1...")
-            try:
-                result = subprocess.run(
-                    ['powershell', '-File', str(clipboard_script)],
-                    stdin=sys.stdin
-                )
-                if result.returncode != 0:
-                    print(f"  Warning: save_clipboard.ps1 exited with code {result.returncode}")
-            except Exception as e:
-                print(f"  Warning: Could not run save_clipboard.ps1: {e}")
+            # Ask before reading clipboard (interactive only) — avoids dumping
+            # unrelated content (e.g. YouTube transcripts) into input/ when the
+            # clipboard doesn't hold Discord HTML.
+            run_clipboard = False
+            if sys.stdin.isatty():
+                try:
+                    answer = input("Import Discord messages from clipboard? [y/N]: ").strip().lower()
+                    run_clipboard = (answer == 'y')
+                except EOFError:
+                    run_clipboard = False
+            if run_clipboard:
+                print("Running save_clipboard.ps1...")
+                try:
+                    result = subprocess.run(
+                        ['powershell', '-File', str(clipboard_script)],
+                        stdin=sys.stdin
+                    )
+                    if result.returncode != 0:
+                        print(f"  Warning: save_clipboard.ps1 exited with code {result.returncode}")
+                except Exception as e:
+                    print(f"  Warning: Could not run save_clipboard.ps1: {e}")
+            else:
+                print("  Skipping clipboard import.")
         else:
             print("  save_clipboard.ps1 not found, skipping clipboard import")
 
