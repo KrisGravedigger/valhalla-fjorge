@@ -2691,12 +2691,78 @@ def main():
         try:
             from valhalla.wallet_trend_report import generate_wallet_trend_report
             from valhalla.loss_analyzer import WalletScorecardAnalyzer
+            from valhalla.models import parse_iso_datetime as _piso
+
             trend_scorecards = WalletScorecardAnalyzer().analyze(matched_positions)
+
+            # Still-open positions live in unmatched_opens (as OpenEvent), not in
+            # matched_positions. The analyzer only sees closed ones, so we override
+            # three fields with data that includes open positions:
+            #   current_exposure_sol  — sum of your_sol for currently open positions
+            #   positions_{7,3,1}d    — count of ALL opens (closed + still-open)
+            #   days_since_last_position — based on most recent activity (open OR close)
+            def _open_ev_dt(o):
+                if not o.date or not o.timestamp:
+                    return None
+                try:
+                    return datetime.strptime(
+                        f"{o.date}T{o.timestamp.strip('[]')}:00",
+                        "%Y-%m-%dT%H:%M:%S",
+                    )
+                except (ValueError, AttributeError):
+                    return None
+
+            exposure_by_wallet: Dict[str, Decimal] = {}
+            opens_by_wallet: Dict[str, List[datetime]] = {}
+            for p in matched_positions:
+                dt = _piso(p.datetime_open)
+                if dt is not None:
+                    opens_by_wallet.setdefault(p.target_wallet, []).append(dt)
+            for open_ev in unmatched_opens:
+                dt = _open_ev_dt(open_ev)
+                if dt is not None:
+                    opens_by_wallet.setdefault(open_ev.target, []).append(dt)
+                if open_ev.your_sol is not None:
+                    exposure_by_wallet[open_ev.target] = (
+                        exposure_by_wallet.get(open_ev.target, Decimal("0"))
+                        + Decimal(str(open_ev.your_sol))
+                    )
+
+            closes_by_wallet: Dict[str, List[datetime]] = {}
+            for p in matched_positions:
+                dt = _piso(p.datetime_close)
+                if dt is not None:
+                    closes_by_wallet.setdefault(p.target_wallet, []).append(dt)
+
+            all_activity = [
+                d for lst in opens_by_wallet.values() for d in lst
+            ] + [
+                d for lst in closes_by_wallet.values() for d in lst
+            ]
+            ref_dt = max(all_activity) if all_activity else datetime.utcnow()
+            cut_7d = ref_dt - timedelta(days=7)
+            cut_3d = ref_dt - timedelta(days=3)
+            cut_1d = ref_dt - timedelta(days=1)
+
+            for sc in trend_scorecards:
+                opens = opens_by_wallet.get(sc.wallet, [])
+                sc.positions_7d = sum(1 for d in opens if d >= cut_7d)
+                sc.positions_3d = sum(1 for d in opens if d >= cut_3d)
+                sc.positions_1d = sum(1 for d in opens if d >= cut_1d)
+                sc.current_exposure_sol = exposure_by_wallet.get(sc.wallet, Decimal("0"))
+                last = None
+                for d in opens + closes_by_wallet.get(sc.wallet, []):
+                    if last is None or d > last:
+                        last = d
+                if last is not None:
+                    sc.days_since_last_position = (ref_dt - last).days
+
             generate_wallet_trend_report(
                 trend_scorecards,
                 matched_positions,
                 str(wallet_trend_path),
                 PORTFOLIO_TOTAL_SOL,
+                reference_date=ref_dt,
             )
             print(f"  {wallet_trend_path}")
         except Exception as e:

@@ -197,18 +197,18 @@ def generate_wallet_trend_report(
     lines.append(f"# Wallet Trend Report — {date_str}")
     lines.append(f"Generated: {now_str} UTC")
     lines.append("")
-    lines.append(f"Reference date (latest closed position): {ref_str} UTC")
+    lines.append(f"Reference date (latest activity, open or close): {ref_str} UTC")
     lines.append("Windows: 7d / 3d / 1d rolling from reference date.")
     lines.append("")
     lines.append(
-        "Columns: **Pos/day** = closed positions per day in window. "
-        "**WR%** = win rate. "
-        "**PnL** = SOL earned in window. "
+        "Columns: **Pos/day** = all positions per day opened in window (includes still-open). "
+        "**WR%** = win rate on closed positions. "
+        "**PnL** = SOL earned from closes in window. "
         "**SOL/day** = PnL normalised per day. "
         "**Rug%** = rug/rug_unknown_open as % of window closes (— = no closes). "
         "**Med PnL** = median pnl_sol per trade across all time. "
-        "**Last seen** = days since most recent close. "
-        "**% portf** = open exposure / PORTFOLIO_TOTAL_SOL."
+        "**Last seen** = days since most recent activity (open or close). "
+        "**% portf** = sum of your_sol on still-open positions / PORTFOLIO_TOTAL_SOL."
     )
     lines.append("")
 
