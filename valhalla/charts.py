@@ -1475,8 +1475,11 @@ def generate_insufficient_balance_chart(csv_path: str, output_dir: str) -> None:
     if not daily_counts:
         return
 
-    sorted_dates = sorted(daily_counts.keys())
-    counts = [daily_counts[d] for d in sorted_dates]
+    min_date = min(daily_counts.keys())
+    max_date = max(daily_counts.keys())
+    all_dates = [min_date + timedelta(days=i) for i in range((max_date - min_date).days + 1)]
+    sorted_dates = all_dates
+    counts = [daily_counts.get(d, 0) for d in sorted_dates]
 
     fig, ax = plt.subplots(figsize=(12, 6))
     ax.plot(sorted_dates, counts, marker='o', markersize=5, linewidth=2,
