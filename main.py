@@ -12,8 +12,10 @@ Uzycie:
 Stan poprzednich pullow jest przechowywany w .dce_state.json.
 """
 
+import csv
 import io
 import json
+import os
 import random
 import subprocess
 import sys
@@ -44,6 +46,7 @@ PROJECT_ROOT = Path(__file__).parent
 STATE_FILE = PROJECT_ROOT / '.dce_state.json'
 DCE_PULL = PROJECT_ROOT / 'dce_pull.py'
 PARSER = PROJECT_ROOT / 'valhalla_parser_v2.py'
+RECALC_PENDING = PROJECT_ROOT / 'tools' / 'recalc_pending.py'
 
 
 # ---------------------------------------------------------------------------
@@ -218,6 +221,50 @@ def _run_parser() -> int:
         raise
     except Exception as e:
         print(f'\n[main] Blad uruchamiania parsera: {e}', file=sys.stderr)
+        return 1
+
+
+def _run_recalc_pending() -> int:
+    """
+    Wywolaj tools/recalc_pending.py w podprocesie z wymuszona kodowaniem UTF-8.
+
+    Uzyj zmiennej srodowiskowej SKIP_PENDING_RECALC=1 zeby poминac ten krok
+    podczas lokalnego development (bez dostepu do Meteora API lub celowo).
+
+    Zwraca returncode (0 = sukces lub krok pominieto).
+    """
+    if os.environ.get('SKIP_PENDING_RECALC', '').strip() == '1':
+        print('\n[recalc_pending] SKIP_PENDING_RECALC=1 — pomijam recalkulacje pending.')
+        return 0
+
+    # Count pending positions before calling the subprocess so we can log N
+    csv_path = PROJECT_ROOT / 'output' / 'positions.csv'
+    pending_count = 0
+    if csv_path.exists():
+        try:
+            with open(csv_path, encoding='utf-8') as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    if row.get('pnl_source', '') == 'pending' and row.get('full_address', ''):
+                        pending_count += 1
+        except Exception:
+            pending_count = -1  # unknown — still run recalc
+
+    print(f'\n[recalc_pending] Starting Meteora API recalculation for {pending_count} pending positions...')
+    print()
+
+    env = dict(os.environ)
+    env['PYTHONIOENCODING'] = 'utf-8'
+    env['PYTHONUTF8'] = '1'
+
+    cmd = [sys.executable, str(RECALC_PENDING)]
+    try:
+        result = subprocess.run(cmd, env=env)
+        return result.returncode
+    except KeyboardInterrupt:
+        raise
+    except Exception as e:
+        print(f'\n[recalc_pending] Blad uruchamiania recalc_pending: {e}', file=sys.stderr)
         return 1
 
 
@@ -615,6 +662,9 @@ def main() -> None:
         print('\n[main] Parser pominieto.')
         _print_summary(chunks_done, skip_pull)
         sys.exit(1)
+
+    # --- Recalc pending (Meteora API) ---
+    _run_recalc_pending()
 
     # --- Podsumowanie ---
     _print_summary(chunks_done, skip_pull)

@@ -50,21 +50,29 @@ class MeteoraPnlCalculator:
             return cached[2]
         return None
 
-    def calculate_pnl(self, address: str) -> Optional[MeteoraPnlResult]:
+    def calculate_pnl_with_reason(
+        self, address: str
+    ) -> 'tuple[Optional[MeteoraPnlResult], str]':
         """
         Calculate PnL for a position address.
-        Returns MeteoraPnlResult or None if failed.
+
+        Returns:
+            (result, reason_code) where reason_code is one of:
+              "ok"           — success, result is a MeteoraPnlResult
+              "non_sol_pair" — pool has no SOL token (ASTEROID/cbBTC quote etc.)
+              "api_error"    — API returned no data / unexpected error
+              "not_found"    — position has no events (likely pruned or invalid)
         """
         try:
             # Fetch all events in one call — replaces separate deposits/withdraws/claim_fees calls
             historical = self._meteora_get(f"/positions/{address}/historical")
             if not historical:
-                return None
+                return None, "api_error"
 
             all_events = historical.get('events', [])
             if not all_events:
                 print(f"  Warning: No events for {short_id(address)}")
-                return None
+                return None, "not_found"
 
             # Cache events so get_position_timestamps() can reuse them
             self._events_cache[address] = all_events
@@ -73,7 +81,7 @@ class MeteoraPnlCalculator:
             pair_address = all_events[0].get('poolAddress', '')
             if not pair_address:
                 print(f"  Warning: No poolAddress in events for {short_id(address)}")
-                return None
+                return None, "api_error"
 
             time.sleep(0.3)
 
@@ -81,7 +89,7 @@ class MeteoraPnlCalculator:
             sol_side = self._get_sol_side(pair_address)
             if not sol_side:
                 print(f"  Warning: No SOL token found in pair for {short_id(address)}")
-                return None
+                return None, "non_sol_pair"
 
             sol_is_x, sol_is_y = sol_side
 
@@ -176,7 +184,7 @@ class MeteoraPnlCalculator:
             pnl_sol = wdr_sol_equiv + fee_sol_equiv - dep_sol_equiv
             pnl_usd = wdr_usd + fee_usd - dep_usd
 
-            return MeteoraPnlResult(
+            result = MeteoraPnlResult(
                 deposited_sol=dep_sol_equiv,
                 withdrawn_sol=wdr_sol_equiv,
                 fees_sol=fee_sol_equiv,
@@ -186,10 +194,21 @@ class MeteoraPnlCalculator:
                 pnl_usd=pnl_usd,
                 pnl_sol=pnl_sol
             )
+            return result, "ok"
 
         except Exception as e:
             print(f"  Meteora API error for {short_id(address)}: {e}")
-            return None
+            return None, "api_error"
+
+    def calculate_pnl(self, address: str) -> Optional[MeteoraPnlResult]:
+        """
+        Calculate PnL for a position address.
+        Returns MeteoraPnlResult or None if failed.
+
+        Thin backward-compat wrapper around calculate_pnl_with_reason().
+        """
+        result, _ = self.calculate_pnl_with_reason(address)
+        return result
 
     def get_position_timestamps(
         self, address: str, events: Optional[list] = None

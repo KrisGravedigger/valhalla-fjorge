@@ -1,17 +1,30 @@
 """
 Recalculate PnL for pending positions and fix Bug #1 positions.
 Directly calls Meteora API and updates output/positions.csv.
+
+Cases handled per position:
+  A  deposited_sol > 0        -> pnl_source="meteora", all fields filled
+  B  deposited_sol == 0       -> pnl_source="token_only_deposit", sol_deployed
+                                 kept if already set, PnL fields cleared
+  C  reason_code="non_sol_pair" -> pnl_source="non_sol_pair", other fields unchanged
+  D  other API failure        -> fallback: price_drop_pct -> "discord_estimate",
+                                 or remain "pending" if fallback unavailable
 """
 import csv
+import os
 import sys
 import time
-import os
 
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from valhalla.meteora import MeteoraPnlCalculator
 
 CSV_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'output', 'positions.csv')
+
+# Fields to clear for token-only / non-calculable positions
+_PNL_FIELDS = ['sol_received', 'pnl_sol', 'pnl_pct',
+                'meteora_deposited', 'meteora_withdrawn', 'meteora_fees', 'meteora_pnl']
+
 
 def main():
     # Read all positions
@@ -55,22 +68,40 @@ def main():
         pid = r['position_id']
         print(f"Calculating {pid} ({r.get('token','?')})...", end=' ')
 
-        result = calc.calculate_pnl(full_addr)
-        if result:
-            # Update the row
+        result, reason_code = calc.calculate_pnl_with_reason(full_addr)
+
+        if result is not None and result.deposited_sol > 0:
+            # Case A: normal result with actual SOL amounts
             rows[idx]['pnl_source'] = 'meteora'
             rows[idx]['meteora_deposited'] = f"{result.deposited_sol:.4f}"
             rows[idx]['meteora_withdrawn'] = f"{result.withdrawn_sol:.4f}"
             rows[idx]['meteora_fees'] = f"{result.fees_sol:.4f}"
             rows[idx]['meteora_pnl'] = f"{result.pnl_sol:.4f}"
             rows[idx]['pnl_sol'] = f"{result.pnl_sol:.4f}"
-            rows[idx]['pnl_pct'] = f"{(result.pnl_sol / result.deposited_sol * 100):.2f}" if result.deposited_sol > 0 else "0.00"
+            rows[idx]['pnl_pct'] = f"{(result.pnl_sol / result.deposited_sol * 100):.2f}"
             rows[idx]['sol_deployed'] = f"{result.deposited_sol:.4f}"
-
             print(f"OK dep={result.deposited_sol:.4f} pnl={result.pnl_sol:+.4f}")
             success += 1
+
+        elif result is not None and result.deposited_sol == 0:
+            # Case B: token-only deposit — Meteora correctly returns 0 for SOL flow
+            existing_sol_deployed = rows[idx].get('sol_deployed', '')
+            rows[idx]['pnl_source'] = 'token_only_deposit'
+            # Preserve existing sol_deployed if already set by patch script
+            # (do NOT overwrite with 0)
+            for field in _PNL_FIELDS:
+                rows[idx][field] = ''
+            print(f"OK (token-only deposit detected, keeping sol_deployed={existing_sol_deployed!r})")
+            success += 1
+
+        elif reason_code == 'non_sol_pair':
+            # Case C: pool has no SOL token — mark and leave other fields unchanged
+            rows[idx]['pnl_source'] = 'non_sol_pair'
+            print("OK (non-SOL pair detected)")
+            success += 1
+
         else:
-            # Fallback: use price_drop_pct if available
+            # Case D: genuine API error / not_found — try price_drop_pct fallback
             drop_pct_str = r.get('price_drop_pct', '')
             sol_dep_str = r.get('sol_deployed', '')
             if drop_pct_str and sol_dep_str:
@@ -87,10 +118,10 @@ def main():
                     print(f"OK (price_drop estimate: -{drop_pct:.2f}%)")
                     success += 1
                 except (ValueError, ZeroDivisionError):
-                    print("FAILED (API error or 404)")
+                    print(f"FAILED ({reason_code})")
                     failed += 1
             else:
-                print("FAILED (API error or 404)")
+                print(f"FAILED ({reason_code})")
                 failed += 1
 
         time.sleep(1)  # rate limit
@@ -106,6 +137,7 @@ def main():
         print(f"Updated {CSV_PATH}")
     else:
         print("No changes to write.")
+
 
 if __name__ == '__main__':
     main()
