@@ -12,8 +12,10 @@ Uzycie:
 Stan poprzednich pullow jest przechowywany w .dce_state.json.
 """
 
+import csv
 import io
 import json
+import os
 import random
 import subprocess
 import sys
@@ -44,6 +46,7 @@ PROJECT_ROOT = Path(__file__).parent
 STATE_FILE = PROJECT_ROOT / '.dce_state.json'
 DCE_PULL = PROJECT_ROOT / 'dce_pull.py'
 PARSER = PROJECT_ROOT / 'valhalla_parser_v2.py'
+RECALC_PENDING = PROJECT_ROOT / 'tools' / 'recalc_pending.py'
 
 
 # ---------------------------------------------------------------------------
@@ -218,6 +221,66 @@ def _run_parser() -> int:
         raise
     except Exception as e:
         print(f'\n[main] Blad uruchamiania parsera: {e}', file=sys.stderr)
+        return 1
+
+
+def _run_recalc_pending(parser_rc: int = 0) -> int:
+    """
+    Wywolaj tools/recalc_pending.py w podprocesie z wymuszona kodowaniem UTF-8.
+
+    Uzyj zmiennej srodowiskowej SKIP_PENDING_RECALC=1 zeby pominac ten krok
+    podczas lokalnego development (bez dostepu do Meteora API lub celowo).
+
+    Jesli parser zakonczyl sie bledem (parser_rc != 0), krok jest pomijany,
+    bo CSV moze byc w niespojnym stanie i recalc moglby uszkodzic dane.
+
+    Zwraca returncode (0 = sukces lub krok pominieto).
+    """
+    if parser_rc != 0:
+        print('\n[recalc_pending] Parser failed (rc={}) — pomijam recalkulacje pending.'.format(parser_rc))
+        return 0
+
+    if os.environ.get('SKIP_PENDING_RECALC', '').strip() == '1':
+        print('\n[recalc_pending] SKIP_PENDING_RECALC=1 — pomijam recalkulacje pending.')
+        return 0
+
+    # Count candidates recalc_pending will process: pending rows with full_address
+    # (Case D candidates) + "Bug#1" meteora rows with zero/empty meteora_deposited.
+    csv_path = PROJECT_ROOT / 'output' / 'positions.csv'
+    pending_count = 0
+    bug1_count = 0
+    if csv_path.exists():
+        try:
+            with open(csv_path, encoding='utf-8') as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    src = row.get('pnl_source', '')
+                    if src == 'pending' and row.get('full_address', ''):
+                        pending_count += 1
+                    elif src == 'meteora' and row.get('meteora_deposited', '').strip() in ('0.0000', '0', ''):
+                        bug1_count += 1
+        except Exception:
+            pending_count = -1  # unknown — still run recalc
+
+    total = pending_count + bug1_count if pending_count >= 0 else -1
+    print(
+        f'\n[recalc_pending] Starting Meteora API recalculation '
+        f'({pending_count} pending + {bug1_count} Bug#1 = {total} candidates)...'
+    )
+    print()
+
+    env = dict(os.environ)
+    env['PYTHONIOENCODING'] = 'utf-8'
+    env['PYTHONUTF8'] = '1'
+
+    cmd = [sys.executable, str(RECALC_PENDING)]
+    try:
+        result = subprocess.run(cmd, env=env)
+        return result.returncode
+    except KeyboardInterrupt:
+        raise
+    except Exception as e:
+        print(f'\n[recalc_pending] Blad uruchamiania recalc_pending: {e}', file=sys.stderr)
         return 1
 
 
@@ -615,6 +678,9 @@ def main() -> None:
         print('\n[main] Parser pominieto.')
         _print_summary(chunks_done, skip_pull)
         sys.exit(1)
+
+    # --- Recalc pending (Meteora API) ---
+    _run_recalc_pending(parser_rc=parser_rc)
 
     # --- Podsumowanie ---
     _print_summary(chunks_done, skip_pull)
