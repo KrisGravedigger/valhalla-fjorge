@@ -10,6 +10,7 @@ Exit codes:
   1 - one or more files differ (regression detected)
   2 - baseline directory missing
   3 - subprocess (parser) returned non-zero
+  4 - prerequisite file/dir missing (output/positions.csv, input/ files)
 """
 
 import argparse
@@ -291,7 +292,7 @@ def run_parse_mode(
     input_files = sorted(INPUT_DIR.glob("*.txt")) + sorted(INPUT_DIR.glob("*.html"))
     if not input_files:
         print(f"ERROR: no input files found in {INPUT_DIR}", file=sys.stderr)
-        sys.exit(1)
+        sys.exit(4)
 
     # Seed _test_output/ with baseline state so the parser's merge path runs
     # against the canonical history. The input/ files are a slice already
@@ -351,7 +352,7 @@ def run_report_mode(
             f"ERROR: {source_csv} not found. Cannot run --report mode.",
             file=sys.stderr,
         )
-        sys.exit(1)
+        sys.exit(4)
 
     dest_csv = test_output_dir / "positions.csv"
     shutil.copy2(source_csv, dest_csv)
