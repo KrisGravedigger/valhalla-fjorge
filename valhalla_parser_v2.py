@@ -6,11 +6,9 @@ Parses Discord DM plain text logs and calculates per-position PnL using Meteora 
 
 import json
 import os
-import re
 import argparse
 import csv
 import shutil
-import statistics
 import subprocess
 import sys
 from pathlib import Path
@@ -46,6 +44,8 @@ from valhalla.json_io import export_to_json, import_from_json, merge_with_import
 from valhalla.merge import merge_with_existing_csv, merge_positions_csvs
 from valhalla.charts import generate_charts, generate_insufficient_balance_chart
 from valhalla.alias_resolver import apply_aliases
+from valhalla.coverage_gaps import detect_coverage_gaps as _detect_coverage_gaps
+from valhalla.balance_recovery import recover_insufficient_balance_history as _recover_insufficient_balance_history
 
 
 # ---------------------------------------------------------------------------
@@ -57,181 +57,6 @@ from valhalla.lpagent_pipeline import (
     run_cross_check as _run_cross_check,
     retro_enrich_lpagent_from_archive as _retro_enrich_lpagent_from_archive,
 )
-
-
-def _detect_coverage_gaps(positions_csv_path):
-    """Detect and report coverage gaps in position timestamps.
-
-    Args:
-        positions_csv_path: Path to positions.csv file
-    """
-    # Check if CSV exists
-    csv_path = Path(positions_csv_path)
-    if not csv_path.exists():
-        return
-
-    # Read all timestamps from CSV
-    timestamps = []
-    try:
-        with open(csv_path, 'r', encoding='utf-8') as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                # Parse datetime_open
-                dt_open = row.get('datetime_open', '').strip()
-                if dt_open:
-                    for fmt in ('%Y-%m-%dT%H:%M:%S', '%Y-%m-%dT%H:%M', '%Y-%m-%d %H:%M'):
-                        try:
-                            timestamps.append(datetime.strptime(dt_open, fmt))
-                            break
-                        except ValueError:
-                            continue
-
-                # Parse datetime_close
-                dt_close = row.get('datetime_close', '').strip()
-                if dt_close:
-                    for fmt in ('%Y-%m-%dT%H:%M:%S', '%Y-%m-%dT%H:%M', '%Y-%m-%d %H:%M'):
-                        try:
-                            timestamps.append(datetime.strptime(dt_close, fmt))
-                            break
-                        except ValueError:
-                            continue
-    except Exception:
-        return  # Silently fail on any CSV read error
-
-    # Need at least 2 timestamps to detect gaps
-    if len(timestamps) < 2:
-        return
-
-    # Sort timestamps
-    timestamps.sort()
-
-    # Calculate consecutive gaps in minutes
-    gaps = []
-    for i in range(len(timestamps) - 1):
-        gap_minutes = (timestamps[i + 1] - timestamps[i]).total_seconds() / 60
-        gaps.append((gap_minutes, timestamps[i], timestamps[i + 1]))
-
-    # Calculate median gap
-    gap_values = [g[0] for g in gaps]
-    median_gap = statistics.median(gap_values)
-
-    # Dynamic threshold: max(180, min(median * 20, 360))
-    threshold_minutes = max(180, min(median_gap * 20, 360))
-
-    # Filter gaps above threshold
-    significant_gaps = [(gap_min, start, end) for gap_min, start, end in gaps if gap_min > threshold_minutes]
-
-    # Format time values (hours if >= 60, else minutes)
-    def format_time(minutes):
-        if minutes >= 60:
-            return f"{minutes / 60:.1f}h"
-        else:
-            return f"{int(minutes)}m"
-
-    # Load allowlist (paste full gap lines or just "MM-DD HH:MM -> MM-DD HH:MM")
-    allowlist = set()
-    allowlist_path = csv_path.parent / 'gap_allowlist.txt'
-    if allowlist_path.exists():
-        for line in allowlist_path.read_text(encoding='utf-8').splitlines():
-            line = line.strip()
-            if not line or line.startswith('#'):
-                continue
-            # Extract date range: "MM-DD HH:MM -> MM-DD HH:MM" from anywhere in line
-            m = re.search(r'(\d{2}-\d{2} \d{2}:\d{2}) -> (\d{2}-\d{2} \d{2}:\d{2})', line)
-            if m:
-                allowlist.add(f"{m.group(1)} -> {m.group(2)}")
-
-    # Print results
-    threshold_str = format_time(threshold_minutes)
-    median_str = format_time(median_gap)
-
-    if significant_gaps:
-        # Sort chronologically (oldest first)
-        significant_gaps.sort(key=lambda x: x[1])
-
-        new_gaps = []
-        allowed_count = 0
-        for gap_min, start, end in significant_gaps:
-            start_str = start.strftime('%m-%d %H:%M')
-            end_str = end.strftime('%m-%d %H:%M')
-            range_key = f"{start_str} -> {end_str}"
-            if range_key in allowlist:
-                allowed_count += 1
-            else:
-                new_gaps.append((gap_min, start_str, end_str))
-
-        if new_gaps:
-            print(f"\nCoverage Gaps (threshold: {threshold_str}, median: {median_str})")
-            for gap_min, start_str, end_str in new_gaps:
-                gap_str = format_time(gap_min)
-                print(f"  ! {gap_str} gap: {start_str} -> {end_str}")
-            if allowed_count:
-                print(f"  ({allowed_count} allowed gap(s) hidden - see gap_allowlist.txt)")
-            print(f"  {len(new_gaps)} potential gap(s) detected")
-        elif allowed_count:
-            print(f"\nNo new coverage gaps (threshold: {threshold_str}, {allowed_count} allowed gap(s) hidden)")
-    else:
-        print(f"\nNo coverage gaps detected (threshold: {threshold_str}, median: {median_str})")
-
-
-def _recover_insufficient_balance_history(output_dir: str) -> None:
-    """Scan archive files and recover all insufficient_balance events into CSV."""
-    from valhalla.models import extract_date_from_filename
-    from valhalla.readers import PlainTextReader, HtmlReader, detect_input_format
-    from valhalla.event_parser import EventParser
-    from valhalla.csv_writer import CsvWriter
-
-    archive_dir = Path('archive')
-    if not archive_dir.exists():
-        print("No archive/ directory found")
-        return
-
-    archive_files = [f for f in archive_dir.iterdir()
-                     if f.is_file() and f.suffix in ('.txt', '.html')]
-
-    if not archive_files:
-        print("No .txt or .html files in archive/")
-        return
-
-    print(f"Scanning {len(archive_files)} archive file(s) for insufficient balance events...")
-
-    all_events = []
-    for filepath in sorted(archive_files):
-        fmt = detect_input_format(str(filepath))
-        if fmt == 'html':
-            reader = HtmlReader(str(filepath))
-        else:
-            reader = PlainTextReader(str(filepath))
-
-        messages = reader.read()
-
-        # Detect date for this file
-        file_date = extract_date_from_filename(str(filepath))
-        if not file_date and reader.header_date:
-            file_date = reader.header_date
-
-        # Check for embedded timestamps
-        has_full_timestamps = any(
-            '[' in msg.timestamp and 'T' in msg.timestamp and len(msg.timestamp) > 7
-            for msg in messages
-        )
-        if has_full_timestamps:
-            file_date = None  # dates embedded
-
-        file_parser = EventParser(base_date=file_date)
-        file_parser.parse_messages(messages)
-
-        if file_parser.insufficient_balance_events:
-            all_events.extend(file_parser.insufficient_balance_events)
-            print(f"  {filepath.name}: {len(file_parser.insufficient_balance_events)} event(s)")
-
-    if all_events:
-        insuf_csv = Path(output_dir) / 'insufficient_balance.csv'
-        csv_writer = CsvWriter()
-        csv_writer.generate_insufficient_balance_csv(all_events, str(insuf_csv))
-        print(f"\nRecovered {len(all_events)} insufficient balance events -> {insuf_csv}")
-    else:
-        print("No insufficient balance events found in archive files")
 
 
 # ---------------------------------------------------------------------------
