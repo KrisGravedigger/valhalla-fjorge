@@ -346,7 +346,11 @@ def run_report_mode(
 
     clear_dir(test_output_dir)
 
-    source_csv = OUTPUT_DIR / "positions.csv"
+    # Seed _test_output/ with BASELINE files (not output/) so --report mode
+    # is deterministic. output/ mutates daily as the user runs main.py;
+    # using it would cause spurious diffs whenever positions.csv grows.
+    # The baseline snapshot is the canonical fixed input for verification.
+    source_csv = baseline_dir / "positions.csv"
     if not source_csv.exists():
         print(
             f"ERROR: {source_csv} not found. Cannot run --report mode.",
@@ -358,21 +362,24 @@ def run_report_mode(
     shutil.copy2(source_csv, dest_csv)
     print(f"Copied {source_csv} -> {dest_csv}")
 
-    # Copy address_cache.json so source wallet analysis doesn't need RPC
-    src_cache = OUTPUT_DIR / "address_cache.json"
+    # Copy address_cache.json from baseline so source wallet analysis is
+    # deterministic (no live RPC calls, no cache drift).
+    src_cache = baseline_dir / "address_cache.json"
     if src_cache.exists():
         shutil.copy2(src_cache, test_output_dir / "address_cache.json")
         print(f"Copied {src_cache} -> {test_output_dir / 'address_cache.json'}")
 
-    # Copy .recommendations_state.json so [new]/[ignored]/[done] tags
-    # match baseline (state is environmental, not parser logic).
+    # Copy .recommendations_state.json from output/ (it lives there, not in
+    # baseline) so [new]/[ignored]/[done] tags match baseline-time state.
+    # If user has manually marked recommendations since baseline, this can
+    # still drift — but it's the best we can do without snapshotting state.
     src_rec_state = OUTPUT_DIR / ".recommendations_state.json"
     if src_rec_state.exists():
         shutil.copy2(src_rec_state, test_output_dir / ".recommendations_state.json")
         print(f"Copied {src_rec_state} -> {test_output_dir / '.recommendations_state.json'}")
 
-    # Copy insufficient_balance.csv — loss_analysis section depends on it
-    src_insuf = OUTPUT_DIR / "insufficient_balance.csv"
+    # Copy insufficient_balance.csv from baseline — loss_analysis depends on it.
+    src_insuf = baseline_dir / "insufficient_balance.csv"
     if src_insuf.exists():
         shutil.copy2(src_insuf, test_output_dir / "insufficient_balance.csv")
         print(f"Copied {src_insuf} -> {test_output_dir / 'insufficient_balance.csv'}")
