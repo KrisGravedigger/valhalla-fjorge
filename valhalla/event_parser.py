@@ -46,7 +46,7 @@ class EventParser:
 
     # Rug event patterns
     RUG_TARGET_PATTERN = r'Copied From:\s*(\S+)\)'
-    RUG_POSITION_ID_PATTERN = r'Rug Check Stop Loss Executed\s*\(DLMM\)\s*\((\w+)\)'
+    RUG_POSITION_ID_PATTERN = r'Rug Check Stop Loss Executed\s*\(DLMM\)\*?\*?\s*\((\w+)\)'
     PRICE_DROP_PATTERN = r'Price Drop:\s*([\d.]+)%'
     RUG_THRESHOLD_PATTERN = r'Rug Check Threshold:\s*([\d.]+)%'
     POSITION_ADDRESS_PATTERN = r'Position:\s*(\S+)'
@@ -77,8 +77,8 @@ class EventParser:
     INSUF_REQUIRED_PATTERN = r'Required amount for this trade:\s*([\d.]+)\s*SOL'
 
     # Take profit / stop loss event patterns
-    TAKE_PROFIT_POSITION_ID_PATTERN = r'Take Profit Executed \(DLMM\)\s*\((\w+)\)'
-    STOP_LOSS_POSITION_ID_PATTERN = r'Stop Loss Executed \(DLMM\)\s*\((\w+)\)'
+    TAKE_PROFIT_POSITION_ID_PATTERN = r'Take Profit Executed \(DLMM\)\*?\*?\s*\((\w+)\)'
+    STOP_LOSS_POSITION_ID_PATTERN = r'Stop Loss Executed \(DLMM\)\*?\*?\s*\((\w+)\)'
     TAKE_PROFIT_TARGET_PATTERN = r'Copied From:\s*(\S+)\)'
     ENTRY_VALUE_PATTERN = r'Entry Value:\s*([\d.]+)\s*SOL'
     EXIT_VALUE_PATTERN = r'Exit Value:\s*([\d.]+)\s*SOL'
