@@ -14,7 +14,11 @@ from .readers import ParsedMessage
 
 
 class EventParser:
-    """Parse events from Discord message text"""
+    """Parse events from Discord message text
+
+    Future split trigger: if message types grow beyond 15 or any single _parse_* method
+    exceeds 80 lines, apply a parsers/ sub-package with one file per message type.
+    """
 
     # Regex patterns (from v1)
     TIMESTAMP_PATTERN = r'\[((?:\d{4}-\d{2}-\d{2}T)?\d{2}:\d{2})\]'
