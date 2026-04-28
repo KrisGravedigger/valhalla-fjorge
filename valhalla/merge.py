@@ -138,6 +138,12 @@ def merge_with_existing_csv(
         has_meteora = pos.pnl_source == "meteora"
         return has_open and has_close and has_meteora
 
+    def normalize_specific_close_reason(reason: str) -> str:
+        if reason in ("rug_unknown_open", "failsafe_unknown_open",
+                      "take_profit_unknown_open", "stop_loss_unknown_open"):
+            return reason.replace("_unknown_open", "")
+        return reason
+
     # Helper: merge open data from new into existing (keep existing Meteora PnL)
     def enrich_existing_with_open(existing: MatchedPosition, new_pos: MatchedPosition) -> MatchedPosition:
         """Take open-side data from new_pos, keep close+Meteora data from existing."""
@@ -201,11 +207,16 @@ def merge_with_existing_csv(
         # Rule 1: Fully complete (open + close + meteora) - keep as-is
         if is_fully_complete(existing_pos):
             # Allow upgrading close_reason from generic "normal" to specific take_profit/stop_loss
-            if (new_matched_pos and existing_pos.close_reason == "normal"
-                    and new_matched_pos.close_reason in (
-                        "take_profit", "stop_loss",
-                        "take_profit_unknown_open", "stop_loss_unknown_open")):
-                existing_pos.close_reason = new_matched_pos.close_reason.replace("_unknown_open", "")
+            if new_matched_pos and existing_pos.close_reason in (
+                "normal", "already_closed", "already_closed_unknown_open"
+            ):
+                specific_reason = normalize_specific_close_reason(new_matched_pos.close_reason)
+                if specific_reason in ("take_profit", "stop_loss", "rug", "failsafe"):
+                    existing_pos.close_reason = specific_reason
+                    if new_matched_pos.price_drop_pct is not None:
+                        existing_pos.price_drop_pct = new_matched_pos.price_drop_pct
+                    if new_matched_pos.datetime_close:
+                        existing_pos.datetime_close = new_matched_pos.datetime_close
             # Recover target_wallet if it ended up as 'unknown' (e.g. failsafe was matched before
             # the open event was available, and close_reason was later enriched to drop _unknown_open
             # suffix, locking it into Rule 1 before target_wallet could be updated).

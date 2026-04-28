@@ -26,7 +26,10 @@ own_bot_project.md
 lpagent_closed_positions.csv
 *.csv
 DiscordChatExporter.Cli.win-x64/
+tasks.md
 
 _temp/
 DiscordChatExporter.Cli.win-x64/*.json
 TODO.md
+_baseline_pre_refactor/
+scripts/
