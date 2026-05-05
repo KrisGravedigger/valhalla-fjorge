@@ -812,7 +812,7 @@ def _chart_daily_pnl_breakdown(
         if any(cat_name in breakdown_data.get((w, d), {}) for w in wallets for d in dates):
             used_gain_cats.append(cat_name)
 
-    fig, ax = plt.subplots(figsize=(max(10, n_dates * n_wallets * 1.2 + 4), 8))
+    fig, ax = plt.subplots(figsize=(max(14, n_dates * 2.5 + n_wallets * 1.2 + 4), 9))
     fig.patch.set_facecolor('#1a1a1a')
     ax.set_facecolor('#1a1a1a')
 
@@ -856,12 +856,20 @@ def _chart_daily_pnl_breakdown(
                     )
                     bottom += val
 
-    # X-axis: date labels, one tick per date, wallet names as sub-labels
+    # X-axis: date labels drawn manually so they don't collide with wallet labels
     ax.set_xticks(range(n_dates))
-    date_labels = [d.strftime('%m-%d') for d in dates]
-    ax.set_xticklabels(date_labels, color='white', fontsize=9)
+    ax.set_xticklabels([''] * n_dates)  # hide default major tick labels
+    ax.tick_params(axis='x', which='major', length=5, color='#555555')
 
-    # Add wallet short names as minor tick labels below the date labels
+    # Draw date labels just below the axis using axes-fraction y so they always
+    # sit above the wallet names regardless of data scale
+    trans = ax.get_xaxis_transform()
+    for d_idx, dt in enumerate(dates):
+        ax.text(d_idx, -0.04, dt.strftime('%m-%d'),
+                transform=trans, ha='center', va='top',
+                color='white', fontsize=9, fontweight='bold', clip_on=False)
+
+    # Wallet short names as minor tick labels, with enough padding to sit below dates
     minor_ticks = []
     minor_labels = []
     for d_idx, dt in enumerate(dates):
@@ -872,11 +880,11 @@ def _chart_daily_pnl_breakdown(
 
     ax.set_xticks(minor_ticks, minor=True)
     ax.set_xticklabels(minor_labels, minor=True, fontsize=6, color='#aaaaaa', rotation=45, ha='right')
-    ax.tick_params(axis='x', which='minor', length=0, pad=12)
+    ax.tick_params(axis='x', which='minor', length=0, pad=30)
 
     # Formatting
     ax.set_title(
-        'Daily PnL Breakdown per Wallet (SOL) — Last 3 Days',
+        f'Daily PnL Breakdown per Wallet (SOL) — Last {len(dates)} Days',
         fontsize=13, fontweight='bold', color='white'
     )
     ax.set_ylabel('SOL', fontsize=11, color='white')

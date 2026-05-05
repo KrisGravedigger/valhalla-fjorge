@@ -108,7 +108,7 @@ LOSS_DETAIL_LOOKBACK_DAYS: int = 3
 # ---------------------------------------------------------------------------
 
 # Number of days to show in the daily_pnl_breakdown.png chart.
-PNL_BREAKDOWN_LOOKBACK_DAYS: int = 3
+PNL_BREAKDOWN_LOOKBACK_DAYS: int = 7
 
 # ---------------------------------------------------------------------------
 # Hourly Capital Utilization (Doc 009)
