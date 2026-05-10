@@ -1,8 +1,9 @@
 """Portfolio NAV scoreboard - build and render the per-source summary table."""
 
 import csv
+import sys
 from datetime import datetime, timezone
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -21,6 +22,27 @@ def _decimal(value: Optional[str]) -> Optional[Decimal]:
     if value is None or value == "":
         return None
     return Decimal(str(value))
+
+
+def _warn_malformed(row: Dict[str, str], error: InvalidOperation) -> None:
+    source = row.get("source", "")
+    value = row.get("value_sol")
+    print(
+        f"Warning: skipping malformed snapshot row (source={source}, value_sol={value!r}): {error}",
+        file=sys.stderr,
+    )
+
+
+def _is_valid_display_row(row: Dict[str, str]) -> bool:
+    try:
+        _decimal(row.get("value_sol"))
+        _decimal(row.get("net_contribution_sol"))
+        _decimal(row.get("total_pnl_sol"))
+        _decimal(row.get("total_pnl_pct"))
+    except InvalidOperation as error:
+        _warn_malformed(row, error)
+        return False
+    return True
 
 
 def _fmt(value: Optional[Decimal], places: str = "0.000001", signed: bool = False) -> str:
@@ -45,8 +67,11 @@ def build_scoreboard(rows: List[Dict[str, str]]) -> List[Dict[str, str]]:
         source = row.get("source", "").strip()
         if not source:
             continue
+        if not _is_valid_display_row(row):
+            continue
         previous = latest_by_source.get(source)
-        if previous is None or row.get("timestamp", "") > previous.get("timestamp", ""):
+        # Tie-break by append order: on equal timestamps, last-appended wins.
+        if previous is None or row.get("timestamp", "") >= previous.get("timestamp", ""):
             latest_by_source[source] = row
 
     return [
@@ -70,7 +95,10 @@ def render_console(table: List[Dict[str, str]], date: str) -> None:
     if not table:
         return
 
-    display_rows = [_display_row(row) for row in table]
+    display_rows = [_display_row(row) for row in table if _is_valid_display_row(row)]
+    if not display_rows:
+        return
+
     print(f"\n=== Portfolio Scoreboard - {date} ===\n")
     print("Source    | Value (SOL) | Net Contribution | Total PnL    | Total PnL %")
     print("----------|-------------|------------------|--------------|-------------")
@@ -99,6 +127,8 @@ def render_markdown(table: List[Dict[str, str]], date: str, path: Path) -> None:
         "|---|---:|---:|---:|---:|",
     ]
     for row in table:
+        if not _is_valid_display_row(row):
+            continue
         display = _display_row(row)
         lines.append(
             "| {source} | {value_sol} | {net_contribution_sol} | {total_pnl_sol} | {total_pnl_pct} |".format(

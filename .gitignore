@@ -38,3 +38,4 @@ _test_output/
 pytest-cache-files-*/
 .pytest-basetemp*/
 pytest_basetemp*/
+.pytest-debug-root/

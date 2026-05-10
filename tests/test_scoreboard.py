@@ -7,7 +7,7 @@ from uuid import uuid4
 import pytest
 
 from tools.record_portfolio_snapshot import append_snapshot, build_snapshot
-from valhalla.scoreboard import build_scoreboard, render_markdown
+from valhalla.scoreboard import build_scoreboard, render_console, render_markdown
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -77,8 +77,62 @@ def test_build_scoreboard_latest_per_source() -> None:
     assert table[1]["value_sol"] == "63.840000"
 
 
+def test_build_scoreboard_same_second_tiebreak_uses_last_appended() -> None:
+    rows = [
+        {
+            "timestamp": "2026-05-10T12:00:00Z",
+            "source": "lpagent",
+            "value_sol": "63.000000",
+            "net_contribution_sol": "44.600000",
+            "total_pnl_sol": "18.400000",
+            "total_pnl_pct": "41.2556",
+        },
+        {
+            "timestamp": "2026-05-10T12:00:00Z",
+            "source": "lpagent",
+            "value_sol": "64.000000",
+            "net_contribution_sol": "44.600000",
+            "total_pnl_sol": "19.400000",
+            "total_pnl_pct": "43.4978",
+        },
+    ]
+
+    table = build_scoreboard(rows)
+
+    assert table[0]["value_sol"] == "64.000000"
+
+
 def test_build_scoreboard_empty() -> None:
     assert build_scoreboard([]) == []
+
+
+def test_render_console_skips_malformed_numeric_row(capsys: pytest.CaptureFixture[str]) -> None:
+    table = [
+        {
+            "timestamp": "2026-05-10T12:00:00Z",
+            "source": "lpagent",
+            "value_sol": "not-a-number",
+            "net_contribution_sol": "44.600000",
+            "total_pnl_sol": "19.240000",
+            "total_pnl_pct": "43.1390",
+        },
+        {
+            "timestamp": "2026-05-10T10:00:00Z",
+            "source": "fabriq",
+            "value_sol": "60.140000",
+            "net_contribution_sol": "44.600000",
+            "total_pnl_sol": "15.540000",
+            "total_pnl_pct": "34.8430",
+        },
+    ]
+
+    render_console(table, "2026-05-10")
+
+    captured = capsys.readouterr()
+    assert "Warning: skipping malformed snapshot row" in captured.err
+    assert "lpagent" not in captured.out
+    assert "not-a-number" not in captured.out
+    assert "fabriq" in captured.out
 
 
 def test_render_markdown_creates_file() -> None:
@@ -109,6 +163,37 @@ def test_render_markdown_creates_file() -> None:
     assert "lpagent" in text
     assert "fabriq" in text
     assert "_NAV PnL = current portfolio value - external net contributions." in text
+
+
+def test_render_markdown_skips_malformed_numeric_row(capsys: pytest.CaptureFixture[str]) -> None:
+    path = _case_dir("markdown-malformed") / "portfolio_scoreboard.md"
+    table = [
+        {
+            "timestamp": "2026-05-10T12:00:00Z",
+            "source": "lpagent",
+            "value_sol": "not-a-number",
+            "net_contribution_sol": "44.600000",
+            "total_pnl_sol": "19.240000",
+            "total_pnl_pct": "43.1390",
+        },
+        {
+            "timestamp": "2026-05-10T10:00:00Z",
+            "source": "fabriq",
+            "value_sol": "60.140000",
+            "net_contribution_sol": "44.600000",
+            "total_pnl_sol": "15.540000",
+            "total_pnl_pct": "34.8430",
+        },
+    ]
+
+    render_markdown(table, "2026-05-10", path)
+
+    captured = capsys.readouterr()
+    text = path.read_text(encoding="utf-8")
+    assert "Warning: skipping malformed snapshot row" in captured.err
+    assert "lpagent" not in text
+    assert "not-a-number" not in text
+    assert "fabriq" in text
 
 
 def test_snapshot_auto_reads_capital_flows(monkeypatch: pytest.MonkeyPatch) -> None:
