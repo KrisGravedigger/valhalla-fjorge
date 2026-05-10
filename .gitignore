@@ -33,3 +33,5 @@ DiscordChatExporter.Cli.win-x64/*.json
 TODO.md
 _baseline_pre_refactor/
 scripts/
+.claude/
+_test_output/

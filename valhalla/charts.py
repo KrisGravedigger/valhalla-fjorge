@@ -576,7 +576,7 @@ def _chart_portfolio_cumulative(
     Args:
         pnl_data: {(wallet, date): pnl_sol}
         dates: Sorted list of dates
-        wallets: List of active wallet identifiers
+        wallets: List of wallet identifiers to include
         output_dir: Directory to save the chart
     """
     from pathlib import Path
@@ -614,12 +614,12 @@ def _chart_portfolio_cumulative(
         color='#ff9800',
         linewidth=2,
         linestyle='-',
-        label='Cumulative PnL',
+        label=f'Cumulative PnL ({cumulative[-1]:+.2f} SOL)' if cumulative else 'Cumulative PnL',
         zorder=3
     )
 
     # Formatting
-    ax.set_title('Portfolio Daily PnL & Cumulative', fontsize=14, fontweight='bold', color='white')
+    ax.set_title('Portfolio Daily PnL & Cumulative (all wallets)', fontsize=14, fontweight='bold', color='white')
     ax.set_ylabel('SOL', fontsize=11, color='white')
     ax.tick_params(colors='white')
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%m-%d'))
@@ -1308,6 +1308,9 @@ def generate_charts(positions: List[MatchedPosition], output_dir: str, skip_even
 
     # Aggregate data (uses close dates for PnL, winrate, rugs, stop-losses)
     pnl_data, entries_data_close, winrate_data, rugs_data, pnl_pct_data, dates, wallets, sl_data = _aggregate_daily_data(dated)
+    portfolio_pnl_data = dict(pnl_data)
+    portfolio_dates = list(dates)
+    portfolio_wallets = list(wallets)
 
     # Build separate entries data based on OPEN dates (not close dates)
     entries_data = {}
@@ -1329,6 +1332,10 @@ def generate_charts(positions: List[MatchedPosition], output_dir: str, skip_even
     if not dates or not wallets:
         print("  No date/wallet data for charts")
         return
+
+    # Portfolio cumulative is an all-time accounting chart. Do not apply wallet
+    # retirement here, or historical PnL disappears when an old wallet goes idle.
+    _chart_portfolio_cumulative(portfolio_pnl_data, portfolio_dates, portfolio_wallets, output_dir)
 
     # Apply wallet retirement filter: completely hide wallets inactive > SCORECARD_INACTIVE_DAYS
     retired = _apply_wallet_retirement(
@@ -1360,7 +1367,6 @@ def generate_charts(positions: List[MatchedPosition], output_dir: str, skip_even
     _chart_daily_losses(rugs_data, sl_data, dates, wallets, wallet_colors, output_dir)
     _chart_rolling_avg_pnl(pnl_data, dates, wallets, wallet_colors, output_dir, window=3)
     _chart_rolling_avg_pnl(pnl_data, dates, wallets, wallet_colors, output_dir, window=7)
-    _chart_portfolio_cumulative(pnl_data, dates, wallets, output_dir)
 
     # Daily PnL breakdown: stacked bar per wallet per day (last N days)
     breakdown_data, bd_dates, bd_wallets = _aggregate_pnl_breakdown(

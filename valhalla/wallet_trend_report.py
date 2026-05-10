@@ -178,10 +178,11 @@ def generate_wallet_trend_report(
     active: List[WalletScorecard] = []     # had activity in last 1d
     long_dormant: List[WalletScorecard] = []  # no activity in last 7d
 
+    # Activity = any position opened OR closed in the window (disjoint signals)
     for sc in scorecards:
-        if sc.positions_1d > 0:
+        if sc.positions_1d > 0 or sc.opened_1d > 0:
             active.append(sc)
-        elif sc.positions_7d > 0:
+        elif sc.positions_7d > 0 or sc.opened_7d > 0:
             dormant.append(sc)
         else:
             long_dormant.append(sc)

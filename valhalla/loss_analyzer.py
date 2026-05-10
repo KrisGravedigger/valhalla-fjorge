@@ -120,6 +120,9 @@ class WalletScorecard:
     positions_7d: int = 0
     positions_3d: int = 0
     positions_1d: int = 0
+    # Positions OPENED in window (all, including still-open) — used for activity classification
+    opened_1d: int = 0
+    opened_7d: int = 0
     # Rolling-window PnL
     pnl_3d_sol: Decimal = field(default_factory=lambda: Decimal("0"))
     pnl_1d_sol: Decimal = field(default_factory=lambda: Decimal("0"))
@@ -884,6 +887,18 @@ class WalletScorecardAnalyzer:
             positions_3d = len(window_3d)
             positions_1d = len(window_1d)
 
+            # Count positions OPENED in each window (all positions, including still-open)
+            opened_1d = sum(
+                1 for p in wallet_all
+                if parse_iso_datetime(p.datetime_open) is not None
+                and parse_iso_datetime(p.datetime_open) >= cutoff_24h
+            )
+            opened_7d = sum(
+                1 for p in wallet_all
+                if parse_iso_datetime(p.datetime_open) is not None
+                and parse_iso_datetime(p.datetime_open) >= cutoff_7d
+            )
+
             # pnl_3d_sol, pnl_1d_sol
             pnl_3d_sol = sum(
                 (p.pnl_sol for p in window_3d if p.pnl_sol is not None),
@@ -971,6 +986,8 @@ class WalletScorecardAnalyzer:
                 positions_7d=positions_7d,
                 positions_3d=positions_3d,
                 positions_1d=positions_1d,
+                opened_1d=opened_1d,
+                opened_7d=opened_7d,
                 pnl_3d_sol=pnl_3d_sol,
                 pnl_1d_sol=pnl_1d_sol,
                 rug_rate_7d_pct=rug_rate_7d_pct,
