@@ -2,10 +2,12 @@
 Chart generation module for Valhalla parser.
 """
 
+import csv
 from typing import List, Dict, Optional, Tuple
 from decimal import Decimal
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from collections import defaultdict
+from pathlib import Path
 
 from .models import MatchedPosition, SkipEvent, parse_iso_datetime
 from .analysis_config import SCORECARD_INACTIVE_DAYS, PORTFOLIO_TOTAL_SOL, PNL_BREAKDOWN_LOOKBACK_DAYS, FILTER_IMPACT_LOOKBACK_DAYS
@@ -619,7 +621,13 @@ def _chart_portfolio_cumulative(
     )
 
     # Formatting
-    ax.set_title('Portfolio Daily PnL & Cumulative (all wallets)', fontsize=14, fontweight='bold', color='white')
+    ax.set_title(
+        'Portfolio Daily PnL & Cumulative (all wallets)\n'
+        'Closed-position PnL only - excludes open positions and NAV',
+        fontsize=14,
+        fontweight='bold',
+        color='white',
+    )
     ax.set_ylabel('SOL', fontsize=11, color='white')
     ax.tick_params(colors='white')
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%m-%d'))
@@ -639,6 +647,73 @@ def _chart_portfolio_cumulative(
     fig.savefig(Path(output_dir) / 'portfolio_cumulative.png', dpi=120)
     plt.close(fig)
     print("  Generated: portfolio_cumulative.png")
+
+
+def _parse_snapshot_timestamp(value: str) -> datetime:
+    if value.endswith("Z"):
+        return datetime.fromisoformat(value.replace("Z", "+00:00"))
+    return datetime.fromisoformat(value)
+
+
+def generate_nav_pnl_chart(snapshots_path: str | Path, output_dir: str | Path) -> None:
+    """Generate total NAV PnL chart from portfolio_snapshots.csv."""
+    if not HAS_MATPLOTLIB:
+        print("  matplotlib not installed, skipping portfolio_nav_pnl.png")
+        return
+
+    snapshot_file = Path(snapshots_path)
+    if not snapshot_file.exists():
+        return
+
+    series_by_source: Dict[str, List[Tuple[datetime, Decimal]]] = defaultdict(list)
+    with snapshot_file.open("r", newline="", encoding="utf-8") as fh:
+        for row in csv.DictReader(fh):
+            source = row.get("source", "").strip()
+            timestamp = row.get("timestamp", "").strip()
+            total_pnl_sol = row.get("total_pnl_sol", "").strip()
+            if not source or not timestamp or not total_pnl_sol:
+                continue
+            series_by_source[source].append(
+                (_parse_snapshot_timestamp(timestamp), Decimal(total_pnl_sol))
+            )
+
+    if not series_by_source:
+        return
+
+    fig, ax = plt.subplots(figsize=(12, 7))
+    for source in sorted(series_by_source):
+        series = sorted(series_by_source[source], key=lambda item: item[0])
+        dates = [item[0] for item in series]
+        values = [float(item[1]) for item in series]
+        ax.plot(
+            dates,
+            values,
+            marker='o',
+            markersize=5,
+            linewidth=2,
+            linestyle='-',
+            label=source,
+        )
+
+    ax.set_title(
+        "Portfolio NAV PnL by Source\n"
+        "total_pnl_sol = current NAV - net external contributions",
+        fontsize=14,
+        fontweight='bold',
+    )
+    ax.set_ylabel("SOL", fontsize=11)
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%m-%d'))
+    ax.xaxis.set_major_locator(mdates.AutoDateLocator())
+    plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
+    ax.axhline(y=0, color='black', linewidth=0.8, linestyle='-', alpha=0.3)
+    ax.grid(True, alpha=0.3, axis='y')
+    ax.legend(fontsize='small')
+    fig.tight_layout()
+
+    Path(output_dir).mkdir(parents=True, exist_ok=True)
+    fig.savefig(Path(output_dir) / 'portfolio_nav_pnl.png', dpi=120)
+    plt.close(fig)
+    print("  Generated: portfolio_nav_pnl.png")
 
 
 _RUG_REASONS = {"rug", "rug_unknown_open"}

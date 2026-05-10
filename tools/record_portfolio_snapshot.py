@@ -3,10 +3,13 @@
 
 This is intentionally separate from per-position PnL. It answers:
 current portfolio value - external net contributions = real portfolio PnL.
+
+Single-process tool: do not run concurrent invocations against the same snapshot CSV.
 """
 
 import argparse
 import csv
+import sys
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
@@ -25,6 +28,10 @@ FIELDS = [
     "period_pnl_sol",
     "notes",
 ]
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 
 def _decimal(value: Optional[str], name: str) -> Optional[Decimal]:
@@ -56,7 +63,24 @@ def _latest_for_source(rows: List[Dict[str, str]], source: str) -> Optional[Dict
     return sorted(matches, key=lambda row: row.get("timestamp", ""))[-1]
 
 
+def _validate_timestamp_utc(value: str) -> str:
+    try:
+        parsed = datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ")
+    except ValueError as exc:
+        raise SystemExit(
+            "Invalid --timestamp: must be YYYY-MM-DDTHH:MM:SSZ (UTC, Z suffix)."
+        ) from exc
+
+    if parsed.strftime("%Y-%m-%dT%H:%M:%SZ") != value:
+        raise SystemExit(
+            "Invalid --timestamp: must be YYYY-MM-DDTHH:MM:SSZ (UTC, Z suffix)."
+        )
+
+    return value
+
+
 def build_snapshot(args: argparse.Namespace, previous: Optional[Dict[str, str]]) -> Dict[str, str]:
+    timestamp_arg = _validate_timestamp_utc(args.timestamp) if args.timestamp else None
     value_sol = _decimal(args.value_sol, "value_sol")
     value_usd = _decimal(args.value_usd, "value_usd")
     sol_usd = _decimal(args.sol_usd, "sol_usd")
@@ -68,14 +92,26 @@ def build_snapshot(args: argparse.Namespace, previous: Optional[Dict[str, str]])
 
     net_contribution = _decimal(args.net_contribution_sol, "net_contribution_sol")
     if net_contribution is None:
+        flows_path = Path(args.path).parent / "capital_flows.csv"
+        if flows_path.exists():
+            from valhalla.capital_flow import read_flows
+
+            asof = (timestamp_arg or datetime.now().strftime("%Y-%m-%d"))[:10]
+            net_from_ledger = read_flows(flows_path, asof)
+            if net_from_ledger is not None:
+                net_contribution = net_from_ledger
+
+    if net_contribution is None:
         if previous and previous.get("net_contribution_sol"):
             net_contribution = _decimal(previous["net_contribution_sol"], "net_contribution_sol")
         else:
             raise SystemExit(
-                "First snapshot for a source requires --net-contribution-sol "
-                "(deposits minus withdrawals, in SOL)."
+                "Error: No capital_flows.csv found and --net-contribution-sol not provided. "
+                "Provide one of these to record the first snapshot."
             )
 
+    assert value_sol is not None
+    assert net_contribution is not None
     total_pnl = value_sol - net_contribution
     total_pnl_pct = (total_pnl / net_contribution * Decimal("100")) if net_contribution else None
 
@@ -86,7 +122,7 @@ def build_snapshot(args: argparse.Namespace, previous: Optional[Dict[str, str]])
         if prev_value is not None and prev_contribution is not None:
             period_pnl = (value_sol - prev_value) - (net_contribution - prev_contribution)
 
-    timestamp = args.timestamp or datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+    timestamp = timestamp_arg or datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
 
     return {
         "timestamp": timestamp,

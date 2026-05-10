@@ -37,3 +37,4 @@ scripts/
 _test_output/
 pytest-cache-files-*/
 .pytest-basetemp*/
+pytest_basetemp*/
