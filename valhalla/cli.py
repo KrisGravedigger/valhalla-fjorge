@@ -1024,9 +1024,10 @@ def main():
     report_discord_gaps(str(positions_csv))
 
     print(f"\nDone!")
-    stale_warning = check_stale_flows(output_dir / "capital_flows.csv")
-    if stale_warning:
-        print(f"\n{stale_warning}")
+    if not args.no_input:
+        stale_warning = check_stale_flows(output_dir / "capital_flows.csv")
+        if stale_warning:
+            print(f"\n{stale_warning}")
 
 
 if __name__ == '__main__':

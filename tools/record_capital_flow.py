@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Append a manual capital-flow entry to output/capital_flows.csv."""
+"""Append a manual capital-flow entry to output/capital_flows.csv.
+
+Single-process tool: do not run concurrent invocations against the same ledger; the duplicate-signature check is not atomic.
+"""
 
 import argparse
 import csv
@@ -67,10 +70,31 @@ def _default_timestamp_utc() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+def _validate_timestamp_utc(value: str) -> str:
+    try:
+        parsed = datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ")
+    except ValueError as exc:
+        raise SystemExit(
+            "Invalid --timestamp-utc: must be YYYY-MM-DDTHH:MM:SSZ (UTC, Z suffix)."
+        ) from exc
+
+    if parsed.strftime("%Y-%m-%dT%H:%M:%SZ") != value:
+        raise SystemExit(
+            "Invalid --timestamp-utc: must be YYYY-MM-DDTHH:MM:SSZ (UTC, Z suffix)."
+        )
+
+    return value
+
+
 def _build_row(args: argparse.Namespace) -> Dict[str, str]:
     amount = _parse_positive_decimal(args.sol_amount)
+    timestamp_utc = (
+        _validate_timestamp_utc(args.timestamp_utc)
+        if args.timestamp_utc
+        else _default_timestamp_utc()
+    )
     return {
-        "timestamp_utc": args.timestamp_utc or _default_timestamp_utc(),
+        "timestamp_utc": timestamp_utc,
         "wallet": args.wallet,
         "type": args.type,
         "sol_amount": _fmt_sol(amount),

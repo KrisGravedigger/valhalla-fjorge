@@ -38,13 +38,17 @@ def _row(
     }
 
 
-def _run_record_flow(path: Path, tx_signature: str) -> subprocess.CompletedProcess[str]:
+def _run_record_flow(
+    path: Path,
+    tx_signature: str,
+    timestamp_utc: str = "2026-03-01T10:00:00Z",
+) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         [
             sys.executable,
             str(SCRIPT),
             "--timestamp-utc",
-            "2026-03-01T10:00:00Z",
+            timestamp_utc,
             "--wallet",
             "J4tkG",
             "--type",
@@ -82,6 +86,42 @@ def test_record_capital_flow_normal_append_formats_fields(tmp_path: Path) -> Non
             "notes": "top-up",
         }
     ]
+
+
+def test_record_capital_flow_invalid_timestamp_format(tmp_path: Path) -> None:
+    path = tmp_path / "capital_flows.csv"
+
+    result = _run_record_flow(path, "ABC123", "2026-03-01T10:00:00")
+
+    assert result.returncode != 0
+    assert (
+        "Invalid --timestamp-utc: must be YYYY-MM-DDTHH:MM:SSZ (UTC, Z suffix)."
+    ) in result.stderr
+    assert not path.exists()
+
+
+def test_record_capital_flow_invalid_timestamp_no_time(tmp_path: Path) -> None:
+    path = tmp_path / "capital_flows.csv"
+
+    result = _run_record_flow(path, "ABC123", "2026-03-01")
+
+    assert result.returncode != 0
+    assert (
+        "Invalid --timestamp-utc: must be YYYY-MM-DDTHH:MM:SSZ (UTC, Z suffix)."
+    ) in result.stderr
+    assert not path.exists()
+
+
+def test_record_capital_flow_valid_timestamp(tmp_path: Path) -> None:
+    path = tmp_path / "capital_flows.csv"
+
+    result = _run_record_flow(path, "ABC123", "2026-03-01T10:00:00Z")
+
+    assert result.returncode == 0
+    with path.open("r", newline="", encoding="utf-8") as fh:
+        rows = list(csv.DictReader(fh))
+    assert len(rows) == 1
+    assert rows[0]["timestamp_utc"] == "2026-03-01T10:00:00Z"
 
 
 def test_record_capital_flow_internal_transfer_dry_run_reminder(tmp_path: Path) -> None:
