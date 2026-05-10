@@ -25,6 +25,8 @@ analysis_plan_done.md
 own_bot_project.md
 lpagent_closed_positions.csv
 *.csv
+!tests/fixtures/**/*.csv
+!tests/fixtures/**/*.json
 DiscordChatExporter.Cli.win-x64/
 tasks.md
 
@@ -35,3 +37,7 @@ _baseline_pre_refactor/
 scripts/
 .claude/
 _test_output/
+pytest-cache-files-*/
+.pytest-basetemp*/
+pytest_basetemp*/
+.pytest-debug-root/

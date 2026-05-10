@@ -42,10 +42,12 @@ from valhalla.matcher import PositionMatcher
 from valhalla.csv_writer import CsvWriter
 from valhalla.json_io import export_to_json, import_from_json, merge_with_imported
 from valhalla.merge import merge_with_existing_csv, merge_positions_csvs
-from valhalla.charts import generate_charts, generate_insufficient_balance_chart
+from valhalla.charts import generate_charts, generate_insufficient_balance_chart, generate_nav_pnl_chart
 from valhalla.alias_resolver import apply_aliases
 from valhalla.coverage_gaps import detect_coverage_gaps as _detect_coverage_gaps
 from valhalla.balance_recovery import recover_insufficient_balance_history as _recover_insufficient_balance_history
+from valhalla.capital_flow import check_stale_flows
+from valhalla.scoreboard import run_scoreboard
 
 
 # ---------------------------------------------------------------------------
@@ -808,6 +810,7 @@ def main():
         generate_charts(matched_positions, str(output_dir), skip_events=event_parser.skip_events)
         insuf_csv = output_dir / 'insufficient_balance.csv'
         generate_insufficient_balance_chart(str(insuf_csv), str(output_dir))
+        generate_nav_pnl_chart(output_dir / "portfolio_snapshots.csv", output_dir)
         # Doc 009: Hourly capital utilization chart
         if PORTFOLIO_TOTAL_SOL > 0:
             from valhalla.utilization import (
@@ -1023,6 +1026,13 @@ def main():
     report_discord_gaps(str(positions_csv))
 
     print(f"\nDone!")
+    if not args.no_input:
+        stale_warning = check_stale_flows(output_dir / "capital_flows.csv")
+        if stale_warning:
+            print(f"\n{stale_warning}")
+    snapshots_path = output_dir / "portfolio_snapshots.csv"
+    if snapshots_path.exists():
+        run_scoreboard(snapshots_path, output_dir)
 
 
 if __name__ == '__main__':
