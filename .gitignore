@@ -35,3 +35,4 @@ _baseline_pre_refactor/
 scripts/
 .claude/
 _test_output/
+pytest-cache-files-*/
