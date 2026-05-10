@@ -144,8 +144,127 @@ def test_malformed_numeric_is_skipped_without_crash(caplog: pytest.LogCaptureFix
     with caplog.at_level("WARNING"):
         result = reconcile._reconcile(lpagent, ours, "2026-04-01")
 
-    assert result.matched == []
-    assert "malformed pnlNative" in caplog.text
+    assert len(result.matched) == 1
+    assert result.matched[0].full_address == "BAD_TOKEN"
+    assert result.matched[0].pnl_lpagent is None
+    assert result.matched[0].diff_sol == "ERROR (malformed lpagent pnl: not-a-number)"
+    assert "malformed lpagent pnl" in caplog.text
+
+
+def _matched_csv_rows(path: Path) -> list[dict[str, str]]:
+    lines = path.read_text(encoding="utf-8").splitlines()
+    return list(csv.DictReader(lines[1:]))
+
+
+def test_matched_record_preserved_with_malformed_lpagent_pnl(caplog: pytest.LogCaptureFixture) -> None:
+    token_id = "BAD_LPAGENT_TOKEN"
+    lpagent = {
+        token_id: {
+            "tokenId": token_id,
+            "token0Info": {"token_symbol": "BAD"},
+            "pnlNative": "not-a-number",
+        }
+    }
+    ours = {token_id: {"full_address": token_id, "token": "BAD", "pnl_sol": "0.100000"}}
+
+    with caplog.at_level("WARNING"):
+        result = reconcile._reconcile(lpagent, ours, "2026-04-01")
+    paths = reconcile._render_csvs(result, "2026-04-01", "2026-04-01", _case_dir("bad-lpagent-pnl"))
+    matched_rows = _matched_csv_rows(paths[0])
+
+    assert result.matched[0].full_address == token_id
+    assert matched_rows[0]["full_address"] == token_id
+    assert matched_rows[0]["pnl_lpagent"] == "N/A"
+    assert matched_rows[0]["diff_sol"] == "ERROR (malformed lpagent pnl: not-a-number)"
+    assert "malformed lpagent pnl" in caplog.text
+
+
+def test_matched_record_preserved_with_empty_local_pnl(caplog: pytest.LogCaptureFixture) -> None:
+    token_id = "EMPTY_LOCAL_TOKEN"
+    lpagent = {
+        token_id: {
+            "tokenId": token_id,
+            "token0Info": {"token_symbol": "EMPTY"},
+            "pnlNative": "0.250000",
+        }
+    }
+    ours = {token_id: {"full_address": token_id, "token": "EMPTY", "pnl_sol": ""}}
+
+    with caplog.at_level("WARNING"):
+        result = reconcile._reconcile(lpagent, ours, "2026-04-01")
+    paths = reconcile._render_csvs(result, "2026-04-01", "2026-04-01", _case_dir("empty-local-pnl"))
+    matched_rows = _matched_csv_rows(paths[0])
+
+    assert result.matched[0].full_address == token_id
+    assert result.matched[0].pnl_ours is None
+    assert result.matched[0].diff_sol == "N/A"
+    assert matched_rows[0]["full_address"] == token_id
+    assert matched_rows[0]["pnl_ours"] == "N/A"
+    assert matched_rows[0]["diff_sol"] == "N/A"
+    assert "local pnl field empty" in caplog.text
+
+
+def test_matched_record_with_both_pnl_valid_computes_diff() -> None:
+    token_id = "VALID_PNL_TOKEN"
+    lpagent = {
+        token_id: {
+            "tokenId": token_id,
+            "token0Info": {"token_symbol": "VALID"},
+            "pnlNative": "0.250000",
+        }
+    }
+    ours = {token_id: {"full_address": token_id, "token": "VALID", "pnl_sol": "0.300000"}}
+
+    result = reconcile._reconcile(lpagent, ours, "2026-04-01")
+
+    assert result.matched[0].pnl_ours == Decimal("0.300000")
+    assert result.matched[0].pnl_lpagent == Decimal("0.250000")
+    assert result.matched[0].diff_sol == Decimal("0.050000")
+    assert result.matched[0].diff_pct == "+20.00%"
+
+
+def test_output_write_failure_exits_with_error(
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    output_dir = _case_dir("write-failure") / "output"
+    cache_dir = output_dir / "lpagent_cache"
+    cache_dir.mkdir(parents=True)
+    (output_dir / "positions.csv").write_text(
+        (FIXTURES / "sample_positions.csv").read_text(encoding="utf-8"),
+        encoding="utf-8",
+    )
+    (cache_dir / "2026-04-30.json").write_text(
+        (FIXTURES / "cache" / "2026-04-30.json").read_text(encoding="utf-8"),
+        encoding="utf-8",
+    )
+
+    original_write_text = Path.write_text
+
+    def fail_markdown_write(self: Path, *args: object, **kwargs: object) -> int:
+        if self.suffix == ".md":
+            raise OSError("disk full")
+        return original_write_text(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "write_text", fail_markdown_write)
+
+    with pytest.raises(SystemExit) as excinfo:
+        reconcile.main(
+            [
+                "--from",
+                "2026-04-30",
+                "--to",
+                "2026-04-30",
+                "--legacy-cache",
+                "--output-dir",
+                str(output_dir),
+            ]
+        )
+
+    captured = capsys.readouterr()
+    assert excinfo.value.code == 1
+    assert "Matched:       10 positions" in captured.out
+    assert "Error: failed to write report (OSError: disk full)" in captured.err
 
 
 def test_legacy_cache_required(capsys: pytest.CaptureFixture[str]) -> None:

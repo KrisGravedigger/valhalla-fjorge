@@ -32,10 +32,17 @@ _CSV_WARNING = "# WARNING: legacy cache, results approximate"
 class _MatchedRow:
     full_address: str
     token: str
-    pnl_ours: Decimal
-    pnl_lpagent: Decimal
-    diff_sol: Decimal
+    pnl_ours: Decimal | None
+    pnl_lpagent: Decimal | None
+    diff_sol: Decimal | str
     diff_pct: str
+
+
+@dataclass(frozen=True)
+class _ParsedPnl:
+    value: Decimal | None
+    issue: str | None = None
+    is_error: bool = False
 
 
 @dataclass(frozen=True)
@@ -190,14 +197,22 @@ def _load_positions_csv(path: Path) -> dict[str, dict[str, str]]:
     return positions
 
 
-def _parse_decimal(value: object, field_name: str, row_id: str) -> Decimal | None:
-    if value is None or value == "":
-        return Decimal("0")
+def _parse_decimal(value: object, field_name: str, row_id: str) -> _ParsedPnl:
+    if value is None:
+        issue = f"missing {field_name}"
+        logging.warning("%s for matched record %s", issue, row_id)
+        return _ParsedPnl(value=None, issue=issue)
+    if isinstance(value, str) and value.strip() == "":
+        issue = f"{field_name} field empty"
+        logging.warning("%s for matched record %s", issue, row_id)
+        return _ParsedPnl(value=None, issue=issue)
+
     try:
-        return Decimal(str(value))
+        return _ParsedPnl(value=Decimal(str(value).strip()))
     except (InvalidOperation, ValueError) as exc:
-        logger.warning("Skipping %s: malformed %s value %r (%s)", row_id, field_name, value, exc)
-        return None
+        issue = f"malformed {field_name}: {value}"
+        logging.warning("%s for matched record %s (%s)", issue, row_id, exc)
+        return _ParsedPnl(value=None, issue=issue, is_error=True)
 
 
 def _lpagent_token(row: dict[str, Any]) -> str:
@@ -221,26 +236,39 @@ def _lpagent_pnl_native(row: dict[str, Any]) -> str:
     return str(row.get("pnlNative") or "0")
 
 
-def _compute_pnl_diff(our_row: dict[str, str], lpagent_row: dict[str, Any]) -> _MatchedRow | None:
+def _compute_pnl_diff(our_row: dict[str, str], lpagent_row: dict[str, Any]) -> _MatchedRow:
     token_id = str(lpagent_row.get("tokenId", "") or our_row.get("full_address", "")).strip()
-    pnl_ours = _parse_decimal(our_row.get("pnl_sol"), "pnl_sol", token_id)
-    pnl_lpagent = _parse_decimal(lpagent_row.get("pnlNative"), "pnlNative", token_id)
-    if pnl_ours is None or pnl_lpagent is None:
-        return None
+    pnl_ours = _parse_decimal(our_row.get("pnl_sol"), "local pnl", token_id)
+    pnl_lpagent = _parse_decimal(lpagent_row.get("pnlNative"), "lpagent pnl", token_id)
 
-    diff_sol = pnl_ours - pnl_lpagent
-    if pnl_lpagent == 0:
+    if pnl_ours.value is None or pnl_lpagent.value is None:
+        error_issue = next(
+            (pnl.issue for pnl in (pnl_ours, pnl_lpagent) if pnl.is_error and pnl.issue is not None),
+            None,
+        )
+        error_diff_sol = f"ERROR ({error_issue})" if error_issue else "N/A"
+        return _MatchedRow(
+            full_address=our_row.get("full_address", "").strip(),
+            token=_clean_text(our_row.get("token", "") or _lpagent_token(lpagent_row)),
+            pnl_ours=pnl_ours.value,
+            pnl_lpagent=pnl_lpagent.value,
+            diff_sol=error_diff_sol,
+            diff_pct="N/A",
+        )
+
+    numeric_diff_sol = pnl_ours.value - pnl_lpagent.value
+    if pnl_lpagent.value == 0:
         diff_pct = "N/A"
     else:
-        diff_pct_value = (diff_sol / abs(pnl_lpagent)) * Decimal("100")
+        diff_pct_value = (numeric_diff_sol / abs(pnl_lpagent.value)) * Decimal("100")
         diff_pct = f"{diff_pct_value:+.2f}%"
 
     return _MatchedRow(
         full_address=our_row.get("full_address", "").strip(),
         token=_clean_text(our_row.get("token", "") or _lpagent_token(lpagent_row)),
-        pnl_ours=pnl_ours,
-        pnl_lpagent=pnl_lpagent,
-        diff_sol=diff_sol,
+        pnl_ours=pnl_ours.value,
+        pnl_lpagent=pnl_lpagent.value,
+        diff_sol=numeric_diff_sol,
         diff_pct=diff_pct,
     )
 
@@ -271,9 +299,7 @@ def _reconcile(
     """Return matched, lpagent-only, and ours-only categories."""
     matched: list[_MatchedRow] = []
     for token_id in sorted(lpagent_positions.keys() & our_positions.keys()):
-        diff = _compute_pnl_diff(our_positions[token_id], lpagent_positions[token_id])
-        if diff is not None:
-            matched.append(diff)
+        matched.append(_compute_pnl_diff(our_positions[token_id], lpagent_positions[token_id]))
 
     lpagent_only = [
         _LpAgentOnlyRow(
@@ -302,6 +328,26 @@ def _reconcile(
 
 def _fmt_decimal(value: Decimal) -> str:
     return f"{value:+.6f}"
+
+
+def _fmt_optional_decimal(value: Decimal | None) -> str:
+    if value is None:
+        return "N/A"
+    return _fmt_decimal(value)
+
+
+def _fmt_diff(value: Decimal | str) -> str:
+    if isinstance(value, Decimal):
+        return _fmt_decimal(value)
+    return value
+
+
+def _matched_numeric_rows(result: _ReconcileResult) -> list[_MatchedRow]:
+    return [
+        row
+        for row in result.matched
+        if row.pnl_ours is not None and row.pnl_lpagent is not None and isinstance(row.diff_sol, Decimal)
+    ]
 
 
 def _short(value: str, limit: int = 12) -> str:
@@ -344,8 +390,8 @@ def _render_console(
     for matched_row in result.matched:
         print(
             f"{_short(matched_row.full_address)} | {matched_row.token} | "
-            f"{_fmt_decimal(matched_row.pnl_ours)} | {_fmt_decimal(matched_row.pnl_lpagent)} | "
-            f"{_fmt_decimal(matched_row.diff_sol)} | {matched_row.diff_pct}"
+            f"{_fmt_optional_decimal(matched_row.pnl_ours)} | {_fmt_optional_decimal(matched_row.pnl_lpagent)} | "
+            f"{_fmt_diff(matched_row.diff_sol)} | {matched_row.diff_pct}"
         )
     print()
 
@@ -367,8 +413,9 @@ def _render_console(
         )
     print()
 
-    ours_total = sum((row.pnl_ours for row in result.matched), Decimal("0"))
-    lpagent_total = sum((row.pnl_lpagent for row in result.matched), Decimal("0"))
+    numeric_rows = _matched_numeric_rows(result)
+    ours_total = sum((row.pnl_ours for row in numeric_rows if row.pnl_ours is not None), Decimal("0"))
+    lpagent_total = sum((row.pnl_lpagent for row in numeric_rows if row.pnl_lpagent is not None), Decimal("0"))
     drift = ours_total - lpagent_total
     print("--- Aggregates ---")
     print(f"Total matched PnL (ours):    {_fmt_decimal(ours_total)} SOL")
@@ -420,9 +467,9 @@ def _render_markdown(
                     [
                         row.full_address,
                         row.token,
-                        _fmt_decimal(row.pnl_ours),
-                        _fmt_decimal(row.pnl_lpagent),
-                        _fmt_decimal(row.diff_sol),
+                        _fmt_optional_decimal(row.pnl_ours),
+                        _fmt_optional_decimal(row.pnl_lpagent),
+                        _fmt_diff(row.diff_sol),
                         row.diff_pct,
                     ]
                     for row in result.matched
@@ -447,8 +494,9 @@ def _render_markdown(
             "## Aggregates",
         ]
     )
-    ours_total = sum((row.pnl_ours for row in result.matched), Decimal("0"))
-    lpagent_total = sum((row.pnl_lpagent for row in result.matched), Decimal("0"))
+    numeric_rows = _matched_numeric_rows(result)
+    ours_total = sum((row.pnl_ours for row in numeric_rows if row.pnl_ours is not None), Decimal("0"))
+    lpagent_total = sum((row.pnl_lpagent for row in numeric_rows if row.pnl_lpagent is not None), Decimal("0"))
     drift = ours_total - lpagent_total
     lines.extend(
         [
@@ -484,9 +532,9 @@ def _render_csvs(result: _ReconcileResult, from_date: str, to_date: str, output_
             {
                 "full_address": row.full_address,
                 "token": row.token,
-                "pnl_ours": _fmt_decimal(row.pnl_ours),
-                "pnl_lpagent": _fmt_decimal(row.pnl_lpagent),
-                "diff_sol": _fmt_decimal(row.diff_sol),
+                "pnl_ours": _fmt_optional_decimal(row.pnl_ours),
+                "pnl_lpagent": _fmt_optional_decimal(row.pnl_lpagent),
+                "diff_sol": _fmt_diff(row.diff_sol),
                 "diff_pct": row.diff_pct,
             }
             for row in result.matched
@@ -566,8 +614,12 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     result = _reconcile(lpagent_positions, our_positions, args.from_date)
     _render_console(result, args.from_date, args.to_date, missing_dates, include_warning=False)
-    markdown_path = _render_markdown(result, args.from_date, args.to_date, output_dir, missing_dates)
-    csv_paths = _render_csvs(result, args.from_date, args.to_date, output_dir)
+    try:
+        markdown_path = _render_markdown(result, args.from_date, args.to_date, output_dir, missing_dates)
+        csv_paths = _render_csvs(result, args.from_date, args.to_date, output_dir)
+    except OSError as error:
+        print(f"Error: failed to write report ({type(error).__name__}: {error})", file=sys.stderr)
+        sys.exit(1)
 
     print()
     print(f"Markdown report: {markdown_path}")
