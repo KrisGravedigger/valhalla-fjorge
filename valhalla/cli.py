@@ -46,6 +46,7 @@ from valhalla.charts import generate_charts, generate_insufficient_balance_chart
 from valhalla.alias_resolver import apply_aliases
 from valhalla.coverage_gaps import detect_coverage_gaps as _detect_coverage_gaps
 from valhalla.balance_recovery import recover_insufficient_balance_history as _recover_insufficient_balance_history
+from valhalla.capital_flow import check_stale_flows
 
 
 # ---------------------------------------------------------------------------
@@ -1023,6 +1024,9 @@ def main():
     report_discord_gaps(str(positions_csv))
 
     print(f"\nDone!")
+    stale_warning = check_stale_flows(output_dir / "capital_flows.csv")
+    if stale_warning:
+        print(f"\n{stale_warning}")
 
 
 if __name__ == '__main__':
