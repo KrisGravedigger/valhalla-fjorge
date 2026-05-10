@@ -1,0 +1,4 @@
+[
+  {"tokenId": "TOKEN_MATCH_0001", "token0Info": {"token_symbol": "OLD01"}, "createdAt": "2026-04-29T10:01:00Z", "pnlNative": "9.000000"},
+  {"tokenId": "TOKEN_MATCH_0002", "token0Info": {"token_symbol": "TOK02"}, "createdAt": "2026-04-29T10:02:00Z", "pnlNative": "0.020000"}
+]

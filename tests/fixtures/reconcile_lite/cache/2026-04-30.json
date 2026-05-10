@@ -1,0 +1,20 @@
+[
+  {"tokenId": "TOKEN_MATCH_0001", "token0Info": {"token_symbol": "TOK01"}, "createdAt": "2026-04-30T10:01:00Z", "pnlNative": "0.048000"},
+  {"tokenId": "TOKEN_MATCH_0002", "token0Info": {"token_symbol": "TOK02"}, "createdAt": "2026-04-30T10:02:00Z", "pnlNative": "0.020000"},
+  {"tokenId": "TOKEN_MATCH_0003", "token0Info": {"token_symbol": "TOK03"}, "createdAt": "2026-04-30T10:03:00Z", "pnlNative": "-0.010000"},
+  {"tokenId": "TOKEN_MATCH_0004", "token0Info": {"token_symbol": "TOK04"}, "createdAt": "2026-04-30T10:04:00Z", "pnlNative": "0.100000"},
+  {"tokenId": "TOKEN_MATCH_0005", "token0Info": {"token_symbol": "TOK05"}, "createdAt": "2026-04-30T10:05:00Z", "pnlNative": "0.250000"},
+  {"tokenId": "TOKEN_MATCH_0006", "token0Info": {"token_symbol": "TOK06"}, "createdAt": "2026-04-30T10:06:00Z", "pnlNative": "-0.050000"},
+  {"tokenId": "TOKEN_MATCH_0007", "token0Info": {"token_symbol": "TOK07"}, "createdAt": "2026-04-30T10:07:00Z", "pnlNative": "0.075000"},
+  {"tokenId": "TOKEN_MATCH_0008", "token0Info": {"token_symbol": "TOK08"}, "createdAt": "2026-04-30T10:08:00Z", "pnlNative": "0.125000"},
+  {"tokenId": "TOKEN_MATCH_0009", "token0Info": {"token_symbol": "TOK09"}, "createdAt": "2026-04-30T10:09:00Z", "pnlNative": "0.333000"},
+  {"tokenId": "TOKEN_MATCH_0010", "token0Info": {"token_symbol": "TOK10"}, "createdAt": "2026-04-30T10:10:00Z", "pnlNative": "0.500000"},
+  {"tokenId": "TOKEN_MATCH_0010", "token0Info": {"token_symbol": "TOK10"}, "createdAt": "2026-04-30T10:10:30Z", "pnlNative": "0.000000"},
+  {"tokenId": "TOKEN_LPA_ONLY_0001", "token0Info": {"token_symbol": "LPA01"}, "createdAt": "2026-04-30T11:01:00Z", "pnlNative": "0.010000"},
+  {"tokenId": "TOKEN_LPA_ONLY_0002", "token0Info": {"token_symbol": "LPA02"}, "createdAt": "2026-04-30T11:02:00Z", "pnlNative": "0.020000"},
+  {"tokenId": "TOKEN_LPA_ONLY_0003", "token0Info": {"token_symbol": "LPA03"}, "createdAt": "2026-04-30T11:03:00Z", "pnlNative": "0.030000"},
+  {"tokenId": "TOKEN_LPA_ONLY_0004", "token0Info": {"token_symbol": "LPA04"}, "createdAt": "2026-04-30T11:04:00Z", "pnlNative": "0.040000"},
+  {"tokenId": "TOKEN_LPA_ONLY_0005", "token0Info": {"token_symbol": "LPA05"}, "createdAt": "2026-04-30T11:05:00Z", "pnlNative": "0.050000"},
+  {"tokenId": "", "token0Info": {"token_symbol": "EMPTY"}, "createdAt": "2026-04-30T12:00:00Z", "pnlNative": "9.999999"},
+  {"token0Info": {"token_symbol": "MISSING"}, "createdAt": "2026-04-30T12:01:00Z", "pnlNative": "8.888888"}
+]

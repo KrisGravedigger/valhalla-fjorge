@@ -25,6 +25,8 @@ analysis_plan_done.md
 own_bot_project.md
 lpagent_closed_positions.csv
 *.csv
+!tests/fixtures/**/*.csv
+!tests/fixtures/**/*.json
 DiscordChatExporter.Cli.win-x64/
 tasks.md
 
