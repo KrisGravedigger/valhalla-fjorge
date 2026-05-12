@@ -1,0 +1,23 @@
+{
+  "status": "success",
+  "data": {
+    "data": [
+      {"tokenId": "tok01", "createdAt": "2026-05-01T10:00:00Z", "updatedAt": "2026-05-02T10:00:00Z", "pnlNative": 0.01, "inputNative": 1.0, "outputNative": 1.01},
+      {"tokenId": "tok02", "createdAt": "2026-05-01T11:00:00Z", "updatedAt": "2026-05-02T11:00:00Z", "pnlNative": 0.02, "inputNative": 1.0, "outputNative": 1.02},
+      {"tokenId": "tok03", "createdAt": "2026-05-01T12:00:00Z", "updatedAt": "2026-05-02T12:00:00Z", "pnlNative": 0.03, "inputNative": 1.0, "outputNative": 1.03},
+      {"tokenId": "tok04", "createdAt": "2026-05-01T13:00:00Z", "updatedAt": "2026-05-02T13:00:00Z", "pnlNative": 0.04, "inputNative": 1.0, "outputNative": 1.04},
+      {"tokenId": "tok05", "createdAt": "2026-05-01T14:00:00Z", "updatedAt": "2026-05-02T14:00:00Z", "pnlNative": 0.05, "inputNative": 1.0, "outputNative": 1.05},
+      {"tokenId": "tok06", "createdAt": "2026-05-01T15:00:00Z", "updatedAt": "2026-05-02T15:00:00Z", "pnlNative": 0.06, "inputNative": 1.0, "outputNative": 1.06},
+      {"tokenId": "tok07", "createdAt": "2026-05-01T16:00:00Z", "updatedAt": "2026-05-02T16:00:00Z", "pnlNative": 0.07, "inputNative": 1.0, "outputNative": 1.07},
+      {"tokenId": "tok08", "createdAt": "2026-05-01T17:00:00Z", "updatedAt": "2026-05-02T17:00:00Z", "pnlNative": 0.08, "inputNative": 1.0, "outputNative": 1.08},
+      {"tokenId": "tok09", "createdAt": "2026-05-01T18:00:00Z", "updatedAt": "2026-05-02T18:00:00Z", "pnlNative": 0.09, "inputNative": 1.0, "outputNative": 1.09},
+      {"tokenId": "tok10", "createdAt": "2026-05-01T19:00:00Z", "updatedAt": "2026-05-02T19:00:00Z", "pnlNative": 0.10, "inputNative": 1.0, "outputNative": 1.10}
+    ],
+    "pagination": {
+      "totalCount": 50,
+      "totalPages": 5,
+      "currentPage": 1,
+      "pageSize": 10
+    }
+  }
+}
