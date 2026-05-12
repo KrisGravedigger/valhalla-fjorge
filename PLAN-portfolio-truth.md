@@ -1,7 +1,7 @@
 # Portfolio Truth — PnL/NAV Reliability Plan
 
 **Date:** 2026-05-10
-**Status:** Refined — ready for design-doc-writer
+**Status:** A/B/D-lite shipped (docs 023/024/025, merged 2026-05-10). C docs written (docs 026/027, 2026-05-11). D-full, E, F pending.
 **Supersedes (in spirit):** parts of `PLAN.md` (2026-04-02), all of `notes/portfolio_nav_pnl_model.md`
 
 ---

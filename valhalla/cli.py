@@ -13,7 +13,7 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Dict, List, Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 
 # Import from valhalla package
@@ -59,6 +59,7 @@ from valhalla.lpagent_pipeline import (
     run_cross_check as _run_cross_check,
     retro_enrich_lpagent_from_archive as _retro_enrich_lpagent_from_archive,
 )
+from valhalla.lpagent_client import DEFAULT_WALLET as _LPAGENT_DEFAULT_WALLET, REFRESH_WINDOW_HOURS as _REFRESH_WINDOW_HOURS
 
 
 # ---------------------------------------------------------------------------
@@ -207,7 +208,7 @@ def main():
             # No dates given: use watermark to yesterday
             watermark = _read_watermark(str(output_dir))
             from_date = (
-                datetime.strptime(watermark, "%Y-%m-%d") + timedelta(days=1)
+                datetime.strptime(watermark["min_safe_open_date"], "%Y-%m-%d") + timedelta(days=1)
             ).strftime("%Y-%m-%d")
             to_date = yesterday
         elif len(dates) == 1:
@@ -220,16 +221,28 @@ def main():
             return
 
         print(f"[Cross-check] {from_date} -> {to_date}")
+        _cc_wallet = os.environ.get("LPAGENT_WALLET", _LPAGENT_DEFAULT_WALLET)
         try:
             count = _run_cross_check(
                 from_date, to_date, positions_csv, str(output_dir), silent_if_empty=False
             )
+            _cc_now_utc = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
             if count > 0:
-                _write_watermark(str(output_dir), to_date)
+                _write_watermark(str(output_dir), {
+                    "wallet": _cc_wallet,
+                    "min_safe_open_date": to_date,
+                    "last_full_refresh_at": _cc_now_utc,
+                    "refresh_window_hours": _REFRESH_WINDOW_HOURS,
+                })
                 print(f"  Watermark updated to {to_date}")
             else:
                 # Also update watermark when sync is clean (avoid re-querying)
-                _write_watermark(str(output_dir), to_date)
+                _write_watermark(str(output_dir), {
+                    "wallet": _cc_wallet,
+                    "min_safe_open_date": to_date,
+                    "last_full_refresh_at": _cc_now_utc,
+                    "refresh_window_hours": _REFRESH_WINDOW_HOURS,
+                })
                 print(f"  Watermark updated to {to_date}")
         except ValueError as e:
             print(f"[Cross-check] Error: {e}")
@@ -995,10 +1008,11 @@ def main():
                 yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
                 watermark = _read_watermark(str(output_dir))
                 next_day = (
-                    datetime.strptime(watermark, "%Y-%m-%d") + timedelta(days=1)
+                    datetime.strptime(watermark["min_safe_open_date"], "%Y-%m-%d") + timedelta(days=1)
                 ).strftime("%Y-%m-%d")
                 if next_day <= yesterday:
                     print(f"\n[Cross-check] Syncing {next_day} -> {yesterday}...")
+                    _la_wallet = os.environ.get("LPAGENT_WALLET", _LPAGENT_DEFAULT_WALLET)
                     count = _run_cross_check(
                         next_day,
                         yesterday,
@@ -1007,7 +1021,12 @@ def main():
                         silent_if_empty=True,
                     )
                     # Always update watermark on successful sync (avoids re-querying clean days)
-                    _write_watermark(str(output_dir), yesterday)
+                    _write_watermark(str(output_dir), {
+                        "wallet": _la_wallet,
+                        "min_safe_open_date": yesterday,
+                        "last_full_refresh_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                        "refresh_window_hours": _REFRESH_WINDOW_HOURS,
+                    })
                     if count > 0:
                         print(f"  Watermark updated to {yesterday}")
             except Exception as e:
