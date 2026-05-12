@@ -342,14 +342,12 @@ def test_read_only_set_on_archive(tmp_path: Path) -> None:
 
 
 def test_chmod_failure_does_not_abort(tmp_path: Path) -> None:
-    """AC-5 adversarial: chmod failure is warned but migration still succeeds."""
+    """AC-5 adversarial: os.chmod failure is warned but migration still succeeds."""
     _copy_fixtures(FIXTURES, tmp_path, ["2026-04-28.json"])
     wallet = "J4tkGAbcde"
 
-    def _failing_chmod(path: Path) -> None:
-        raise OSError("permission denied (simulated)")
-
-    with patch.object(mig, "_set_read_only", side_effect=_failing_chmod):
+    # Patch os.chmod at the module level so _set_read_only's try/except is exercised
+    with patch.object(mig.os, "chmod", side_effect=OSError("permission denied (simulated)")):
         with pytest.raises(SystemExit) as exc_info:
             mig.main(["--migrate", "--cache-dir", str(tmp_path), "--wallet", wallet])
 
