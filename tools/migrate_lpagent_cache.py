@@ -15,11 +15,14 @@ import argparse
 import json
 import logging
 import os
+import re
 import sys
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, List, Optional
+
+_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 logger = logging.getLogger(__name__)
 
@@ -68,6 +71,9 @@ def _load_daily_files(
         if path.resolve().parent == archive_dir.resolve():
             continue
         date_str = path.stem  # "2026-04-30"
+        if not _DATE_RE.match(date_str):
+            logger.warning("Skipping non-date file %s", path.name)
+            continue
         try:
             data = json.loads(path.read_text(encoding="utf-8"))
             if not isinstance(data, list):
