@@ -416,11 +416,9 @@ by the PM after inspecting the `--audit` output.
   `output/lpagent_cache/YYYY-MM-DD.json`. After `--migrate` runs, those files live in
   `output/lpagent_cache/archive/`. The reconcile tool will find zero cache files and
   print the "no files found" notice for every date in the range.
-  **PM decision needed**: should `reconcile.py --legacy-cache` be updated to also
-  look in `archive/`? Or is `--legacy-cache` mode considered superseded after C ships
-  (and users should switch to `--jsonl-cache` mode, which D-full will implement)?
-  This doc does NOT fix reconcile.py; that change belongs in either a patch to doc
-  025's scope or the D-full design doc.
+  **Decision (2026-05-12)**: `--legacy-cache` is considered superseded. After
+  `--migrate` runs, do not use `--legacy-cache`. D-full will implement `--jsonl-cache`
+  against the new flat JSONL. No change to `reconcile.py` is planned.
 - **`tokenId` absent in legacy daily files**: Some edge-case positions (e.g., the
   DSc936vC-style zero-token positions noted in `PLAN-portfolio-truth.md`) may have
   empty or absent `tokenId`. The migration skips such rows (consistent with
