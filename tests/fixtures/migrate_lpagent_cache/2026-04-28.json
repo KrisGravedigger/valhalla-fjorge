@@ -1,0 +1,42 @@
+[
+  {
+    "tokenId": "TOKEN_A",
+    "pnlNative": 0.1,
+    "createdAt": "2026-04-28T08:00:00.000Z",
+    "updatedAt": "2026-04-28T10:00:00.000Z",
+    "owner": "J4tkGAbcde",
+    "status": "Close"
+  },
+  {
+    "tokenId": "TOKEN_B",
+    "pnlNative": 0.2,
+    "createdAt": "2026-04-28T09:00:00.000Z",
+    "updatedAt": "2026-04-28T11:00:00.000Z",
+    "owner": "J4tkGAbcde",
+    "status": "Close"
+  },
+  {
+    "tokenId": "TOKEN_C",
+    "pnlNative": 0.3,
+    "createdAt": "2026-04-28T10:00:00.000Z",
+    "updatedAt": "2026-04-28T12:00:00.000Z",
+    "owner": "J4tkGAbcde",
+    "status": "Close"
+  },
+  {
+    "tokenId": "TOKEN_D",
+    "pnlNative": 0.4,
+    "createdAt": "2026-04-28T11:00:00.000Z",
+    "updatedAt": "2026-04-28T13:00:00.000Z",
+    "owner": "J4tkGAbcde",
+    "status": "Close"
+  },
+  {
+    "tokenId": "TOKEN_E",
+    "pnlNative": 0.5,
+    "createdAt": "2026-04-28T12:00:00.000Z",
+    "updatedAt": "2026-04-28T14:00:00.000Z",
+    "owner": "J4tkGAbcde",
+    "status": "Close"
+  }
+]
