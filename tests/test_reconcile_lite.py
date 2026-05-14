@@ -10,7 +10,6 @@ import pytest
 
 from valhalla import reconcile
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = PROJECT_ROOT / "tests" / "fixtures" / "reconcile_lite"
 
@@ -22,13 +21,22 @@ def _case_dir(name: str) -> Path:
 
 
 def _load_fixture_result() -> reconcile._ReconcileResult:
-    lpagent = reconcile._load_legacy_cache(FIXTURES / "cache", "2026-04-30", "2026-04-30")
+    lpagent = reconcile._load_legacy_cache(
+        FIXTURES / "cache",
+        "2026-04-30",
+        "2026-04-30",
+    )
     ours = reconcile._load_positions_csv(FIXTURES / "sample_positions.csv")
     return reconcile._reconcile(lpagent, ours, "2026-04-01")
 
 
 def _write_positions_csv(path: Path, rows: list[dict[str, str]]) -> None:
-    header = (FIXTURES / "sample_positions.csv").read_text(encoding="utf-8").splitlines()[0].split(",")
+    header = (
+        (FIXTURES / "sample_positions.csv")
+        .read_text(encoding="utf-8")
+        .splitlines()[0]
+        .split(",")
+    )
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", newline="", encoding="utf-8") as fh:
         writer = csv.DictWriter(fh, fieldnames=header)
@@ -56,7 +64,11 @@ def test_dedup_legacy_cache_last_seen_file_wins() -> None:
 
 
 def test_dedup_legacy_cache_duplicate_within_file() -> None:
-    lpagent = reconcile._load_legacy_cache(FIXTURES / "cache", "2026-04-30", "2026-04-30")
+    lpagent = reconcile._load_legacy_cache(
+        FIXTURES / "cache",
+        "2026-04-30",
+        "2026-04-30",
+    )
 
     assert len(lpagent) == 15
     assert lpagent["TOKEN_MATCH_0010"]["pnlNative"] == "0.000000"
@@ -64,7 +76,11 @@ def test_dedup_legacy_cache_duplicate_within_file() -> None:
 
 def test_skip_empty_and_missing_tokenid(caplog: pytest.LogCaptureFixture) -> None:
     with caplog.at_level("WARNING"):
-        lpagent = reconcile._load_legacy_cache(FIXTURES / "cache", "2026-04-30", "2026-04-30")
+        lpagent = reconcile._load_legacy_cache(
+            FIXTURES / "cache",
+            "2026-04-30",
+            "2026-04-30",
+        )
 
     assert "" not in lpagent
     assert all("EMPTY" != row.get("token") for row in lpagent.values())
@@ -115,7 +131,9 @@ def test_dedup_positions_csv_two_discord_rows_keep_first(
 
 def test_pnl_diff_math() -> None:
     result = _load_fixture_result()
-    row = next(item for item in result.matched if item.full_address == "TOKEN_MATCH_0001")
+    row = next(
+        item for item in result.matched if item.full_address == "TOKEN_MATCH_0001"
+    )
 
     assert row.pnl_ours == Decimal("0.050000")
     assert row.pnl_lpagent == Decimal("0.048000")
@@ -125,13 +143,17 @@ def test_pnl_diff_math() -> None:
 
 def test_pnl_diff_zero_lpagent() -> None:
     result = _load_fixture_result()
-    row = next(item for item in result.matched if item.full_address == "TOKEN_MATCH_0010")
+    row = next(
+        item for item in result.matched if item.full_address == "TOKEN_MATCH_0010"
+    )
 
     assert row.pnl_lpagent == Decimal("0.000000")
     assert row.diff_pct == "N/A"
 
 
-def test_malformed_numeric_is_skipped_without_crash(caplog: pytest.LogCaptureFixture) -> None:
+def test_malformed_numeric_is_skipped_without_crash(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
     lpagent = {
         "BAD_TOKEN": {
             "tokenId": "BAD_TOKEN",
@@ -139,7 +161,13 @@ def test_malformed_numeric_is_skipped_without_crash(caplog: pytest.LogCaptureFix
             "pnlNative": "not-a-number",
         }
     }
-    ours = {"BAD_TOKEN": {"full_address": "BAD_TOKEN", "token": "BAD", "pnl_sol": "0.1"}}
+    ours = {
+        "BAD_TOKEN": {
+            "full_address": "BAD_TOKEN",
+            "token": "BAD",
+            "pnl_sol": "0.1",
+        }
+    }
 
     with caplog.at_level("WARNING"):
         result = reconcile._reconcile(lpagent, ours, "2026-04-01")
@@ -156,7 +184,9 @@ def _matched_csv_rows(path: Path) -> list[dict[str, str]]:
     return list(csv.DictReader(lines[1:]))
 
 
-def test_matched_record_preserved_with_malformed_lpagent_pnl(caplog: pytest.LogCaptureFixture) -> None:
+def test_matched_record_preserved_with_malformed_lpagent_pnl(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
     token_id = "BAD_LPAGENT_TOKEN"
     lpagent = {
         token_id: {
@@ -169,7 +199,12 @@ def test_matched_record_preserved_with_malformed_lpagent_pnl(caplog: pytest.LogC
 
     with caplog.at_level("WARNING"):
         result = reconcile._reconcile(lpagent, ours, "2026-04-01")
-    paths = reconcile._render_csvs(result, "2026-04-01", "2026-04-01", _case_dir("bad-lpagent-pnl"))
+    paths = reconcile._render_csvs(
+        result,
+        "2026-04-01",
+        "2026-04-01",
+        _case_dir("bad-lpagent-pnl"),
+    )
     matched_rows = _matched_csv_rows(paths[0])
 
     assert result.matched[0].full_address == token_id
@@ -179,7 +214,9 @@ def test_matched_record_preserved_with_malformed_lpagent_pnl(caplog: pytest.LogC
     assert "malformed lpagent pnl" in caplog.text
 
 
-def test_matched_record_preserved_with_empty_local_pnl(caplog: pytest.LogCaptureFixture) -> None:
+def test_matched_record_preserved_with_empty_local_pnl(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
     token_id = "EMPTY_LOCAL_TOKEN"
     lpagent = {
         token_id: {
@@ -192,7 +229,12 @@ def test_matched_record_preserved_with_empty_local_pnl(caplog: pytest.LogCapture
 
     with caplog.at_level("WARNING"):
         result = reconcile._reconcile(lpagent, ours, "2026-04-01")
-    paths = reconcile._render_csvs(result, "2026-04-01", "2026-04-01", _case_dir("empty-local-pnl"))
+    paths = reconcile._render_csvs(
+        result,
+        "2026-04-01",
+        "2026-04-01",
+        _case_dir("empty-local-pnl"),
+    )
     matched_rows = _matched_csv_rows(paths[0])
 
     assert result.matched[0].full_address == token_id
@@ -213,7 +255,13 @@ def test_matched_record_with_both_pnl_valid_computes_diff() -> None:
             "pnlNative": "0.250000",
         }
     }
-    ours = {token_id: {"full_address": token_id, "token": "VALID", "pnl_sol": "0.300000"}}
+    ours = {
+        token_id: {
+            "full_address": token_id,
+            "token": "VALID",
+            "pnl_sol": "0.300000",
+        }
+    }
 
     result = reconcile._reconcile(lpagent, ours, "2026-04-01")
 
@@ -267,16 +315,27 @@ def test_output_write_failure_exits_with_error(
     assert "Error: failed to write report (OSError: disk full)" in captured.err
 
 
-def test_legacy_cache_required(capsys: pytest.CaptureFixture[str]) -> None:
+def test_jsonl_mode_exits_with_missing_cache_error(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """JSONL mode exits 1 if the expected JSONL cache file is absent."""
+    output_dir = _case_dir("jsonl-missing-error")
+
     with pytest.raises(SystemExit) as excinfo:
-        reconcile.main(["--from", "2026-04-01", "--to", "2026-04-30"])
+        reconcile.main(
+            [
+                "--from",
+                "2026-04-01",
+                "--to",
+                "2026-04-30",
+                "--output-dir",
+                str(output_dir),
+            ]
+        )
 
     captured = capsys.readouterr()
     assert excinfo.value.code == 1
-    assert (
-        "Error: --legacy-cache is required. "
-        "Non-legacy mode (sub-project D) is not yet implemented."
-    ) in captured.err
+    assert "JSONL cache not found" in captured.err
 
 
 def test_invalid_date_exits_before_loading(capsys: pytest.CaptureFixture[str]) -> None:
@@ -288,7 +347,9 @@ def test_invalid_date_exits_before_loading(capsys: pytest.CaptureFixture[str]) -
     assert "Invalid --from: must be YYYY-MM-DD." in captured.err
 
 
-def test_warning_banner_is_first_console_line(capsys: pytest.CaptureFixture[str]) -> None:
+def test_warning_banner_is_first_console_line(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
     result = _load_fixture_result()
 
     reconcile._render_console(result, "2026-04-01", "2026-04-30")
