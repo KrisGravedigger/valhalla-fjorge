@@ -481,9 +481,11 @@ def _ours_only_reason_jsonl(
     """Sub-categorise a positions.csv row absent from the JSONL."""
     closed = (row.get("datetime_close") or "")[:10]
     pnl_raw = (row.get("pnl_sol") or "").strip()
-    source_wallet = (row.get("source_wallet") or "").strip()
+    source_wallet = (
+        row.get("target_wallet_address") or row.get("source_wallet") or ""
+    ).strip()
 
-    if closed and closed < from_date:
+    if not closed or closed < from_date:
         return "older_than_retention"
     try:
         pnl_is_zero = not pnl_raw or Decimal(pnl_raw) == 0
@@ -553,9 +555,15 @@ def _reconcile_jsonl(
         for token_id in sorted(lpagent_positions.keys() - in_window.keys())
     ]
 
-    # ours-only: in-window rows not in lpagent + out-of-window rows
+    # ours-only: in-window rows not in lpagent + pre-window rows.
+    # Rows with datetime_close > to_date are excluded (future window).
+    pre_window = {
+        k: v for k, v in out_of_window.items()
+        if not (v.get("datetime_close") or "")[:10]
+        or (v.get("datetime_close") or "")[:10] < from_date
+    }
     ours_only_keys = sorted(
-        list(in_window.keys() - lpagent_positions.keys()) + list(out_of_window.keys())
+        list(in_window.keys() - lpagent_positions.keys()) + list(pre_window.keys())
     )
     ours_only = [
         _OursOnlyRow(
@@ -574,7 +582,9 @@ def _reconcile_jsonl(
     wallet_data: dict[str, list[tuple[_MatchedRow, dict[str, str]]]] = {}
     day_data: dict[str, list[tuple[_MatchedRow, dict[str, str]]]] = {}
     for mr, pos_row in matched_pairs:
-        w = (pos_row.get("source_wallet") or "").strip() or "unknown"
+        w = (
+            pos_row.get("target_wallet_address") or pos_row.get("source_wallet") or ""
+        ).strip() or "unknown"
         wallet_data.setdefault(w, []).append((mr, pos_row))
         d = (pos_row.get("datetime_close") or "")[:10] or "unknown"
         day_data.setdefault(d, []).append((mr, pos_row))
@@ -982,6 +992,11 @@ def _render_console_jsonl(
     print(f"Total matched PnL (ours):    {_fmt_decimal(ours_total)} SOL")
     print(f"Total matched PnL (lpagent): {_fmt_decimal(lpagent_total)} SOL")
     print(f"Total drift:                 {_fmt_decimal(drift)} SOL")
+    if result.matched:
+        print(
+            "Note: PnL drift is expected — our formula uses Meteora on-chain data;"
+            " lpagent uses its own input/output tracking."
+        )
 
     if result.wallet_aggregates:
         print()
@@ -1094,9 +1109,14 @@ def _render_markdown_jsonl(
             f"- Total matched PnL (ours): {_fmt_decimal(ours_total)} SOL",
             f"- Total matched PnL (lpagent): {_fmt_decimal(lpagent_total)} SOL",
             f"- Total drift: {_fmt_decimal(drift)} SOL",
-            "",
         ]
     )
+    if result.matched:
+        lines.append(
+            "- Note: PnL drift is expected — our formula uses Meteora on-chain data;"
+            " lpagent uses its own input/output tracking."
+        )
+    lines.append("")
     if result.wallet_aggregates:
         lines.extend(
             [
