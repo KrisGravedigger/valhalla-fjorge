@@ -38,18 +38,21 @@ LAMPORTS = 1_000_000_000
 #  32   lb_pair        pubkey         → offset 8
 #  32   owner          pubkey         → offset 40
 # 1120  liquidity_shares [u128; 70]  → offset 72
-#  96   reward_infos [UserRewardInfo; 2]  → offset 1192
-#       UserRewardInfo: [u128; 2] + [u64; 2] = 48B each → 2*48 = 96B
-# 3360  fee_infos [FeeInfo; 70]      → offset 1288
+# 3360  reward_infos [UserRewardInfo; 70] → offset 1192
+#       UserRewardInfo: [u128; NUM_REWARDS=2] + [u64; NUM_REWARDS=2] = 48B
+#       70 * 48 = 3360B  (NOT [UserRewardInfo; 2] — NUM_REWARDS is reward-token
+#       count per bin, not the array length; array length = MAX_BIN_PER_POSITION=70)
+# 3360  fee_infos [FeeInfo; 70]      → offset 4552
 #       FeeInfo: u128 + u128 + u64 + u64 = 48B each → 70*48 = 3360B
-#   4   lower_bin_id   i32           → offset 4648
-#   4   upper_bin_id   i32           → offset 4652
+#   4   lower_bin_id   i32           → offset 7912
+#   4   upper_bin_id   i32           → offset 7916
+# Total account size ≈ 8041 bytes
 POS_LB_PAIR = 8
 POS_OWNER = 40
 POS_LIQ_SHARES = 72
-POS_FEE_INFOS = 1288
-POS_LOWER_BIN = 4648
-POS_UPPER_BIN = 4652
+POS_FEE_INFOS = 4552
+POS_LOWER_BIN = 7912
+POS_UPPER_BIN = 7916
 # Within each FeeInfo (48 bytes): u128(16) + u128(16) + u64(8) + u64(8)
 FEE_INFO_SIZE = 48
 FEE_X_PENDING_OFF = 32  # offset within FeeInfo
@@ -143,8 +146,13 @@ def get_position_addresses(rpc_url: str, wallet: str) -> list[str]:
 # ─── Step 2: decode PositionV2 ────────────────────────────────────────────────
 
 def decode_position(data: bytes) -> dict:
-    if len(data) < 4660:
-        raise ValueError(f"PositionV2 too short: {len(data)} bytes")
+    # Expected ~8041 bytes; need at least through upper_bin_id at 7916+4=7920
+    print(f"    [debug] account size: {len(data)} bytes (expected ~8041)")
+    if len(data) < 7920:
+        raise ValueError(
+            f"PositionV2 too short: {len(data)} bytes "
+            f"(expected ~8041; wrong offsets or wrong account type?)"
+        )
 
     lb_pair_bytes = data[POS_LB_PAIR : POS_LB_PAIR + 32]
     lb_pair = base58.b58encode(lb_pair_bytes).decode()
