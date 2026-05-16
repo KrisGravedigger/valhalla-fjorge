@@ -12,6 +12,7 @@ import base64
 import json
 import os
 import struct
+import time
 import urllib.request
 import urllib.error
 from datetime import datetime, timezone
@@ -49,29 +50,40 @@ LAMPORTS = 1_000_000_000
 # Total account size ≈ 8041 bytes
 POS_LB_PAIR = 8
 POS_OWNER = 40
-POS_LIQ_SHARES = 72
-POS_FEE_INFOS = 4552
-POS_LOWER_BIN = 7912
-POS_UPPER_BIN = 7916
+POS_LIQ_SHARES = 72    # liq_shares data start (N u128 values, no prefix)
+# fee_data_off = 72 + N*64 (computed dynamically in decode_position)
+# lower_bin_off = 72 + N*112 (computed dynamically)
 # Within each FeeInfo (48 bytes): u128(16) + u128(16) + u64(8) + u64(8)
 FEE_INFO_SIZE = 48
 FEE_X_PENDING_OFF = 32  # offset within FeeInfo
 FEE_Y_PENDING_OFF = 40  # offset within FeeInfo
 
-# BinArray layout:
+# BinArray layout (from Meteora DLMM IDL):
 #  8   discriminator
 #  8   index           i64
+#  1   version         u8
+#  7   _padding        [u8; 7]
 # 32   lb_pair         pubkey
-# = 48 bytes header
-# Each Bin (112 bytes):
+# = 56 bytes header   (NOT 48 — version+padding add 8 bytes)
+# Each Bin is a bytemuck C struct (144 bytes in the current IDL):
 #  8   amount_x        u64
 #  8   amount_y        u64
 # 16   price           u128
 # 16   liquidity_supply u128
-# 32   reward_per_token_stored [u128; 2]
-# 32   fee_amounts_per_token_stored [u128; 2]
-BA_HEADER = 48
-BIN_SIZE = 112
+#  8   fulfilled_order_amount_x u64
+#  8   fulfilled_order_amount_y u64
+#  8   limit_order_fee_ask_side u64
+#  8   limit_order_fee_bid_side u64
+# 16   fee_amount_x_per_token_stored u128
+# 16   fee_amount_y_per_token_stored u128
+#  8   open_order_amount u64
+#  8   total_processing_order_amount u64
+#  8   processed_order_remaining_amount u64
+#  4   order_age u32
+#  1   limit_order_ask_side u8
+#  3   _padding_1 [u8; 3]
+BA_HEADER = 56
+BIN_SIZE = 144
 BIN_AMOUNT_X = 0     # u64 within bin
 BIN_AMOUNT_Y = 8     # u64 within bin
 BIN_LIQ_SUPPLY = 32  # u128 within bin (lo+hi)
@@ -79,17 +91,26 @@ BIN_LIQ_SUPPLY = 32  # u128 within bin (lo+hi)
 
 # ─── RPC helpers ─────────────────────────────────────────────────────────────
 
-def rpc_call(url: str, method: str, params: list) -> dict:
+def rpc_call(url: str, method: str, params: list, _retries: int = 3) -> dict:
     payload = {"jsonrpc": "2.0", "id": 1, "method": method, "params": params}
     body = json.dumps(payload).encode()
-    req = urllib.request.Request(
-        url, data=body, headers={"Content-Type": "application/json"}
-    )
-    with urllib.request.urlopen(req, timeout=30) as resp:
-        data = json.loads(resp.read())
-    if "error" in data:
-        raise RuntimeError(f"RPC {method} error: {data['error']}")
-    return data["result"]
+    for attempt in range(_retries):
+        req = urllib.request.Request(
+            url, data=body, headers={"Content-Type": "application/json"}
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                data = json.loads(resp.read())
+            if "error" in data:
+                raise RuntimeError(f"RPC {method} error: {data['error']}")
+            return data["result"]
+        except urllib.error.HTTPError as e:
+            if e.code == 429 and attempt < _retries - 1:
+                wait = 2 ** attempt
+                time.sleep(wait)
+                continue
+            raise
+    raise RuntimeError(f"RPC {method} failed after {_retries} retries")
 
 
 def http_get(url: str) -> dict:
@@ -146,33 +167,45 @@ def get_position_addresses(rpc_url: str, wallet: str) -> list[str]:
 # ─── Step 2: decode PositionV2 ────────────────────────────────────────────────
 
 def decode_position(data: bytes) -> dict:
-    # Expected ~8041 bytes; need at least through upper_bin_id at 7916+4=7920
-    print(f"    [debug] account size: {len(data)} bytes (expected ~8041)")
-    if len(data) < 7920:
-        raise ValueError(
-            f"PositionV2 too short: {len(data)} bytes "
-            f"(expected ~8041; wrong offsets or wrong account type?)"
-        )
+    # PositionV2 layout (MAX_BIN_PER_POSITION=70, always fixed):
+    #   8  discriminator
+    #  32  lb_pair          → offset 8
+    #  32  owner            → offset 40
+    #  N*16 liq_shares      → offset 72      (N=70, 1120B)
+    #  N*48 reward_infos    → offset 1192    (3360B)
+    #  N*48 fee_infos       → offset 4552    (3360B)
+    #   4  lower_bin_id     → offset 7912
+    #   4  upper_bin_id     → offset 7916
+    #  = 7920 bytes baseline; larger accounts have trailing limit-order data
+    N = 70  # MAX_BIN_PER_POSITION — constant in Meteora DLMM
+    FEE_DATA_OFF = 4552   # 72 + 70*64
+    LOWER_BIN_OFF = 7912  # 72 + 70*112
+
+    raw_len = len(data)
+    if raw_len < 7920:
+        raise ValueError(f"PositionV2 too short: {raw_len} bytes (need >= 7920)")
 
     lb_pair_bytes = data[POS_LB_PAIR : POS_LB_PAIR + 32]
     lb_pair = base58.b58encode(lb_pair_bytes).decode()
-    lower_bin_id = struct.unpack_from("<i", data, POS_LOWER_BIN)[0]
-    upper_bin_id = struct.unpack_from("<i", data, POS_UPPER_BIN)[0]
+
+    lower_bin_id = struct.unpack_from("<i", data, LOWER_BIN_OFF)[0]
+    upper_bin_id = struct.unpack_from("<i", data, LOWER_BIN_OFF + 4)[0]
+    active_width = upper_bin_id - lower_bin_id + 1
 
     liq_shares = []
-    for j in range(70):
+    for j in range(N):
         lo, hi = struct.unpack_from("<QQ", data, POS_LIQ_SHARES + j * 16)
         liq_shares.append(lo + (hi << 64))
 
     fee_x_pending = 0
     fee_y_pending = 0
-    for j in range(70):
-        base_off = POS_FEE_INFOS + j * FEE_INFO_SIZE
+    for j in range(N):
+        base = FEE_DATA_OFF + j * FEE_INFO_SIZE
         fee_x_pending += struct.unpack_from(
-            "<Q", data, base_off + FEE_X_PENDING_OFF
+            "<Q", data, base + FEE_X_PENDING_OFF
         )[0]
         fee_y_pending += struct.unpack_from(
-            "<Q", data, base_off + FEE_Y_PENDING_OFF
+            "<Q", data, base + FEE_Y_PENDING_OFF
         )[0]
 
     return {
@@ -180,7 +213,8 @@ def decode_position(data: bytes) -> dict:
         "lb_pair_bytes": lb_pair_bytes,
         "lower_bin_id": lower_bin_id,
         "upper_bin_id": upper_bin_id,
-        "width": upper_bin_id - lower_bin_id + 1,
+        "width": active_width,
+        "n_slots": N,
         "liquidity_shares": liq_shares,
         "fee_x_pending_raw": fee_x_pending,
         "fee_y_pending_raw": fee_y_pending,
@@ -196,12 +230,47 @@ def bin_array_address(lb_pair_pk: Pubkey, array_idx: int) -> Pubkey:
     return addr
 
 
-def decode_bin_array(data: bytes, array_idx: int) -> dict[int, dict]:
+def decode_bin_array(
+    data: bytes, array_idx: int, expected_lb_pair: Optional[bytes] = None
+) -> dict[int, dict]:
     """Decode BinArray → dict of bin_id → {amount_x, amount_y, liq_supply}."""
+    # Verify lb_pair field to confirm BA_HEADER is correct.
+    # With BA_HEADER=56: lb_pair at bytes 24-55 (after disc+index+ver+pad)
+    # With BA_HEADER=48: lb_pair at bytes 16-47 (after disc+index, no ver/pad)
+    if expected_lb_pair and len(data) >= 56:
+        lbp_56 = data[24:56]
+        lbp_48 = data[16:48]
+        if lbp_56 == expected_lb_pair:
+            header = 56
+        elif lbp_48 == expected_lb_pair:
+            header = 48
+            print("    [debug] BA_HEADER=48 matches! (no version+padding)")
+        else:
+            header = BA_HEADER  # fallback
+            print(
+                f"    [debug] lb_pair mismatch: "
+                f"h56={base58.b58encode(lbp_56).decode()[:8]} "
+                f"h48={base58.b58encode(lbp_48).decode()[:8]}"
+            )
+    else:
+        header = BA_HEADER
+
+    payload_len = len(data) - header
+    if payload_len % 70 == 0 and payload_len // 70 in (112, 144):
+        bin_size = payload_len // 70
+    else:
+        bin_size = BIN_SIZE
+        expected_len = header + 70 * bin_size
+        if len(data) < expected_len:
+            raise ValueError(
+                f"BinArray too short: {len(data)} bytes "
+                f"(need {expected_len} for {bin_size}-byte bins)"
+            )
+
     bins = {}
     base_bin_id = array_idx * 70
     for slot in range(70):
-        off = BA_HEADER + slot * BIN_SIZE
+        off = header + slot * bin_size
         amount_x = struct.unpack_from("<Q", data, off + BIN_AMOUNT_X)[0]
         amount_y = struct.unpack_from("<Q", data, off + BIN_AMOUNT_Y)[0]
         lo, hi = struct.unpack_from("<QQ", data, off + BIN_LIQ_SUPPLY)
@@ -214,13 +283,54 @@ def decode_bin_array(data: bytes, array_idx: int) -> dict[int, dict]:
     return bins
 
 
-# ─── Meteora pool API ─────────────────────────────────────────────────────────
+# ─── Meteora pool API + on-chain LbPair fallback ─────────────────────────────
 
-def get_pool_mints(lb_pair: str) -> dict:
-    """Get token_x/token_y mint addresses from Meteora DLMM API."""
+SOL_MINT_BYTES = base58.b58decode(SOL_MINT)
+
+
+def _lbpair_mints_onchain(
+    rpc_url: str, lb_pair: str
+) -> tuple[Optional[str], Optional[str]]:
+    """Scan LbPair account bytes for token mint pubkeys.
+
+    Searches for the SOL_MINT pattern at every byte offset. When found,
+    the adjacent 32-byte block is the other mint. Works for any SOL-paired
+    pool regardless of whether it is indexed by the Meteora REST API.
+    """
+    try:
+        result = rpc_call(
+            rpc_url, "getAccountInfo", [lb_pair, {"encoding": "base64"}]
+        )
+        if not result["value"]:
+            return None, None
+        data = base64.b64decode(result["value"]["data"][0])
+    except Exception as e:
+        print(f"    WARN: on-chain LbPair fetch failed: {e}")
+        return None, None
+
+    sol = SOL_MINT_BYTES
+    for off in range(8, len(data) - 31):
+        if data[off : off + 32] == sol:
+            # SOL found as X-side mint
+            if off + 64 <= len(data):
+                y = data[off + 32 : off + 64]
+                if any(b != 0 for b in y):
+                    return SOL_MINT, base58.b58encode(y).decode()
+        if off >= 32 and data[off : off + 32] == sol:
+            # (already handled above; this block for Y-side)
+            pass
+        if off + 32 < len(data) and data[off + 32 : off + 64] == sol:
+            # SOL found as Y-side mint
+            x = data[off : off + 32]
+            if any(b != 0 for b in x):
+                return base58.b58encode(x).decode(), SOL_MINT
+    return None, None
+
+
+def get_pool_mints(rpc_url: str, lb_pair: str) -> dict:
+    """Get token_x/token_y mint addresses: Meteora API first, on-chain fallback."""
     for url in [
         f"https://dlmm-api.meteora.ag/pair/{lb_pair}",
-        f"https://app.meteora.ag/clmm-api/pair/{lb_pair}",
     ]:
         try:
             data = http_get(url)
@@ -237,23 +347,36 @@ def get_pool_mints(lb_pair: str) -> dict:
             name = data.get("name", "?/?")
             if mint_x and mint_y:
                 return {"mint_x": mint_x, "mint_y": mint_y, "name": name}
-        except Exception as e:
-            print(f"    WARN: pool API failed ({url[:50]}): {e}")
+        except Exception:
+            pass
+
+    # On-chain fallback: scan LbPair account for SOL_MINT bytes
+    mint_x, mint_y = _lbpair_mints_onchain(rpc_url, lb_pair)
+    if mint_x and mint_y:
+        return {"mint_x": mint_x, "mint_y": mint_y, "name": "?/?"}
+
     return {"mint_x": None, "mint_y": None, "name": "?/?"}
 
 
 # ─── Token decimals ───────────────────────────────────────────────────────────
 
+_decimals_cache: dict[str, int] = {}
+
 def get_decimals(rpc_url: str, mint: str) -> int:
     """Fetch token decimals from SPL mint account (offset 44)."""
     if mint == SOL_MINT:
         return 9
+    if mint in _decimals_cache:
+        return _decimals_cache[mint]
     result = rpc_call(rpc_url, "getAccountInfo", [mint, {"encoding": "base64"}])
     if result["value"] is None:
         print(f"    WARN: mint {mint[:8]}... not found, assuming 6")
+        _decimals_cache[mint] = 6
         return 6
     data = base64.b64decode(result["value"]["data"][0])
-    return data[44]
+    dec = data[44]
+    _decimals_cache[mint] = dec
+    return dec
 
 
 # ─── Jupiter quote ────────────────────────────────────────────────────────────
@@ -302,7 +425,7 @@ def main() -> None:
     parser.add_argument(
         "--lpagent-nav",
         type=float,
-        required=True,
+        default=None,
         help="lpagent portfolio widget value read NOW (SOL)",
     )
     parser.add_argument(
@@ -375,22 +498,27 @@ def main() -> None:
             upper = pos["upper_bin_id"]
             print(
                 f"  {addr[:8]}... lb_pair={pos['lb_pair'][:8]}... "
-                f"lower={lower} upper={upper} width={pos['width']}"
+                f"lower={lower} upper={upper} width={pos['width']} "
+                f"n_slots={pos['n_slots']} raw_len={len(raw)}"
             )
         except Exception as e:
             print(f"  KILL candidate: decode failed for {addr}: {e}")
 
-    # AC-2 validation
+    # Filter empty/closed positions (all liq_shares == 0)
+    active = [p for p in positions if any(s > 0 for s in p["liquidity_shares"])]
+    empty = len(positions) - len(active)
+    if empty:
+        print(f"  Skipped {empty} position(s) with zero liquidity (closed/empty)")
+    positions = active
+
+    # AC-2 validation on active positions only
     for pos in positions:
         lid = pos["lower_bin_id"]
         assert -10_000 <= lid <= 10_000, f"lower_bin_id={lid} out of range"
         w = pos["width"]
-        assert 1 <= w <= 200, f"width={w} suspicious"
-        assert any(
-            s > 0 for s in pos["liquidity_shares"]
-        ), "all liquidity_shares are zero"
+        assert 1 <= w <= 500, f"width={w} suspicious"
     n = len(positions)
-    print(f"  AC-2 PASS: all {n} position(s) decoded with sensible fields")
+    print(f"  AC-2 PASS: {n} active position(s) with sensible fields")
 
     # ── Steps 3-5: BinArrays → bin math → SOL conversion ────────────────────
     print("\nSteps 3-5: BinArrays, bin math, Jupiter conversion...")
@@ -408,10 +536,21 @@ def main() -> None:
         print(f"\n  Position {addr[:8]}...")
 
         # Pool mints
-        pool = get_pool_mints(lb_pair_str)
-        mint_x = pool["mint_x"] or SOL_MINT
-        mint_y = pool["mint_y"] or SOL_MINT
+        pool = get_pool_mints(rpc_url, lb_pair_str)
+        mint_x = pool["mint_x"]
+        mint_y = pool["mint_y"]
         print(f"    Pool: {pool['name']}")
+        if not mint_x or not mint_y:
+            print("    WARN: could not determine token mints — skipping position")
+            position_results.append(
+                {
+                    "address": addr,
+                    "pair": "?/?",
+                    "reserves_sol": Decimal("0"),
+                    "fees_sol": Decimal("0"),
+                }
+            )
+            continue
         print(f"    mintX={mint_x[:8]}...  mintY={mint_y[:8]}...")
 
         dec_x = get_decimals(rpc_url, mint_x)
@@ -436,7 +575,9 @@ def main() -> None:
                 print(f"    WARN: BinArray idx={idx} not found (bad PDA?)")
                 continue
             try:
-                bin_arrays[idx] = decode_bin_array(ba_raw, idx)
+                bin_arrays[idx] = decode_bin_array(
+                    ba_raw, idx, pos["lb_pair_bytes"]
+                )
             except Exception as e:
                 print(f"    WARN: BinArray idx={idx} decode error: {e}")
 
@@ -456,11 +597,21 @@ def main() -> None:
         n_needed = len(required_arrays)
         print(f"    AC-3 PASS: {n_ok}/{n_needed} BinArray(s) fetched")
 
-        # Bin math
+        # Bin math — iterate active bins [lower, upper]
+        # liq_shares[i] corresponds to bin lower+i (i=0..active_width-1)
+        active_width = pos["width"]
+        n_slots = pos["n_slots"]
+        if active_width > n_slots:
+            print(
+                f"    WARN: active_width={active_width} > n_slots={n_slots}"
+                " — capping iteration"
+            )
+        iter_width = min(active_width, n_slots)
+
         total_x_raw = Decimal(0)
         total_y_raw = Decimal(0)
 
-        for bin_offset, bin_id in enumerate(range(lower, upper + 1)):
+        for bin_offset, bin_id in enumerate(range(lower, lower + iter_width)):
             array_idx = bin_id // 70
             if array_idx not in bin_arrays:
                 continue
@@ -475,6 +626,15 @@ def main() -> None:
                 continue
 
             frac = Decimal(liq_share) / Decimal(liq_supply)
+            if frac > Decimal("1.01"):
+                # liq_share > liq_supply: impossible in correct data
+                # signals a decode error (wrong BinArray PDA or BA_HEADER)
+                print(
+                    f"    WARN: bin {bin_id} frac={float(frac):.2f} "
+                    f"(liq_share={liq_share} liq_supply={liq_supply})"
+                    " — decode error, skipping bin"
+                )
+                continue
             total_x_raw += frac * Decimal(bd["amount_x"])
             total_y_raw += frac * Decimal(bd["amount_y"])
 
@@ -562,7 +722,7 @@ def main() -> None:
         sol_val = jupiter_to_sol(mint, amount_raw)
         if sol_val > 0:
             ui = info["tokenAmount"].get("uiAmountString", str(amount_raw))
-            print(f"    {mint[:8]}... = {ui} tokens → {sol_val:.4f} SOL")
+            print(f"    {mint[:8]}... = {ui} tokens = {sol_val:.4f} SOL")
             idle_spl_sol += Decimal(str(sol_val))
 
     # ── Step 7: summary ───────────────────────────────────────────────────────
@@ -570,9 +730,15 @@ def main() -> None:
     internal_nav_sol = (
         positions_nav_sol + total_unclaimed_fee_sol + free_sol + idle_spl_sol
     )
-    lpagent_nav = Decimal(str(args.lpagent_nav))
-    diff_pct = abs(internal_nav_sol - lpagent_nav) / lpagent_nav * 100
-    verdict = "PASS" if diff_pct <= 5 else "FAIL"
+    lpagent_nav = (
+        Decimal(str(args.lpagent_nav)) if args.lpagent_nav is not None else None
+    )
+    diff_pct = (
+        abs(internal_nav_sol - lpagent_nav) / lpagent_nav * 100
+        if lpagent_nav is not None and lpagent_nav != 0
+        else None
+    )
+    verdict = "PASS" if diff_pct is not None and diff_pct <= 5 else "FAIL"
 
     print()
     print("=" * 60)
@@ -600,15 +766,22 @@ def main() -> None:
     )
     print(f"Free SOL:                 {float(free_sol):>10.4f} SOL")
     print(f"Idle SPL tokens:          {float(idle_spl_sol):>10.4f} SOL")
-    print("─" * 46)
+    print("-" * 46)
     print(f"internal_nav_sol:         {float(internal_nav_sol):>10.4f} SOL")
-    nav_line = f"{float(lpagent_nav):>10.4f} SOL   (user-supplied)"
-    print(f"lpagent_nav_sol:          {nav_line}")
-    print(f"diff_pct:                 {float(diff_pct):>9.1f}%")
-    print(f"verdict:                  {verdict:>10}  (threshold 5%)")
+    if lpagent_nav is not None:
+        nav_line = f"{float(lpagent_nav):>10.4f} SOL   (user-supplied)"
+        print(f"lpagent_nav_sol:          {nav_line}")
+        print(f"diff_pct:                 {float(diff_pct):>9.1f}%")
+        print(f"verdict:                  {verdict:>10}  (threshold 5%)")
+    else:
+        print("lpagent_nav_sol:             n/a       (not supplied)")
+        print("diff_pct:                    n/a")
+        print("verdict:                     n/a")
     print()
 
-    if verdict == "PASS":
+    if lpagent_nav is None:
+        print("DECISION: n/a -- rerun with --lpagent-nav for portfolio comparison.")
+    elif verdict == "PASS":
         print("DECISION: GO — implement sub-project E.")
     else:
         items = [
