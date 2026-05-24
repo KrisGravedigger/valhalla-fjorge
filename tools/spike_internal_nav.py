@@ -51,12 +51,17 @@ LAMPORTS = 1_000_000_000
 POS_LB_PAIR = 8
 POS_OWNER = 40
 POS_LIQ_SHARES = 72    # liq_shares data start (N u128 values, no prefix)
+POSV2_FIXED = 8120
+POSBIN_SIZE = 112
 # fee_data_off = 72 + N*64 (computed dynamically in decode_position)
 # lower_bin_off = 72 + N*112 (computed dynamically)
 # Within each FeeInfo (48 bytes): u128(16) + u128(16) + u64(8) + u64(8)
 FEE_INFO_SIZE = 48
 FEE_X_PENDING_OFF = 32  # offset within FeeInfo
 FEE_Y_PENDING_OFF = 40  # offset within FeeInfo
+REWARD_INFO_OFF = 1192
+REWARD_INFO_SIZE = 48
+REWARD_PENDING_OFF = 32  # offset within UserRewardInfo
 
 # BinArray layout (from Meteora DLMM IDL):
 #  8   discriminator
@@ -182,8 +187,10 @@ def decode_position(data: bytes) -> dict:
     LOWER_BIN_OFF = 7912  # 72 + 70*112
 
     raw_len = len(data)
-    if raw_len < 7920:
-        raise ValueError(f"PositionV2 too short: {raw_len} bytes (need >= 7920)")
+    if raw_len < POSV2_FIXED:
+        raise ValueError(
+            f"PositionV2 too short: {raw_len} bytes (need >= {POSV2_FIXED})"
+        )
 
     lb_pair_bytes = data[POS_LB_PAIR : POS_LB_PAIR + 32]
     lb_pair = base58.b58encode(lb_pair_bytes).decode()
@@ -199,6 +206,17 @@ def decode_position(data: bytes) -> dict:
 
     fee_x_pending = 0
     fee_y_pending = 0
+    reward0_pending = 0
+    reward1_pending = 0
+    for j in range(N):
+        base = REWARD_INFO_OFF + j * REWARD_INFO_SIZE
+        reward0_pending += struct.unpack_from(
+            "<Q", data, base + REWARD_PENDING_OFF
+        )[0]
+        reward1_pending += struct.unpack_from(
+            "<Q", data, base + REWARD_PENDING_OFF + 8
+        )[0]
+
     for j in range(N):
         base = FEE_DATA_OFF + j * FEE_INFO_SIZE
         fee_x_pending += struct.unpack_from(
@@ -208,6 +226,28 @@ def decode_position(data: bytes) -> dict:
             "<Q", data, base + FEE_Y_PENDING_OFF
         )[0]
 
+    ext_liq_shares = []
+    ext_fee_x_pending = 0
+    ext_fee_y_pending = 0
+    ext_reward0_pending = 0
+    ext_reward1_pending = 0
+    ext_count = 0
+    if raw_len > POSV2_FIXED:
+        ext_count = (raw_len - POSV2_FIXED) // POSBIN_SIZE
+        for j in range(ext_count):
+            base = POSV2_FIXED + j * POSBIN_SIZE
+            lo, hi = struct.unpack_from("<QQ", data, base)
+            ext_liq_shares.append(lo + (hi << 64))
+            ext_reward0_pending += struct.unpack_from("<Q", data, base + 48)[0]
+            ext_reward1_pending += struct.unpack_from("<Q", data, base + 56)[0]
+            ext_fee_x_pending += struct.unpack_from("<Q", data, base + 96)[0]
+            ext_fee_y_pending += struct.unpack_from("<Q", data, base + 104)[0]
+
+    fee_x_pending += ext_fee_x_pending
+    fee_y_pending += ext_fee_y_pending
+    reward0_pending += ext_reward0_pending
+    reward1_pending += ext_reward1_pending
+
     return {
         "lb_pair": lb_pair,
         "lb_pair_bytes": lb_pair_bytes,
@@ -216,8 +256,16 @@ def decode_position(data: bytes) -> dict:
         "width": active_width,
         "n_slots": N,
         "liquidity_shares": liq_shares,
+        "ext_liq_shares": ext_liq_shares,
+        "ext_count": ext_count,
+        "ext_fee_x_raw": ext_fee_x_pending,
+        "ext_fee_y_raw": ext_fee_y_pending,
+        "ext_reward0_raw": ext_reward0_pending,
+        "ext_reward1_raw": ext_reward1_pending,
         "fee_x_pending_raw": fee_x_pending,
         "fee_y_pending_raw": fee_y_pending,
+        "reward0_raw": reward0_pending,
+        "reward1_raw": reward1_pending,
     }
 
 
@@ -356,6 +404,83 @@ def get_pool_mints(rpc_url: str, lb_pair: str) -> dict:
         return {"mint_x": mint_x, "mint_y": mint_y, "name": "?/?"}
 
     return {"mint_x": None, "mint_y": None, "name": "?/?"}
+
+
+_reward_mints_cache: dict[str, list[Optional[str]]] = {}
+
+def _first_present(data: dict, keys: tuple[str, ...]) -> Optional[str]:
+    for key in keys:
+        value = data.get(key)
+        if value:
+            return value
+    return None
+
+
+def _reward_mint_from_info(info: object) -> Optional[str]:
+    if not isinstance(info, dict):
+        return None
+    return _first_present(
+        info,
+        (
+            "mint",
+            "reward_mint",
+            "rewardMint",
+            "reward_mint_address",
+            "rewardMintAddress",
+            "token_mint",
+            "tokenMint",
+        ),
+    )
+
+
+def get_reward_mints(rpc_url: str, lb_pair_str: str) -> list[Optional[str]]:
+    """Get reward token mints from Meteora API, or [None, None] if unknown."""
+    del rpc_url  # Reserved for a future on-chain fallback; API-only for this spike.
+    if lb_pair_str in _reward_mints_cache:
+        return _reward_mints_cache[lb_pair_str]
+
+    reward_mints: list[Optional[str]] = [None, None]
+    try:
+        data = http_get(f"https://dlmm-api.meteora.ag/pair/{lb_pair_str}")
+        one_based_0 = _first_present(data, ("reward_mint_1", "rewardMint1"))
+        one_based_1 = _first_present(data, ("reward_mint_2", "rewardMint2"))
+        zero_based_0 = _first_present(data, ("reward_mint_0", "rewardMint0"))
+        zero_based_1 = _first_present(data, ("reward_mint_1", "rewardMint1"))
+        if one_based_0 or one_based_1:
+            reward_mints = [one_based_0, one_based_1]
+        elif zero_based_0 or zero_based_1:
+            reward_mints = [zero_based_0, zero_based_1]
+        else:
+            reward_mints[0] = _first_present(
+                data, ("reward_mint_x", "rewardMintX")
+            )
+            reward_mints[1] = _first_present(
+                data, ("reward_mint_y", "rewardMintY")
+            )
+
+        infos = (
+            data.get("reward_infos")
+            or data.get("rewardInfos")
+            or data.get("rewards")
+            or []
+        )
+        if isinstance(infos, list):
+            if len(infos) > 0:
+                reward_mints[0] = reward_mints[0] or _reward_mint_from_info(
+                    infos[0]
+                )
+            if len(infos) > 1:
+                reward_mints[1] = reward_mints[1] or _reward_mint_from_info(
+                    infos[1]
+                )
+    except Exception as e:
+        print(f"    WARN: reward mints API lookup failed: {e}")
+
+    if not reward_mints[0] and not reward_mints[1]:
+        print("    WARN: reward mints unknown")
+
+    _reward_mints_cache[lb_pair_str] = reward_mints
+    return reward_mints
 
 
 # ─── Token decimals ───────────────────────────────────────────────────────────
@@ -499,13 +624,19 @@ def main() -> None:
             print(
                 f"  {addr[:8]}... lb_pair={pos['lb_pair'][:8]}... "
                 f"lower={lower} upper={upper} width={pos['width']} "
-                f"n_slots={pos['n_slots']} raw_len={len(raw)}"
+                f"n_slots={pos['n_slots']} ext_count={pos['ext_count']} "
+                f"raw_len={len(raw)}"
             )
         except Exception as e:
             print(f"  KILL candidate: decode failed for {addr}: {e}")
 
     # Filter empty/closed positions (all liq_shares == 0)
-    active = [p for p in positions if any(s > 0 for s in p["liquidity_shares"])]
+    active = [
+        p
+        for p in positions
+        if any(s > 0 for s in p["liquidity_shares"])
+        or any(s > 0 for s in p["ext_liq_shares"])
+    ]
     empty = len(positions) - len(active)
     if empty:
         print(f"  Skipped {empty} position(s) with zero liquidity (closed/empty)")
@@ -525,6 +656,7 @@ def main() -> None:
 
     position_results = []
     total_unclaimed_fee_sol = Decimal("0")
+    total_unclaimed_rewards_sol = Decimal("0")
 
     for pos in positions:
         addr = pos["address"]
@@ -548,6 +680,7 @@ def main() -> None:
                     "pair": "?/?",
                     "reserves_sol": Decimal("0"),
                     "fees_sol": Decimal("0"),
+                    "rewards_sol": Decimal("0"),
                 }
             )
             continue
@@ -558,9 +691,12 @@ def main() -> None:
         print(f"    Decimals: X={dec_x} Y={dec_y}")
 
         # Required BinArrays
-        required_arrays = sorted(
-            {bin_id // 70 for bin_id in range(lower, upper + 1)}
+        fixed_width = min(pos["width"], pos["n_slots"])
+        position_bin_ids = [lower + i for i in range(fixed_width)]
+        position_bin_ids.extend(
+            lower + pos["n_slots"] + j for j in range(pos["ext_count"])
         )
+        required_arrays = sorted({bin_id // 70 for bin_id in position_bin_ids})
         print(f"    BinArrays: {required_arrays}")
 
         ba_addr_map = {
@@ -589,6 +725,7 @@ def main() -> None:
                     "pair": pool["name"],
                     "reserves_sol": Decimal("0"),
                     "fees_sol": Decimal("0"),
+                    "rewards_sol": Decimal("0"),
                 }
             )
             continue
@@ -611,7 +748,16 @@ def main() -> None:
         total_x_raw = Decimal(0)
         total_y_raw = Decimal(0)
 
-        for bin_offset, bin_id in enumerate(range(lower, lower + iter_width)):
+        position_bins = [
+            (lower + bin_offset, pos["liquidity_shares"][bin_offset])
+            for bin_offset in range(iter_width)
+        ]
+        position_bins.extend(
+            (lower + n_slots + j, liq_share)
+            for j, liq_share in enumerate(pos["ext_liq_shares"])
+        )
+
+        for bin_id, liq_share in position_bins:
             array_idx = bin_id // 70
             if array_idx not in bin_arrays:
                 continue
@@ -620,7 +766,6 @@ def main() -> None:
                 continue
 
             liq_supply = bd["liquidity_supply"]
-            liq_share = pos["liquidity_shares"][bin_offset]
 
             if liq_supply == 0 or liq_share == 0:
                 continue
@@ -666,6 +811,37 @@ def main() -> None:
             if amt > 0:
                 reserves_sol += Decimal(str(jupiter_to_sol(mint_y, amt)))
 
+        # Convert reward pendings to SOL
+        reward_mints = get_reward_mints(rpc_url, lb_pair_str)
+        reward_raws = [pos["reward0_raw"], pos["reward1_raw"]]
+        rewards_sol = Decimal("0")
+        reward_parts = []
+        print(
+            f"    Reward mints: R0="
+            f"{reward_mints[0][:8] + '...' if reward_mints[0] else '?'} "
+            f"R1={reward_mints[1][:8] + '...' if reward_mints[1] else '?'}"
+        )
+        for idx, (mint, amount_raw) in enumerate(zip(reward_mints, reward_raws)):
+            if amount_raw <= 0:
+                continue
+            if not mint:
+                print(
+                    f"    WARN: reward{idx}_raw={amount_raw} but reward mint unknown"
+                )
+                continue
+            sol_val = Decimal(str(jupiter_to_sol(mint, amount_raw)))
+            rewards_sol += sol_val
+            dec = get_decimals(rpc_url, mint)
+            amount_human = Decimal(amount_raw) / Decimal(10 ** dec)
+            reward_parts.append(
+                f"R{idx}={float(amount_human):.4f} {mint[:8]}..."
+                f" ({float(sol_val):.4f} SOL)"
+            )
+        if reward_parts:
+            print(f"    Rewards:    {'; '.join(reward_parts)}")
+        else:
+            print("    Rewards:    none")
+
         # Convert fees to SOL
         fees_sol = Decimal("0")
         if fee_x_raw > 0:
@@ -682,14 +858,17 @@ def main() -> None:
 
         print(f"    Reserves NAV: {float(reserves_sol):.4f} SOL")
         print(f"    Fees NAV:     {float(fees_sol):.4f} SOL")
+        print(f"    Rewards NAV:  {float(rewards_sol):.4f} SOL")
 
         total_unclaimed_fee_sol += fees_sol
+        total_unclaimed_rewards_sol += rewards_sol
         position_results.append(
             {
                 "address": addr,
                 "pair": pool["name"],
                 "reserves_sol": reserves_sol,
                 "fees_sol": fees_sol,
+                "rewards_sol": rewards_sol,
             }
         )
 
@@ -728,7 +907,11 @@ def main() -> None:
     # ── Step 7: summary ───────────────────────────────────────────────────────
     positions_nav_sol = sum(r["reserves_sol"] for r in position_results)
     internal_nav_sol = (
-        positions_nav_sol + total_unclaimed_fee_sol + free_sol + idle_spl_sol
+        positions_nav_sol
+        + total_unclaimed_fee_sol
+        + total_unclaimed_rewards_sol
+        + free_sol
+        + idle_spl_sol
     )
     lpagent_nav = (
         Decimal(str(args.lpagent_nav)) if args.lpagent_nav is not None else None
@@ -749,20 +932,27 @@ def main() -> None:
     print()
 
     if position_results:
-        hdr = f"{'Addr':<10} {'Pair':<20} {'Reserves(SOL)':>14} {'Fees(SOL)':>10}"
+        hdr = (
+            f"{'Addr':<10} {'Pair':<20} {'Reserves(SOL)':>14} "
+            f"{'Fees(SOL)':>10} {'Rewards(SOL)':>13}"
+        )
         print(hdr)
-        print("-" * 58)
+        print("-" * 72)
         for r in position_results:
             print(
                 f"{r['address'][:8]:<10} {r['pair'][:20]:<20} "
                 f"{float(r['reserves_sol']):>14.4f} "
-                f"{float(r['fees_sol']):>10.4f}"
+                f"{float(r['fees_sol']):>10.4f} "
+                f"{float(r['rewards_sol']):>13.4f}"
             )
         print()
 
     print(f"Active positions NAV:     {float(positions_nav_sol):>10.4f} SOL")
     print(
         f"Unclaimed fees:           {float(total_unclaimed_fee_sol):>10.4f} SOL"
+    )
+    print(
+        f"Unclaimed rewards:        {float(total_unclaimed_rewards_sol):>10.4f} SOL"
     )
     print(f"Free SOL:                 {float(free_sol):>10.4f} SOL")
     print(f"Idle SPL tokens:          {float(idle_spl_sol):>10.4f} SOL")
@@ -787,6 +977,7 @@ def main() -> None:
         items = [
             ("Active positions", float(positions_nav_sol)),
             ("Unclaimed fees", float(total_unclaimed_fee_sol)),
+            ("Unclaimed rewards", float(total_unclaimed_rewards_sol)),
             ("Free SOL", float(free_sol)),
             ("Idle SPL", float(idle_spl_sol)),
         ]
