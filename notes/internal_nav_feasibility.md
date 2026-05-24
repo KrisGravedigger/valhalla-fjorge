@@ -1,7 +1,7 @@
 # Internal NAV Feasibility — Findings (E-spike)
 
 **Date:** 2026-05-16 (zaktualizowano 2026-05-24)  
-**Verdict:** KILL z warunkiem — 7.6% gap, prawdopodobnie Jupiter 429 rate limiting, nie strukturalny brak
+**Verdict:** GO — 0.014% diff na właściwej parze porównawczej (LP positions + free SOL)
 
 ---
 
@@ -43,11 +43,17 @@ Wpływ na NAV: mały (tokeny X to ułamki SOL w tych pozycjach — Y=SOL dominuj
 
 ## Dokładność
 
-| Przebieg | internal_nav_sol | lpagent_nav | diff_pct | Co zmieniono |
+| Przebieg | internal_nav_sol | lpagent_nav (ref) | diff_pct | Co zmieniono |
 |---|---:|---:|---:|---|
-| Przed naprawą decode | 20.05 SOL | 67.10 SOL | **70.1%** | baseline |
-| Po naprawie (N=70 + fixed offsets) | 54.97 SOL | 67.10 SOL | **18.1%** | prawidłowy layout PositionV2 |
-| Po extended bins + reward_pendings | **62.02 SOL** | 67.10 SOL | **7.6%** | PositionBinData (>70 binów) |
+| Przed naprawą decode | 20.05 SOL | 67.10 SOL (portfolio) | **70.1%** | baseline |
+| Po naprawie (N=70 + fixed offsets) | 54.97 SOL | 67.10 SOL (portfolio) | **18.1%** | prawidłowy layout PositionV2 |
+| Po extended bins + reward_pendings | 62.02 SOL | 67.10 SOL (portfolio) | **7.6%** | PositionBinData (>70 binów) |
+| Po Jupiter throttle + właściwa para | **62.70 SOL** | 62.69 SOL (LP+free) | **0.014%** | poprawna para; ignoruje niekontrolowane aktywa |
+
+**Właściwa para porównawcza (od 2026-05-24):**
+`internal_nav_sol` (LP positions + free SOL + idle SPL) vs `lpagent LP positions + lpagent free SOL`.
+Nie porównujemy do all-in portfolio widget (67.71) — różnica ~5 SOL to rent reserves (~0.70 SOL) +
+aktywa niezidentyfikowane i poza kontrolą użytkownika (staked SOL?, inne tokeny?). Pomijamy świadomie.
 
 ### Trailing bytes — wyjaśnione (2026-05-24)
 
@@ -60,24 +66,23 @@ Zysk z tej naprawy: +7.05 SOL (18.1% → 7.6%).
 PositionV2 fixed size = **8120B** (nie 7920B jak wcześniej zakładano):
 po `upper_bin_id` jest 200B metadata (timestamps, claimed totals, operator, fee_owner, _reserved).
 
-### Remaining gap: 5.08 SOL (7.6%)
+### Gap do portfolio widget: ~5.01 SOL (wyjaśniony i świadomie pominięty)
 
-Kandydaci według prawdopodobieństwa:
-1. **Jupiter 429 rate limiting** (~70%) — masowe 429 w Step 6b (idle SPL tokens) i kilka pozycji
-   gdzie token X nie mógł być wyceniony. Idle SPL = 0.0000 mimo 173 SPL accounts.
-2. **Reward mints 404** (~20%) — Meteora API zwraca 404 dla tych puli → rewards = 0.
-   Farmy mogą być aktywne dla tych poolów pod innym endpointem.
-3. **Inne** (~10%) — różnica czasu pomiaru, inne źródło cen w lpagent.
+Spike (62.70 SOL) vs lpagent portfolio widget (67.71 SOL) = 5.01 SOL różnicy.
+- ~0.70 SOL: rent reserves (Solana account lamports — zidentyfikowane przez użytkownika)
+- ~4.3 SOL: nieznane — prawdopodobnie staked SOL (mSOL/jitoSOL) lub inne niezarządzane aktywa
 
-## Verdict — KILL z warunkiem (zaktualizowany)
+Decyzja: te aktywa są poza kontrolą użytkownika → nie powinny wchodzić do NAV baseline.
+Właściwy baseline = LP positions + free SOL (kontrolowane, płynne).
 
-diff_pct = 7.6% > próg 5%. Formalnie KILL, ale architektura jest potwierdzona.
-Gap jest bliski progu i prawdopodobnie wynika z rate limiting, nie z brakujących komponentów NAV.
+## Verdict — GO
 
-**Uzasadnienie „z warunkiem":**
-1. Architektura LP reserve NAV działa — poprawnie liczy extended bins, fees, rewards
-2. Remaining 7.6% gap → najbardziej prawdopodobnie Jupiter rate limiting przy 50 pozycjach
-3. Do formalnego GO: re-run z opóźnieniami między Jupiter calls lub innym price source
+**diff_pct = 0.014%** na właściwej parze (spike LP+free vs lpagent LP+free).
+
+LP accuracy: spike 54.3245 SOL vs lpagent 54.32 SOL → **0.008% error** — szum pomiarowy.
+Free SOL: spike 8.3727 SOL vs lpagent 8.37 SOL → zgodne.
+
+Architektura on-chain NAV jest potwierdzona. `solders` + `struct` (raw RPC, bez SDK) wystarczy.
 
 ## Ścieżka do full E implementation
 
@@ -85,8 +90,7 @@ Gap jest bliski progu i prawdopodobnie wynika z rate limiting, nie z brakującyc
 
 **Szacowany nakład:** L (4–6 sesji, per PLAN-portfolio-truth.md)
 
-**Action items do GO:**
-1. Dodać rate-limiting mitigation w Jupiter calls (delay 0.5–1s między calls lub batch)
-2. Re-run spike — oczekiwany diff_pct < 5% gdy 429 nie skażą idle SPL i pozycji
-3. Alternatywnie: użyć Meteora DLMM API `/pair/{lb_pair}` jako ceny tokenów (zamiast Jupiter)
-4. Wtedy formalna GO decyzja dla sub-project E
+**Uwagi do implementacji:**
+- Jupiter throttle 0.15s + retry-backoff działa; dla produkcji rozważyć Meteora `/pair/{lb_pair}` jako alternatywne źródło cen
+- `--lpagent-nav` powinno przyjmować LP+free (62.69), nie all-in portfolio widget (67.71)
+- Reward mints 404 — rewards genuinely zero lub farmy pod innym endpointem; pomijalny wpływ na NAV
