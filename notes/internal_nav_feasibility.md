@@ -1,7 +1,7 @@
 # Internal NAV Feasibility — Findings (E-spike)
 
-**Date:** 2026-05-16  
-**Verdict:** KILL z warunkiem — architektura działa, ale brakuje dekodowania limit orderów
+**Date:** 2026-05-16 (zaktualizowano 2026-05-24)  
+**Verdict:** KILL z warunkiem — 7.6% gap, prawdopodobnie Jupiter 429 rate limiting, nie strukturalny brak
 
 ---
 
@@ -43,38 +43,50 @@ Wpływ na NAV: mały (tokeny X to ułamki SOL w tych pozycjach — Y=SOL dominuj
 
 ## Dokładność
 
-| Przebieg | internal_nav_sol | lpagent_nav | diff_pct |
-|---|---:|---:|---:|
-| Przed naprawą decode | 20.05 SOL | 67.10 SOL | **70.1%** |
-| Po naprawie (N=70 + fixed offsets) | 54.97 SOL | 67.10 SOL | **18.1%** |
+| Przebieg | internal_nav_sol | lpagent_nav | diff_pct | Co zmieniono |
+|---|---:|---:|---:|---|
+| Przed naprawą decode | 20.05 SOL | 67.10 SOL | **70.1%** | baseline |
+| Po naprawie (N=70 + fixed offsets) | 54.97 SOL | 67.10 SOL | **18.1%** | prawidłowy layout PositionV2 |
+| Po extended bins + reward_pendings | **62.02 SOL** | 67.10 SOL | **7.6%** | PositionBinData (>70 binów) |
 
-Pozostały gap 12.13 SOL (18.1%) — najsilniejszy kandydat: **wartość limit orderów**
-zakodowana w trailing bytes (raw_len - 7920) kont z otwartymi zleceniami.
-Nie jest wykluczone że to definicja lpagent_nav (incl. pending limit orders).
+### Trailing bytes — wyjaśnione (2026-05-24)
 
-## Verdict — KILL z warunkiem
+Trailing bytes po 8120B to **PositionBinData extension** (112B/bin):
+`liquidity_share(u128=16B) + UserRewardInfo(48B) + FeeInfo(48B)`.
 
-diff_pct = 18.1% > próg 5%. Formalnie KILL, ale z jednoznaczną ścieżką naprawy.
+Meteora DLMM obsługuje do 1400 binów na pozycję. Konta 9464B mają 12 dodatkowych binów.
+Zysk z tej naprawy: +7.05 SOL (18.1% → 7.6%).
+
+PositionV2 fixed size = **8120B** (nie 7920B jak wcześniej zakładano):
+po `upper_bin_id` jest 200B metadata (timestamps, claimed totals, operator, fee_owner, _reserved).
+
+### Remaining gap: 5.08 SOL (7.6%)
+
+Kandydaci według prawdopodobieństwa:
+1. **Jupiter 429 rate limiting** (~70%) — masowe 429 w Step 6b (idle SPL tokens) i kilka pozycji
+   gdzie token X nie mógł być wyceniony. Idle SPL = 0.0000 mimo 173 SPL accounts.
+2. **Reward mints 404** (~20%) — Meteora API zwraca 404 dla tych puli → rewards = 0.
+   Farmy mogą być aktywne dla tych poolów pod innym endpointem.
+3. **Inne** (~10%) — różnica czasu pomiaru, inne źródło cen w lpagent.
+
+## Verdict — KILL z warunkiem (zaktualizowany)
+
+diff_pct = 7.6% > próg 5%. Formalnie KILL, ale architektura jest potwierdzona.
+Gap jest bliski progu i prawdopodobnie wynika z rate limiting, nie z brakujących komponentów NAV.
 
 **Uzasadnienie „z warunkiem":**
-1. Architektura jest potwierdzona — LP reserve NAV działa, każda pozycja ma sensowną wartość
-2. Jedynym brakującym komponentem jest dekodowanie limit orderów (trailing bytes)
-3. Trailing bytes mają deterministyczny rozmiar (raw_len - 7920 per konto)
-4. Brak limit order decode ≠ brak feasibility — to dodatkowy krok w pełnej implementacji
+1. Architektura LP reserve NAV działa — poprawnie liczy extended bins, fees, rewards
+2. Remaining 7.6% gap → najbardziej prawdopodobnie Jupiter rate limiting przy 50 pozycjach
+3. Do formalnego GO: re-run z opóźnieniami między Jupiter calls lub innym price source
 
 ## Ścieżka do full E implementation
 
 **Narzędzia:** `solders` + `struct` (SDK nie potrzebny — raw RPC wystarczy)
 
-**Kluczowe ryzyko:** Limit order struct w trailing bytes nie jest zdokumentowany publicznie.
-Będzie wymagał reverse-engineering z IDL lub zdekodowania jednego konta przez `anchorpy`.
+**Szacowany nakład:** L (4–6 sesji, per PLAN-portfolio-truth.md)
 
-**Szacowany nakład:** L (4–6 sesji, per PLAN-portfolio-truth.md) + 0.5–1 sesja extra
-na limit order decode.
-
-**Action items do wdrożenia:**
-1. Zdekodować struct limit orderu — pobrać aktualny `idls/dlmm.json` z Meteora SDK repo
-   i znaleźć typ odpowiadający trailing bytes (prawdopodobnie `OpenOrder` lub `LimitOrder`)
-2. Zaimplementować `decode_open_orders(data, offset=7920)` → suma value open orders w SOL
-3. Re-run spike z nowym komponentem — oczekiwany diff_pct < 5%
+**Action items do GO:**
+1. Dodać rate-limiting mitigation w Jupiter calls (delay 0.5–1s między calls lub batch)
+2. Re-run spike — oczekiwany diff_pct < 5% gdy 429 nie skażą idle SPL i pozycji
+3. Alternatywnie: użyć Meteora DLMM API `/pair/{lb_pair}` jako ceny tokenów (zamiast Jupiter)
 4. Wtedy formalna GO decyzja dla sub-project E
