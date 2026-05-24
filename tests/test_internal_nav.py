@@ -3,6 +3,7 @@ from __future__ import annotations
 import csv
 import importlib.util
 import io
+import logging
 import struct
 import urllib.error
 import uuid
@@ -290,6 +291,55 @@ def test_compute_nav_degraded_propagates(monkeypatch: pytest.MonkeyPatch) -> Non
 
     assert result.degraded is True
     assert result.degraded_mints == ["MINTX"]
+
+
+def test_idle_spl_jupiter_degraded_does_not_mark_nav_degraded(
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    def rpc_call(_rpc: str, method: str, _params: list[Any]) -> dict[str, Any]:
+        if method == "getBalance":
+            return {"value": 1_000_000_000}
+        if method == "getTokenAccountsByOwner":
+            return {
+                "value": [
+                    {
+                        "account": {
+                            "data": {
+                                "parsed": {
+                                    "info": {
+                                        "mint": "IDLEMINT",
+                                        "tokenAmount": {"amount": "1000"},
+                                    }
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        raise AssertionError(method)
+
+    monkeypatch.setattr(internal_nav, "_get_position_addresses", lambda _r, _w: [])
+    monkeypatch.setattr(internal_nav, "_fetch_accounts", lambda _r, _p: [])
+    monkeypatch.setattr(internal_nav.time, "sleep", lambda _: None)
+    monkeypatch.setattr(
+        internal_nav,
+        "_http_get",
+        lambda _url: (_ for _ in ()).throw(
+            _http_error(400, b'{"error":"NO_ROUTES_FOUND"}')
+        ),
+    )
+    monkeypatch.setattr(internal_nav, "_rpc_call", rpc_call)
+    caplog.set_level(logging.DEBUG)
+
+    result = internal_nav.compute_nav("RPC", "WALLET")
+
+    assert result.idle_spl_sol == Decimal("0")
+    assert result.total_nav_sol == Decimal("1")
+    assert result.degraded is False
+    assert result.degraded_mints == []
+    assert "Idle SPL mint IDLEMINT has no reliable Jupiter value; using 0" in caplog.text
+    assert "No Jupiter route for IDLEMINT" not in caplog.text
 
 
 def test_record_tool_degraded_notes() -> None:

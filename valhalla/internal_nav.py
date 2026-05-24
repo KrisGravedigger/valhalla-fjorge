@@ -70,6 +70,19 @@ _decimals_cache: dict[str, int] = {}
 _reward_mints_cache: dict[str, list[Optional[str]]] = {}
 
 
+class _IdleJupiterWarningFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        message = record.getMessage()
+        return not (
+            record.levelno == logging.WARNING
+            and (
+                message.startswith("No Jupiter route for ")
+                or message.startswith("Jupiter HTTP ")
+                or message.startswith("Jupiter error for ")
+            )
+        )
+
+
 def compute_nav(rpc_url: str, wallet: str) -> NavResult:
     """Compute portfolio NAV from on-chain Solana state."""
     degraded_mints: list[str] = []
@@ -213,7 +226,7 @@ def _compute_idle_spl_sol(
         info = token_account["account"]["data"]["parsed"]["info"]
         mint = info["mint"]
         amount_raw = int(info["tokenAmount"]["amount"])
-        idle_spl_sol += _convert_amount(rpc_url, mint, Decimal(amount_raw), degraded_mints)
+        idle_spl_sol += _convert_idle_amount(rpc_url, mint, Decimal(amount_raw))
     return idle_spl_sol
 
 
@@ -228,6 +241,24 @@ def _convert_amount(
     sol_value, degraded = _jupiter_to_sol(mint, int(amount_raw))
     if degraded:
         _add_degraded(degraded_mints, mint)
+    return sol_value
+
+
+def _convert_idle_amount(rpc_url: str, mint: str, amount_raw: Decimal) -> Decimal:
+    del rpc_url
+    if amount_raw <= 0:
+        return _ZERO
+    if mint == SOL_MINT:
+        return amount_raw / Decimal(LAMPORTS)
+    root_logger = logging.getLogger()
+    warning_filter = _IdleJupiterWarningFilter()
+    root_logger.addFilter(warning_filter)
+    try:
+        sol_value, degraded = _jupiter_to_sol(mint, int(amount_raw))
+    finally:
+        root_logger.removeFilter(warning_filter)
+    if degraded:
+        logging.debug("Idle SPL mint %s has no reliable Jupiter value; using 0", mint)
     return sol_value
 
 
