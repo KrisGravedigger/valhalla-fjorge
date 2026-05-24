@@ -33,6 +33,7 @@ POSITION_V2_DISC = bytes([117, 176, 212, 199, 245, 180, 133, 182])
 SOL_MINT = "So11111111111111111111111111111111111111112"
 TOKEN_PROGRAM = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
 LAMPORTS = 1_000_000_000
+JUPITER_DELAY = 0.15   # throttle between Jupiter quote calls (seconds)
 
 # PositionV2 struct layout (offsets from Meteora DLMM IDL, Borsh encoding):
 #   8   discriminator
@@ -518,27 +519,36 @@ def jupiter_to_sol(mint: str, amount_raw: int) -> float:
         f"?inputMint={mint}&outputMint={SOL_MINT}"
         f"&amount={amount_raw}&slippageBps=50"
     )
-    try:
-        data = http_get(url)
-        return int(data["outAmount"]) / LAMPORTS
-    except urllib.error.HTTPError as e:
-        body = e.read().decode(errors="replace")
-        no_route = any(
-            k in body
-            for k in (
-                "NO_ROUTES_FOUND",
-                "TOKEN_NOT_TRADABLE",
-                "COULD_NOT_FIND_ANY_ROUTE",
+    _retries = 4
+    for attempt in range(_retries):
+        time.sleep(JUPITER_DELAY)
+        try:
+            data = http_get(url)
+            return int(data["outAmount"]) / LAMPORTS
+        except urllib.error.HTTPError as e:
+            body = e.read().decode(errors="replace")
+            no_route = any(
+                k in body
+                for k in (
+                    "NO_ROUTES_FOUND",
+                    "TOKEN_NOT_TRADABLE",
+                    "COULD_NOT_FIND_ANY_ROUTE",
+                )
             )
-        )
-        if no_route:
-            print(f"    WARN: no Jupiter route for {mint[:8]}..., skipping")
-        else:
+            if no_route:
+                print(f"    WARN: no Jupiter route for {mint[:8]}..., skipping")
+                return 0.0
+            if e.code == 429 and attempt < _retries - 1:
+                wait = 2 ** attempt
+                print(f"    WARN: Jupiter 429, retry in {wait}s...")
+                time.sleep(wait)
+                continue
             print(f"    WARN: Jupiter HTTP {e.code} for {mint[:8]}..., skipping")
-        return 0.0
-    except Exception as e:
-        print(f"    WARN: Jupiter error for {mint[:8]}...: {e}")
-        return 0.0
+            return 0.0
+        except Exception as e:
+            print(f"    WARN: Jupiter error for {mint[:8]}...: {e}")
+            return 0.0
+    return 0.0
 
 
 # ─── Main ─────────────────────────────────────────────────────────────────────
