@@ -89,6 +89,30 @@ class SolanaRpcClient:
         Get transaction and extract account keys.
         Returns list of account key strings.
         """
+        result = self.get_transaction_json(signature)
+        if not result:
+            return None
+
+        # Extract account keys
+        tx = result.get('transaction', {})
+        message = tx.get('message', {})
+        account_keys = message.get('accountKeys', [])
+
+        # Account keys can be strings or objects with "pubkey" field
+        keys = []
+        for key in account_keys:
+            if isinstance(key, str):
+                keys.append(key)
+            elif isinstance(key, dict) and 'pubkey' in key:
+                keys.append(key['pubkey'])
+
+        return keys
+
+    def get_transaction_json(self, signature: str) -> Optional[dict]:
+        """
+        Get full jsonParsed transaction result.
+        Returns the RPC result object or None on error.
+        """
         for attempt in range(5):
             try:
                 payload = {
@@ -120,22 +144,9 @@ class SolanaRpcClient:
                 if not result:
                     return None
 
-                # Extract account keys
-                tx = result.get('transaction', {})
-                message = tx.get('message', {})
-                account_keys = message.get('accountKeys', [])
-
-                # Account keys can be strings or objects with "pubkey" field
-                keys = []
-                for key in account_keys:
-                    if isinstance(key, str):
-                        keys.append(key)
-                    elif isinstance(key, dict) and 'pubkey' in key:
-                        keys.append(key['pubkey'])
-
                 # Rate limiting - adaptive delay
                 time.sleep(self._delay)
-                return keys
+                return result
 
             except urllib.error.HTTPError as e:
                 if e.code == 429:
@@ -156,6 +167,70 @@ class SolanaRpcClient:
                     return None
 
         return None
+
+    def get_signatures_for_address(
+        self,
+        address: str,
+        limit: int = 1000,
+        before: Optional[str] = None,
+        until: Optional[str] = None,
+    ) -> List[dict]:
+        """
+        Wrap getSignaturesForAddress.
+        Returns signature-info objects newest first, or [] on error.
+        """
+        config = {"limit": limit}
+        if before:
+            config["before"] = before
+        if until:
+            config["until"] = until
+
+        for attempt in range(5):
+            try:
+                payload = {
+                    "jsonrpc": "2.0",
+                    "id": 1,
+                    "method": "getSignaturesForAddress",
+                    "params": [address, config],
+                }
+
+                req = urllib.request.Request(
+                    self.rpc_url,
+                    data=json.dumps(payload).encode('utf-8'),
+                    headers={
+                        "Content-Type": "application/json",
+                        "User-Agent": "Mozilla/5.0",
+                    }
+                )
+
+                with urllib.request.urlopen(req, timeout=15) as resp:
+                    data = json.loads(resp.read())
+
+                result = data.get('result')
+                if not isinstance(result, list):
+                    return []
+
+                time.sleep(self._delay)
+                return result
+
+            except urllib.error.HTTPError as e:
+                if e.code == 429:
+                    sleep_time = 5 * (2 ** attempt)
+                    print(f"  Rate limited, waiting {sleep_time}s...", end='', flush=True)
+                    time.sleep(sleep_time)
+                    self._delay = min(self._delay * 2, 5.0)
+                else:
+                    print(f"  HTTP error {e.code}: {e.reason}")
+                    return []
+
+            except Exception as e:
+                print(f"  RPC error: {e}")
+                if attempt < 4:
+                    time.sleep(5 * (2 ** attempt))
+                else:
+                    return []
+
+        return []
 
 
 class PositionResolver:
