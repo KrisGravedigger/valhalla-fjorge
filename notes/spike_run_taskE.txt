@@ -1,0 +1,1173 @@
+============================================================
+Internal NAV Spike — 2026-05-24 10:41 UTC
+============================================================
+Wallet: J4tkGD...VArF
+
+Step 1: Enumerating PositionV2 accounts...
+  AC-1: found 50 position(s)
+    1rprQ6QSQ592rgSTpaHAZVXTEH1RHkYgXKEvuDHHUdx
+    85fgwHwoS6U3oRx1K59qnNrJ7Y7T5AvyCx1SXWF4JPY
+    GG4ongcELqnTdxjqmjCLoHHxocqSXMYv6TZ32uCEake
+    vRW9iaY8TpHDgEvL3tt9E1uvaCT5rCdj5YgN5UCwN64
+    2LdpiGVBx41VUVQHUovFwyxwJNJ2di2YzBKQZT7mUP7D
+    2agRHfUVHgTNrrzipu53GYQekngr1bdpWdC3N2kMdGSB
+    2spc5dvDWcTRXwfZMxeDdoFLXHTFzavKLCjBbYC5z7c6
+    35XzYAB27ZaegtKBxDp1DHCVREWxuS2Qsv7ZjipaGpTJ
+    37UqZNJfjkehParzdtR6BfTUb1GeJ3omSfnZpzvpFMT1
+    3WbaG4G7GNHeWXoz7wJi8atvgakGGCrdRVwU9Ch6qpsN
+    3e7cCrYW1XSvzZUrWSh7faj4MF5hJz3ykgvJpZN5SQbb
+    4q4yshRmPwAMgcSkXBFBwYT9BBr77YiqCTpThQs395q7
+    51Yq1Wff1qEnrkhuNQCeukptkEyiTBCy4wctaPnhrT5C
+    5CHWA7gEwwKqh6sp531XmUM9XXD7ubKwG9ZmLXcaqmph
+    6FnB5M8iucN2nGven3jnrBxjffURPfzRdqLn7xtCFD34
+    6KibbgHFhDafm2gEzzQHrg1EUZMtnnpzXMzhXN7UXphP
+    6ZHCM8LiGj18x9Zfx2VEaJPxbvk1kspusmfnNGFiE5Dn
+    6dGLekxFYoY69FsMLwNiK4i9tTCU94rAgMGNFz4aBMwQ
+    6fSoUmGAC6nDW7zbkvTFfwXLgDuqgtAiaDdUVsDW6Mcg
+    7ZoN2rvyDT7oDRqErsZt2ZvS8LRbrLKyXmTyZwPuJR97
+    7b69GakZGypUjiXk69QcPcLYDeAEeVypa6ccQMcwP7UB
+    8Cpm82p4ymogCjakjWThYsXrKEGaNPpo6eudnEr6afoD
+    8DtJjN3peKEJFvsEU6h4g8dbK73hPSXYVZqjmpXq3XfX
+    8nzmkzKLsZvYx1bURcmeShGaKiQpEgvw9u5AX3BGBD3y
+    994yCUEEA8ZbhYiPN8zYRBU2jtFWeUBmmVGz9PKCmZd3
+    9FVPeMHzPRzMLh1cjZFfHPEf1W5qdYcwciqtosdYC4BL
+    9QrrSGJCYFXHxDbjAStWubf8rP5amQwTfmFBkVfPbG7G
+    9RXZhRTyCne1TkNKShRcLcdk63qLuY293GZ5tiHDaCFJ
+    9bCsYjpBLkNBVv6q2z85yNLvAgR2FNTNViEQYghaFvCR
+    9dQqSLd8eRcDtjihiQ6z9DxPVPiXmmXuARtMSXR33tsp
+    AThRvuSSHN7kEgaqNZ8ApWNFtqT8DSrxNZdonMMBLxQa
+    AmDP6kp8oTY74h7ioJCC51ivvQmvvmrDk432EAh6wWLf
+    BNrPTLBnD7NkvgMX6uCg2w9RYax5zhrBXPbVwsBpiUCo
+    BaLvbs8uDYA9t4gqmJZnBFCJSHZDRXbJ72MKW7HBT2gh
+    BvSeLF8noeU6jAv8oR4iGVQsnhR4tt3Q8egLPfLjSrbR
+    Cua9yfyo5qDWeeENVMFP2qvZonmKLLDuktnLLB22itNK
+    D2DyfzYmR69Wr7XaBA9Zn2mNQLU5VbuRrrr831io8iMG
+    E856wuDMSTtN1hJUwPPR9uFB1Qai8nrEpEfAM5XdNizW
+    FJT8FArorW26tK86SBQdbhHZLzrQ7x29P44qaKe43ATa
+    Fci4G4LAezkUdGQ1jcrEiTe3xAZAgVkmN8P1kXWoSCS3
+    FqkaP1NGPVfy9mgWP6rKdNFuD7qinv3TYW7dWQMsiu2e
+    G7rEmFSDDKAtfz7gdHMf6JYPb3QZFyGW53iHWT2WAceC
+    GECNeTkVbiXcYGPzGRfFQctKUzHsxnvkTf63rK5MPtjV
+    GEKnxVvAEjKDjct5bnzwNpmMYxiSfdBDMvvJ7a9qQPvj
+    GVcP3i9hXqfJ351mZZXpNBL5j1aZkHiQjy11n5rgUVdA
+    GWusKyEGXjVyuugDNM35aUu72iViYseFkTyZK3GkHLsC
+    Gz35Eh1xSLG6CHfiwFBeGc2PZUKGFQfk8R2du8mBG6gG
+    HaBy8TrE92rL5xayQKbbazvqBTW6pFtdQzSw7tRDFK98
+    HkoptrcmhZ3aSZ4wGX8puno16Gg4x5zVRCpF31utP1VJ
+    HqefBPb4DrYXgAVpdduExFhoY4fErn4mTxumNiX1LXGr
+
+Step 2: Fetching and decoding position accounts...
+  1rprQ6QS... lb_pair=3WY9N19n... lower=-400 upper=-305 width=96 n_slots=70 ext_count=26 raw_len=11032
+  85fgwHwo... lb_pair=8aQBjuut... lower=-508 upper=-402 width=107 n_slots=70 ext_count=37 raw_len=12264
+  GG4ongcE... lb_pair=7UXd3L81... lower=-977 upper=-895 width=83 n_slots=70 ext_count=13 raw_len=9576
+  vRW9iaY8... lb_pair=CCPxE4WQ... lower=-871 upper=-660 width=212 n_slots=70 ext_count=142 raw_len=24024
+  2LdpiGVB... lb_pair=7UXd3L81... lower=-984 upper=-903 width=82 n_slots=70 ext_count=12 raw_len=9464
+  2agRHfUV... lb_pair=ATsPPNvr... lower=-827 upper=-616 width=212 n_slots=70 ext_count=142 raw_len=24024
+  2spc5dvD... lb_pair=7tfWuWM3... lower=-341 upper=-265 width=77 n_slots=70 ext_count=7 raw_len=8904
+  35XzYAB2... lb_pair=Bmovbz2F... lower=-401 upper=-308 width=94 n_slots=70 ext_count=24 raw_len=10808
+  37UqZNJf... lb_pair=4vwaaZZS... lower=-670 upper=-564 width=107 n_slots=70 ext_count=37 raw_len=12264
+  3WbaG4G7... lb_pair=Bmovbz2F... lower=-381 upper=-305 width=77 n_slots=70 ext_count=7 raw_len=8904
+  3e7cCrYW... lb_pair=8UYCgRrx... lower=-342 upper=-260 width=83 n_slots=70 ext_count=13 raw_len=9576
+  4q4yshRm... lb_pair=EgGACLzN... lower=-305 upper=-229 width=77 n_slots=70 ext_count=7 raw_len=8904
+  51Yq1Wff... lb_pair=8UYCgRrx... lower=-342 upper=-260 width=83 n_slots=70 ext_count=13 raw_len=9576
+  5CHWA7gE... lb_pair=5eeVtRPE... lower=-660 upper=-554 width=107 n_slots=70 ext_count=37 raw_len=12264
+  6FnB5M8i... lb_pair=Cgnuirsk... lower=-178 upper=171 width=350 n_slots=70 ext_count=280 raw_len=39480
+  6KibbgHF... lb_pair=Cgnuirsk... lower=-182 upper=165 width=348 n_slots=70 ext_count=278 raw_len=39256
+  6ZHCM8Li... lb_pair=FJfe9ayR... lower=-612 upper=-451 width=162 n_slots=70 ext_count=92 raw_len=18424
+  6dGLekxF... lb_pair=3WY9N19n... lower=-382 upper=-306 width=77 n_slots=70 ext_count=7 raw_len=8904
+  6fSoUmGA... lb_pair=7tfWuWM3... lower=-341 upper=-265 width=77 n_slots=70 ext_count=7 raw_len=8904
+  7ZoN2rvy... lb_pair=7AqRdscJ... lower=-505 upper=-417 width=89 n_slots=70 ext_count=19 raw_len=10248
+  7b69GakZ... lb_pair=87ESAEYJ... lower=-466 upper=-334 width=133 n_slots=70 ext_count=63 raw_len=15176
+  8Cpm82p4... lb_pair=8UYCgRrx... lower=-348 upper=-242 width=107 n_slots=70 ext_count=37 raw_len=12264
+  8DtJjN3p... lb_pair=DRWNnjNp... lower=-457 upper=-351 width=107 n_slots=70 ext_count=37 raw_len=12264
+  8nzmkzKL... lb_pair=2meMYhDT... lower=-777 upper=-565 width=213 n_slots=70 ext_count=143 raw_len=24136
+  994yCUEE... lb_pair=8Ya4nn8M... lower=-509 upper=-377 width=133 n_slots=70 ext_count=63 raw_len=15176
+  9FVPeMHz... lb_pair=6Q3k9uLd... lower=-1216 upper=-896 width=321 n_slots=70 ext_count=251 raw_len=36232
+  9QrrSGJC... lb_pair=3WY9N19n... lower=-437 upper=-305 width=133 n_slots=70 ext_count=63 raw_len=15176
+  9RXZhRTy... lb_pair=453Z9ggM... lower=-368 upper=-280 width=89 n_slots=70 ext_count=19 raw_len=10248
+  9bCsYjpB... lb_pair=2meMYhDT... lower=-777 upper=-565 width=213 n_slots=70 ext_count=143 raw_len=24136
+  9dQqSLd8... lb_pair=8aQBjuut... lower=-490 upper=-384 width=107 n_slots=70 ext_count=37 raw_len=12264
+  AThRvuSS... lb_pair=HBdya3uz... lower=-513 upper=-441 width=73 n_slots=70 ext_count=3 raw_len=8456
+  AmDP6kp8... lb_pair=EgGACLzN... lower=-305 upper=-229 width=77 n_slots=70 ext_count=7 raw_len=8904
+  BNrPTLBn... lb_pair=BXCm85ph... lower=-429 upper=-323 width=107 n_slots=70 ext_count=37 raw_len=12264
+  BaLvbs8u... lb_pair=3WY9N19n... lower=-382 upper=-306 width=77 n_slots=70 ext_count=7 raw_len=8904
+  BvSeLF8n... lb_pair=7AqRdscJ... lower=-505 upper=-417 width=89 n_slots=70 ext_count=19 raw_len=10248
+  Cua9yfyo... lb_pair=uQFKuMm3... lower=-417 upper=-316 width=102 n_slots=70 ext_count=32 raw_len=11704
+  D2DyfzYm... lb_pair=7UXd3L81... lower=-977 upper=-895 width=83 n_slots=70 ext_count=13 raw_len=9576
+  E856wuDM... lb_pair=Bnqt67es... lower=-578 upper=-472 width=107 n_slots=70 ext_count=37 raw_len=12264
+  FJT8FAro... lb_pair=CK71NMuP... lower=-327 upper=-221 width=107 n_slots=70 ext_count=37 raw_len=12264
+  Fci4G4LA... lb_pair=HBdya3uz... lower=-545 upper=-444 width=102 n_slots=70 ext_count=32 raw_len=11704
+  FqkaP1NG... lb_pair=7UXd3L81... lower=-989 upper=-903 width=87 n_slots=70 ext_count=17 raw_len=10024
+  G7rEmFSD... lb_pair=6NxcGCXF... lower=-461 upper=-322 width=140 n_slots=70 ext_count=70 raw_len=15960
+  GECNeTkV... lb_pair=HBdya3uz... lower=-513 upper=-441 width=73 n_slots=70 ext_count=3 raw_len=8456
+  GEKnxVvA... lb_pair=EgGACLzN... lower=-337 upper=-231 width=107 n_slots=70 ext_count=37 raw_len=12264
+  GVcP3i9h... lb_pair=453Z9ggM... lower=-444 upper=-270 width=175 n_slots=70 ext_count=105 raw_len=19880
+  GWusKyEG... lb_pair=HBdya3uz... lower=-489 upper=-357 width=133 n_slots=70 ext_count=63 raw_len=15176
+  Gz35Eh1x... lb_pair=7UXd3L81... lower=-1021 upper=-915 width=107 n_slots=70 ext_count=37 raw_len=12264
+  HaBy8TrE... lb_pair=CEZRNzf1... lower=-1011 upper=-905 width=107 n_slots=70 ext_count=37 raw_len=12264
+  Hkoptrcm... lb_pair=453Z9ggM... lower=-368 upper=-280 width=89 n_slots=70 ext_count=19 raw_len=10248
+  HqefBPb4... lb_pair=Bmovbz2F... lower=-381 upper=-305 width=77 n_slots=70 ext_count=7 raw_len=8904
+  AC-2 PASS: 50 active position(s) with sensible fields
+
+Steps 3-5: BinArrays, bin math, Jupiter conversion...
+
+  Position 1rprQ6QS...
+    Pool: ?/?
+    mintX=J8PSdNP3...  mintY=So111111...
+    Decimals: X=6 Y=9
+    BinArrays: [-6, -5]
+    AC-3 PASS: 2/2 BinArray(s) fetched
+    WARN: active_width=96 > n_slots=70 — capping iteration
+    Reserves:  X=0.0000  Y=1.3750
+    Uncl.fees: X=0.0000  Y=0.0000
+    WARN: reward mints API lookup failed: HTTP Error 404: Not Found
+    WARN: reward mints unknown
+    Reward mints: R0=? R1=?
+    Rewards:    none
+    Reserves NAV: 1.3750 SOL
+    Fees NAV:     0.0000 SOL
+    Rewards NAV:  0.0000 SOL
+
+  Position 85fgwHwo...
+    Pool: ?/?
+    mintX=E6ifp2mJ...  mintY=So111111...
+    Decimals: X=6 Y=9
+    BinArrays: [-8, -7, -6]
+    AC-3 PASS: 3/3 BinArray(s) fetched
+    WARN: active_width=107 > n_slots=70 — capping iteration
+    Reserves:  X=0.0000  Y=0.4000
+    Uncl.fees: X=0.0000  Y=0.0000
+    WARN: reward mints API lookup failed: HTTP Error 404: Not Found
+    WARN: reward mints unknown
+    Reward mints: R0=? R1=?
+    Rewards:    none
+    Reserves NAV: 0.4000 SOL
+    Fees NAV:     0.0000 SOL
+    Rewards NAV:  0.0000 SOL
+
+  Position GG4ongcE...
+    Pool: ?/?
+    mintX=4UeLCRqA...  mintY=So111111...
+    Decimals: X=9 Y=9
+    BinArrays: [-14, -13]
+    AC-3 PASS: 2/2 BinArray(s) fetched
+    WARN: active_width=83 > n_slots=70 — capping iteration
+    Reserves:  X=64.2286  Y=0.9916
+    Uncl.fees: X=0.0000  Y=0.0000
+    WARN: reward mints API lookup failed: HTTP Error 404: Not Found
+    WARN: reward mints unknown
+    Reward mints: R0=? R1=?
+    Rewards:    none
+    Reserves NAV: 0.9998 SOL
+    Fees NAV:     0.0000 SOL
+    Rewards NAV:  0.0000 SOL
+
+  Position vRW9iaY8...
+    Pool: ?/?
+    mintX=BiywH8Eq...  mintY=So111111...
+    Decimals: X=6 Y=9
+    BinArrays: [-13, -12, -11, -10]
+    AC-3 PASS: 4/4 BinArray(s) fetched
+    WARN: active_width=212 > n_slots=70 — capping iteration
+    Reserves:  X=262.9111  Y=0.9908
+    Uncl.fees: X=0.0000  Y=0.0000
+    WARN: reward mints API lookup failed: HTTP Error 404: Not Found
+    WARN: reward mints unknown
+    Reward mints: R0=? R1=?
+    Rewards:    none
+    Reserves NAV: 0.9996 SOL
+    Fees NAV:     0.0000 SOL
+    Rewards NAV:  0.0000 SOL
+
+  Position 2LdpiGVB...
+    Pool: ?/?
+    mintX=4UeLCRqA...  mintY=So111111...
+    Decimals: X=9 Y=9
+    BinArrays: [-15, -14, -13]
+    AC-3 PASS: 3/3 BinArray(s) fetched
+    WARN: active_width=82 > n_slots=70 — capping iteration
+    Reserves:  X=0.0000  Y=1.0000
+    Uncl.fees: X=0.0000  Y=0.0000
+    Reward mints: R0=? R1=?
+    Rewards:    none
+    Reserves NAV: 1.0000 SOL
+    Fees NAV:     0.0000 SOL
+    Rewards NAV:  0.0000 SOL
+
+  Position 2agRHfUV...
+    Pool: ?/?
+    mintX=7HgfXftR...  mintY=So111111...
+    Decimals: X=6 Y=9
+    BinArrays: [-12, -11, -10, -9]
+    AC-3 PASS: 4/4 BinArray(s) fetched
+    WARN: active_width=212 > n_slots=70 — capping iteration
+    Reserves:  X=136.7333  Y=0.9940
+    Uncl.fees: X=0.0000  Y=0.0000
+    WARN: reward mints API lookup failed: HTTP Error 404: Not Found
+    WARN: reward mints unknown
+    Reward mints: R0=? R1=?
+    Rewards:    none
+    Reserves NAV: 0.9998 SOL
+    Fees NAV:     0.0000 SOL
+    Rewards NAV:  0.0000 SOL
+
+  Position 2spc5dvD...
+    Pool: ?/?
+    mintX=Hon2rHAi...  mintY=So111111...
+    Decimals: X=6 Y=9
+    BinArrays: [-5, -4]
+    AC-3 PASS: 2/2 BinArray(s) fetched
+    WARN: active_width=77 > n_slots=70 — capping iteration
+    Reserves:  X=53.1416  Y=0.9963
+    Uncl.fees: X=0.0000  Y=0.0000
+    WARN: reward mints API lookup failed: HTTP Error 404: Not Found
+    WARN: reward mints unknown
+    Reward mints: R0=? R1=?
+    Rewards:    none
+    Reserves NAV: 0.9999 SOL
+    Fees NAV:     0.0000 SOL
+    Rewards NAV:  0.0000 SOL
+
+  Position 35XzYAB2...
+    Pool: ?/?
+    mintX=7HgfXftR...  mintY=So111111...
+    Decimals: X=6 Y=9
+    BinArrays: [-6, -5]
+    AC-3 PASS: 2/2 BinArray(s) fetched
+    WARN: active_width=94 > n_slots=70 — capping iteration
+    Reserves:  X=258.5544  Y=0.9886
+    Uncl.fees: X=0.0000  Y=0.0000
+    WARN: reward mints API lookup failed: HTTP Error 404: Not Found
+    WARN: reward mints unknown
+    Reward mints: R0=? R1=?
+    Rewards:    none
+    Reserves NAV: 0.9997 SOL
+    Fees NAV:     0.0000 SOL
+    Rewards NAV:  0.0000 SOL
+
+  Position 37UqZNJf...
+    Pool: ?/?
+    mintX=52nVoVk3...  mintY=So111111...
+    Decimals: X=6 Y=9
+    BinArrays: [-10, -9]
+    AC-3 PASS: 2/2 BinArray(s) fetched
+    WARN: active_width=107 > n_slots=70 — capping iteration
+    Reserves:  X=14920.5941  Y=1.1526
+    Uncl.fees: X=0.0000  Y=0.0000
+    WARN: Jupiter HTTP 429 for 52nVoVk3..., skipping
+    WARN: reward mints API lookup failed: HTTP Error 404: Not Found
+    WARN: reward mints unknown
+    Reward mints: R0=? R1=?
+    Rewards:    none
+    Reserves NAV: 1.1526 SOL
+    Fees NAV:     0.0000 SOL
+    Rewards NAV:  0.0000 SOL
+
+  Position 3WbaG4G7...
+    Pool: ?/?
+    mintX=7HgfXftR...  mintY=So111111...
+    Decimals: X=6 Y=9
+    BinArrays: [-6, -5]
+    AC-3 PASS: 2/2 BinArray(s) fetched
+    WARN: active_width=77 > n_slots=70 — capping iteration
+    Reserves:  X=640.8166  Y=0.9715
+    Uncl.fees: X=0.0000  Y=0.0000
+    WARN: Jupiter HTTP 429 for 7HgfXftR..., skipping
+    Reward mints: R0=? R1=?
+    Rewards:    none
+    Reserves NAV: 0.9715 SOL
+    Fees NAV:     0.0000 SOL
+    Rewards NAV:  0.0000 SOL
+
+  Position 3e7cCrYW...
+    Pool: ?/?
+    mintX=33eum82L...  mintY=So111111...
+    Decimals: X=6 Y=9
+    BinArrays: [-5, -4]
+    AC-3 PASS: 2/2 BinArray(s) fetched
+    WARN: active_width=83 > n_slots=70 — capping iteration
+    Reserves:  X=3.7952  Y=0.9997
+    Uncl.fees: X=0.0000  Y=0.0000
+    WARN: Jupiter HTTP 429 for 33eum82L..., skipping
+    WARN: reward mints API lookup failed: HTTP Error 404: Not Found
+    WARN: reward mints unknown
+    Reward mints: R0=? R1=?
+    Rewards:    none
+    Reserves NAV: 0.9997 SOL
+    Fees NAV:     0.0000 SOL
+    Rewards NAV:  0.0000 SOL
+
+  Position 4q4yshRm...
+    Pool: ?/?
+    mintX=CGEDT9QZ...  mintY=So111111...
+    Decimals: X=6 Y=9
+    BinArrays: [-5, -4]
+    AC-3 PASS: 2/2 BinArray(s) fetched
+    WARN: active_width=77 > n_slots=70 — capping iteration
+    Reserves:  X=1422.2206  Y=0.8774
+    Uncl.fees: X=0.0000  Y=0.0000
+    WARN: Jupiter HTTP 429 for CGEDT9QZ..., skipping
+    WARN: reward mints API lookup failed: HTTP Error 404: Not Found
+    WARN: reward mints unknown
+    Reward mints: R0=? R1=?
+    Rewards:    none
+    Reserves NAV: 0.8774 SOL
+    Fees NAV:     0.0000 SOL
+    Rewards NAV:  0.0000 SOL
+
+  Position 51Yq1Wff...
+    Pool: ?/?
+    mintX=33eum82L...  mintY=So111111...
+    Decimals: X=6 Y=9
+    BinArrays: [-5, -4]
+    AC-3 PASS: 2/2 BinArray(s) fetched
+    WARN: active_width=83 > n_slots=70 — capping iteration
+    Reserves:  X=3.7952  Y=0.9997
+    Uncl.fees: X=0.0000  Y=0.0000
+    WARN: Jupiter HTTP 429 for 33eum82L..., skipping
+    Reward mints: R0=? R1=?
+    Rewards:    none
+    Reserves NAV: 0.9997 SOL
+    Fees NAV:     0.0000 SOL
+    Rewards NAV:  0.0000 SOL
+
+  Position 5CHWA7gE...
+    Pool: ?/?
+    mintX=2ssMotVb...  mintY=So111111...
+    Decimals: X=6 Y=9
+    BinArrays: [-10, -9, -8]
+    AC-3 PASS: 3/3 BinArray(s) fetched
+    WARN: active_width=107 > n_slots=70 — capping iteration
+    Reserves:  X=752.7698  Y=0.4771
+    Uncl.fees: X=0.0000  Y=0.0000
+    WARN: Jupiter HTTP 429 for 2ssMotVb..., skipping
+    WARN: reward mints API lookup failed: HTTP Error 404: Not Found
+    WARN: reward mints unknown
+    Reward mints: R0=? R1=?
+    Rewards:    none
+    Reserves NAV: 0.4771 SOL
+    Fees NAV:     0.0000 SOL
+    Rewards NAV:  0.0000 SOL
+
+  Position 6FnB5M8i...
+    Pool: ?/?
+    mintX=5UUH9RTD...  mintY=So111111...
+    Decimals: X=6 Y=9
+    BinArrays: [-3, -2, -1, 0, 1, 2]
+    AC-3 PASS: 6/6 BinArray(s) fetched
+    WARN: active_width=350 > n_slots=70 — capping iteration
+    Reserves:  X=2.1188  Y=1.9970
+    Uncl.fees: X=0.0000  Y=0.0000
+    WARN: Jupiter HTTP 429 for 5UUH9RTD..., skipping
+    WARN: reward mints API lookup failed: HTTP Error 404: Not Found
+    WARN: reward mints unknown
+    Reward mints: R0=? R1=?
+    Rewards:    none
+    Reserves NAV: 1.9970 SOL
+    Fees NAV:     0.0000 SOL
+    Rewards NAV:  0.0000 SOL
+
+  Position 6KibbgHF...
+    Pool: ?/?
+    mintX=5UUH9RTD...  mintY=So111111...
+    Decimals: X=6 Y=9
+    BinArrays: [-3, -2, -1, 0, 1, 2]
+    AC-3 PASS: 6/6 BinArray(s) fetched
+    WARN: active_width=348 > n_slots=70 — capping iteration
+    Reserves:  X=0.0000  Y=1.0000
+    Uncl.fees: X=0.0000  Y=0.0000
+    Reward mints: R0=? R1=?
+    Rewards:    none
+    Reserves NAV: 1.0000 SOL
+    Fees NAV:     0.0000 SOL
+    Rewards NAV:  0.0000 SOL
+
+  Position 6ZHCM8Li...
+    Pool: ?/?
+    mintX=8J69rbLT...  mintY=So111111...
+    Decimals: X=6 Y=9
+    BinArrays: [-9, -8, -7]
+    AC-3 PASS: 3/3 BinArray(s) fetched
+    WARN: active_width=162 > n_slots=70 — capping iteration
+    Reserves:  X=340.0773  Y=1.3402
+    Uncl.fees: X=0.0000  Y=0.0000
+    WARN: Jupiter HTTP 429 for 8J69rbLT..., skipping
+    WARN: reward mints API lookup failed: HTTP Error 404: Not Found
+    WARN: reward mints unknown
+    Reward mints: R0=? R1=?
+    Rewards:    none
+    Reserves NAV: 1.3402 SOL
+    Fees NAV:     0.0000 SOL
+    Rewards NAV:  0.0000 SOL
+
+  Position 6dGLekxF...
+    Pool: ?/?
+    mintX=J8PSdNP3...  mintY=So111111...
+    Decimals: X=6 Y=9
+    BinArrays: [-6, -5]
+    AC-3 PASS: 2/2 BinArray(s) fetched
+    WARN: active_width=77 > n_slots=70 — capping iteration
+    Reserves:  X=0.0000  Y=1.0000
+    Uncl.fees: X=0.0000  Y=0.0000
+    Reward mints: R0=? R1=?
+    Rewards:    none
+    Reserves NAV: 1.0000 SOL
+    Fees NAV:     0.0000 SOL
+    Rewards NAV:  0.0000 SOL
+
+  Position 6fSoUmGA...
+    Pool: ?/?
+    mintX=Hon2rHAi...  mintY=So111111...
+    Decimals: X=6 Y=9
+    BinArrays: [-5, -4]
+    AC-3 PASS: 2/2 BinArray(s) fetched
+    WARN: active_width=77 > n_slots=70 — capping iteration
+    Reserves:  X=53.1416  Y=0.9963
+    Uncl.fees: X=0.0000  Y=0.0000
+    WARN: Jupiter HTTP 429 for Hon2rHAi..., skipping
+    Reward mints: R0=? R1=?
+    Rewards:    none
+    Reserves NAV: 0.9963 SOL
+    Fees NAV:     0.0000 SOL
+    Rewards NAV:  0.0000 SOL
+
+  Position 7ZoN2rvy...
+    Pool: ?/?
+    mintX=ACtfUWtg...  mintY=So111111...
+    Decimals: X=6 Y=9
+    BinArrays: [-8, -7, -6]
+    AC-3 PASS: 3/3 BinArray(s) fetched
+    WARN: active_width=89 > n_slots=70 — capping iteration
+    Reserves:  X=6.8448  Y=0.9997
+    Uncl.fees: X=0.0000  Y=0.0000
+    WARN: reward mints API lookup failed: HTTP Error 404: Not Found
+    WARN: reward mints unknown
+    Reward mints: R0=? R1=?
+    Rewards:    none
+    Reserves NAV: 1.0000 SOL
+    Fees NAV:     0.0000 SOL
+    Rewards NAV:  0.0000 SOL
+
+  Position 7b69GakZ...
+    Pool: ?/?
+    mintX=EkDGB5fb...  mintY=So111111...
+    Decimals: X=6 Y=9
+    BinArrays: [-7, -6, -5]
+    AC-3 PASS: 3/3 BinArray(s) fetched
+    WARN: active_width=133 > n_slots=70 — capping iteration
+    Reserves:  X=3.2965  Y=0.9998
+    Uncl.fees: X=0.0000  Y=0.0000
+    WARN: reward mints API lookup failed: HTTP Error 404: Not Found
+    WARN: reward mints unknown
+    Reward mints: R0=? R1=?
+    Rewards:    none
+    Reserves NAV: 1.0000 SOL
+    Fees NAV:     0.0000 SOL
+    Rewards NAV:  0.0000 SOL
+
+  Position 8Cpm82p4...
+    Pool: ?/?
+    mintX=33eum82L...  mintY=So111111...
+    Decimals: X=6 Y=9
+    BinArrays: [-5, -4]
+    AC-3 PASS: 2/2 BinArray(s) fetched
+    WARN: active_width=107 > n_slots=70 — capping iteration
+    Reserves:  X=412.1392  Y=0.9671
+    Uncl.fees: X=0.0000  Y=0.0000
+    WARN: Jupiter HTTP 429 for 33eum82L..., skipping
+    Reward mints: R0=? R1=?
+    Rewards:    none
+    Reserves NAV: 0.9671 SOL
+    Fees NAV:     0.0000 SOL
+    Rewards NAV:  0.0000 SOL
+
+  Position 8DtJjN3p...
+    Pool: ?/?
+    mintX=AWGCDT2g...  mintY=So111111...
+    Decimals: X=6 Y=9
+    BinArrays: [-7, -6]
+    AC-3 PASS: 2/2 BinArray(s) fetched
+    WARN: active_width=107 > n_slots=70 — capping iteration
+    Reserves:  X=154.2827  Y=0.9955
+    Uncl.fees: X=0.0000  Y=0.0000
+    WARN: reward mints API lookup failed: HTTP Error 404: Not Found
+    WARN: reward mints unknown
+    Reward mints: R0=? R1=?
+    Rewards:    none
+    Reserves NAV: 0.9999 SOL
+    Fees NAV:     0.0000 SOL
+    Rewards NAV:  0.0000 SOL
+
+  Position 8nzmkzKL...
+    Pool: ?/?
+    mintX=5hiLgyyb...  mintY=So111111...
+    Decimals: X=6 Y=9
+    BinArrays: [-12, -11, -10, -9]
+    AC-3 PASS: 4/4 BinArray(s) fetched
+    WARN: active_width=213 > n_slots=70 — capping iteration
+    Reserves:  X=213.2956  Y=0.9881
+    Uncl.fees: X=0.0000  Y=0.0000
+    WARN: reward mints API lookup failed: HTTP Error 404: Not Found
+    WARN: reward mints unknown
+    Reward mints: R0=? R1=?
+    Rewards:    none
+    Reserves NAV: 0.9995 SOL
+    Fees NAV:     0.0000 SOL
+    Rewards NAV:  0.0000 SOL
+
+  Position 994yCUEE...
+    Pool: ?/?
+    mintX=3B1ijcoc...  mintY=So111111...
+    Decimals: X=6 Y=9
+    BinArrays: [-8, -7, -6]
+    AC-3 PASS: 3/3 BinArray(s) fetched
+    WARN: active_width=133 > n_slots=70 — capping iteration
+    Reserves:  X=644.5711  Y=1.1712
+    Uncl.fees: X=0.0000  Y=0.0000
+    WARN: reward mints API lookup failed: HTTP Error 404: Not Found
+    WARN: reward mints unknown
+    Reward mints: R0=? R1=?
+    Rewards:    none
+    Reserves NAV: 1.1983 SOL
+    Fees NAV:     0.0000 SOL
+    Rewards NAV:  0.0000 SOL
+
+  Position 9FVPeMHz...
+    Pool: ?/?
+    mintX=CGEDT9QZ...  mintY=So111111...
+    Decimals: X=6 Y=9
+    BinArrays: [-18, -17, -16, -15, -14, -13]
+    AC-3 PASS: 6/6 BinArray(s) fetched
+    WARN: active_width=321 > n_slots=70 — capping iteration
+    Reserves:  X=2072.8694  Y=1.0201
+    Uncl.fees: X=0.0000  Y=0.0000
+    WARN: Jupiter HTTP 429 for CGEDT9QZ..., skipping
+    WARN: reward mints API lookup failed: HTTP Error 404: Not Found
+    WARN: reward mints unknown
+    Reward mints: R0=? R1=?
+    Rewards:    none
+    Reserves NAV: 1.0201 SOL
+    Fees NAV:     0.0000 SOL
+    Rewards NAV:  0.0000 SOL
+
+  Position 9QrrSGJC...
+    Pool: ?/?
+    mintX=J8PSdNP3...  mintY=So111111...
+    Decimals: X=6 Y=9
+    BinArrays: [-7, -6, -5]
+    AC-3 PASS: 3/3 BinArray(s) fetched
+    WARN: active_width=133 > n_slots=70 — capping iteration
+    Reserves:  X=0.0000  Y=1.0000
+    Uncl.fees: X=0.0000  Y=0.0000
+    Reward mints: R0=? R1=?
+    Rewards:    none
+    Reserves NAV: 1.0000 SOL
+    Fees NAV:     0.0000 SOL
+    Rewards NAV:  0.0000 SOL
+
+  Position 9RXZhRTy...
+    Pool: ?/?
+    mintX=3KHMZhpt...  mintY=So111111...
+    Decimals: X=6 Y=9
+    BinArrays: [-6, -5, -4]
+    AC-3 PASS: 3/3 BinArray(s) fetched
+    WARN: active_width=89 > n_slots=70 — capping iteration
+    Reserves:  X=2.7232  Y=0.9997
+    Uncl.fees: X=0.0000  Y=0.0000
+    WARN: Jupiter HTTP 429 for 3KHMZhpt..., skipping
+    WARN: reward mints API lookup failed: HTTP Error 404: Not Found
+    WARN: reward mints unknown
+    Reward mints: R0=? R1=?
+    Rewards:    none
+    Reserves NAV: 0.9997 SOL
+    Fees NAV:     0.0000 SOL
+    Rewards NAV:  0.0000 SOL
+
+  Position 9bCsYjpB...
+    Pool: ?/?
+    mintX=5hiLgyyb...  mintY=So111111...
+    Decimals: X=6 Y=9
+    BinArrays: [-12, -11, -10, -9]
+    AC-3 PASS: 4/4 BinArray(s) fetched
+    WARN: active_width=213 > n_slots=70 — capping iteration
+    Reserves:  X=218.2199  Y=0.9879
+    Uncl.fees: X=0.0000  Y=0.0000
+    WARN: Jupiter HTTP 429 for 5hiLgyyb..., skipping
+    Reward mints: R0=? R1=?
+    Rewards:    none
+    Reserves NAV: 0.9879 SOL
+    Fees NAV:     0.0000 SOL
+    Rewards NAV:  0.0000 SOL
+
+  Position 9dQqSLd8...
+    Pool: ?/?
+    mintX=E6ifp2mJ...  mintY=So111111...
+    Decimals: X=6 Y=9
+    BinArrays: [-7, -6]
+    AC-3 PASS: 2/2 BinArray(s) fetched
+    WARN: active_width=107 > n_slots=70 — capping iteration
+    Reserves:  X=80.4979  Y=0.9983
+    Uncl.fees: X=0.0000  Y=0.0000
+    WARN: Jupiter HTTP 429 for E6ifp2mJ..., skipping
+    Reward mints: R0=? R1=?
+    Rewards:    none
+    Reserves NAV: 0.9983 SOL
+    Fees NAV:     0.0000 SOL
+    Rewards NAV:  0.0000 SOL
+
+  Position AThRvuSS...
+    Pool: ?/?
+    mintX=32CdQdBU...  mintY=So111111...
+    Decimals: X=6 Y=9
+    BinArrays: [-8, -7]
+    AC-3 PASS: 2/2 BinArray(s) fetched
+    WARN: active_width=73 > n_slots=70 — capping iteration
+    Reserves:  X=12.4116  Y=0.9996
+    Uncl.fees: X=0.0000  Y=0.0000
+    WARN: Jupiter HTTP 429 for 32CdQdBU..., skipping
+    WARN: reward mints API lookup failed: HTTP Error 404: Not Found
+    WARN: reward mints unknown
+    Reward mints: R0=? R1=?
+    Rewards:    none
+    Reserves NAV: 0.9996 SOL
+    Fees NAV:     0.0000 SOL
+    Rewards NAV:  0.0000 SOL
+
+  Position AmDP6kp8...
+    Pool: ?/?
+    mintX=CGEDT9QZ...  mintY=So111111...
+    Decimals: X=6 Y=9
+    BinArrays: [-5, -4]
+    AC-3 PASS: 2/2 BinArray(s) fetched
+    WARN: active_width=77 > n_slots=70 — capping iteration
+    Reserves:  X=1422.2206  Y=0.8774
+    Uncl.fees: X=0.0000  Y=0.0000
+    WARN: Jupiter HTTP 429 for CGEDT9QZ..., skipping
+    Reward mints: R0=? R1=?
+    Rewards:    none
+    Reserves NAV: 0.8774 SOL
+    Fees NAV:     0.0000 SOL
+    Rewards NAV:  0.0000 SOL
+
+  Position BNrPTLBn...
+    Pool: ?/?
+    mintX=Hh3oTaqD...  mintY=So111111...
+    Decimals: X=6 Y=9
+    BinArrays: [-7, -6, -5]
+    AC-3 PASS: 3/3 BinArray(s) fetched
+    WARN: active_width=107 > n_slots=70 — capping iteration
+    Reserves:  X=248.6926  Y=1.1905
+    Uncl.fees: X=0.0000  Y=0.0000
+    WARN: Jupiter HTTP 429 for Hh3oTaqD..., skipping
+    WARN: reward mints API lookup failed: HTTP Error 404: Not Found
+    WARN: reward mints unknown
+    Reward mints: R0=? R1=?
+    Rewards:    none
+    Reserves NAV: 1.1905 SOL
+    Fees NAV:     0.0000 SOL
+    Rewards NAV:  0.0000 SOL
+
+  Position BaLvbs8u...
+    Pool: ?/?
+    mintX=J8PSdNP3...  mintY=So111111...
+    Decimals: X=6 Y=9
+    BinArrays: [-6, -5]
+    AC-3 PASS: 2/2 BinArray(s) fetched
+    WARN: active_width=77 > n_slots=70 — capping iteration
+    Reserves:  X=0.0000  Y=1.0000
+    Uncl.fees: X=0.0000  Y=0.0000
+    Reward mints: R0=? R1=?
+    Rewards:    none
+    Reserves NAV: 1.0000 SOL
+    Fees NAV:     0.0000 SOL
+    Rewards NAV:  0.0000 SOL
+
+  Position BvSeLF8n...
+    Pool: ?/?
+    mintX=ACtfUWtg...  mintY=So111111...
+    Decimals: X=6 Y=9
+    BinArrays: [-8, -7, -6]
+    AC-3 PASS: 3/3 BinArray(s) fetched
+    WARN: active_width=89 > n_slots=70 — capping iteration
+    Reserves:  X=6.8485  Y=0.9997
+    Uncl.fees: X=0.0000  Y=0.0000
+    WARN: Jupiter HTTP 429 for ACtfUWtg..., skipping
+    Reward mints: R0=? R1=?
+    Rewards:    none
+    Reserves NAV: 0.9997 SOL
+    Fees NAV:     0.0000 SOL
+    Rewards NAV:  0.0000 SOL
+
+  Position Cua9yfyo...
+    Pool: ?/?
+    mintX=CGEDT9QZ...  mintY=So111111...
+    Decimals: X=6 Y=9
+    BinArrays: [-6, -5]
+    AC-3 PASS: 2/2 BinArray(s) fetched
+    WARN: active_width=102 > n_slots=70 — capping iteration
+    Reserves:  X=23.9913  Y=0.9981
+    Uncl.fees: X=0.0000  Y=0.0000
+    WARN: reward mints API lookup failed: HTTP Error 404: Not Found
+    WARN: reward mints unknown
+    Reward mints: R0=? R1=?
+    Rewards:    none
+    Reserves NAV: 1.0000 SOL
+    Fees NAV:     0.0000 SOL
+    Rewards NAV:  0.0000 SOL
+
+  Position D2DyfzYm...
+    Pool: ?/?
+    mintX=4UeLCRqA...  mintY=So111111...
+    Decimals: X=9 Y=9
+    BinArrays: [-14, -13]
+    AC-3 PASS: 2/2 BinArray(s) fetched
+    WARN: active_width=83 > n_slots=70 — capping iteration
+    Reserves:  X=64.2286  Y=0.9916
+    Uncl.fees: X=0.0000  Y=0.0000
+    WARN: Jupiter HTTP 429 for 4UeLCRqA..., skipping
+    Reward mints: R0=? R1=?
+    Rewards:    none
+    Reserves NAV: 0.9916 SOL
+    Fees NAV:     0.0000 SOL
+    Rewards NAV:  0.0000 SOL
+
+  Position E856wuDM...
+    Pool: ?/?
+    mintX=5gTPspC2...  mintY=So111111...
+    Decimals: X=6 Y=9
+    BinArrays: [-9, -8, -7]
+    AC-3 PASS: 3/3 BinArray(s) fetched
+    WARN: active_width=107 > n_slots=70 — capping iteration
+    Reserves:  X=11953.0867  Y=1.1097
+    Uncl.fees: X=0.0000  Y=0.0000
+    WARN: reward mints API lookup failed: HTTP Error 404: Not Found
+    WARN: reward mints unknown
+    Reward mints: R0=? R1=?
+    Rewards:    none
+    Reserves NAV: 1.1907 SOL
+    Fees NAV:     0.0000 SOL
+    Rewards NAV:  0.0000 SOL
+
+  Position FJT8FAro...
+    Pool: ?/?
+    mintX=3KHMZhpt...  mintY=So111111...
+    Decimals: X=6 Y=9
+    BinArrays: [-5, -4]
+    AC-3 PASS: 2/2 BinArray(s) fetched
+    WARN: active_width=107 > n_slots=70 — capping iteration
+    Reserves:  X=8.9057  Y=0.5590
+    Uncl.fees: X=0.0000  Y=0.0000
+    WARN: Jupiter HTTP 429 for 3KHMZhpt..., skipping
+    WARN: reward mints API lookup failed: HTTP Error 404: Not Found
+    WARN: reward mints unknown
+    Reward mints: R0=? R1=?
+    Rewards:    none
+    Reserves NAV: 0.5590 SOL
+    Fees NAV:     0.0000 SOL
+    Rewards NAV:  0.0000 SOL
+
+  Position Fci4G4LA...
+    Pool: ?/?
+    mintX=32CdQdBU...  mintY=So111111...
+    Decimals: X=6 Y=9
+    BinArrays: [-8, -7]
+    AC-3 PASS: 2/2 BinArray(s) fetched
+    WARN: active_width=102 > n_slots=70 — capping iteration
+    Reserves:  X=0.0000  Y=1.3750
+    Uncl.fees: X=0.0000  Y=0.0000
+    Reward mints: R0=? R1=?
+    Rewards:    none
+    Reserves NAV: 1.3750 SOL
+    Fees NAV:     0.0000 SOL
+    Rewards NAV:  0.0000 SOL
+
+  Position FqkaP1NG...
+    Pool: ?/?
+    mintX=4UeLCRqA...  mintY=So111111...
+    Decimals: X=9 Y=9
+    BinArrays: [-15, -14, -13]
+    AC-3 PASS: 3/3 BinArray(s) fetched
+    WARN: active_width=87 > n_slots=70 — capping iteration
+    Reserves:  X=0.0000  Y=1.3750
+    Uncl.fees: X=0.0000  Y=0.0000
+    Reward mints: R0=? R1=?
+    Rewards:    none
+    Reserves NAV: 1.3750 SOL
+    Fees NAV:     0.0000 SOL
+    Rewards NAV:  0.0000 SOL
+
+  Position G7rEmFSD...
+    Pool: ?/?
+    mintX=Cm6fNnMk...  mintY=So111111...
+    Decimals: X=6 Y=9
+    BinArrays: [-7, -6, -5]
+    AC-3 PASS: 3/3 BinArray(s) fetched
+    WARN: active_width=140 > n_slots=70 — capping iteration
+    Reserves:  X=1.5171  Y=0.9997
+    Uncl.fees: X=0.0000  Y=0.0000
+    WARN: reward mints API lookup failed: HTTP Error 404: Not Found
+    WARN: reward mints unknown
+    Reward mints: R0=? R1=?
+    Rewards:    none
+    Reserves NAV: 1.0000 SOL
+    Fees NAV:     0.0000 SOL
+    Rewards NAV:  0.0000 SOL
+
+  Position GECNeTkV...
+    Pool: ?/?
+    mintX=32CdQdBU...  mintY=So111111...
+    Decimals: X=6 Y=9
+    BinArrays: [-8, -7]
+    AC-3 PASS: 2/2 BinArray(s) fetched
+    WARN: active_width=73 > n_slots=70 — capping iteration
+    Reserves:  X=12.4108  Y=0.9996
+    Uncl.fees: X=0.0000  Y=0.0000
+    Reward mints: R0=? R1=?
+    Rewards:    none
+    Reserves NAV: 1.0000 SOL
+    Fees NAV:     0.0000 SOL
+    Rewards NAV:  0.0000 SOL
+
+  Position GEKnxVvA...
+    Pool: ?/?
+    mintX=CGEDT9QZ...  mintY=So111111...
+    Decimals: X=6 Y=9
+    BinArrays: [-5, -4]
+    AC-3 PASS: 2/2 BinArray(s) fetched
+    WARN: active_width=107 > n_slots=70 — capping iteration
+    Reserves:  X=638.2925  Y=0.9453
+    Uncl.fees: X=0.0000  Y=0.0000
+    WARN: Jupiter HTTP 429 for CGEDT9QZ..., skipping
+    Reward mints: R0=? R1=?
+    Rewards:    none
+    Reserves NAV: 0.9453 SOL
+    Fees NAV:     0.0000 SOL
+    Rewards NAV:  0.0000 SOL
+
+  Position GVcP3i9h...
+    Pool: ?/?
+    mintX=3KHMZhpt...  mintY=So111111...
+    Decimals: X=6 Y=9
+    BinArrays: [-7, -6, -5, -4]
+    AC-3 PASS: 4/4 BinArray(s) fetched
+    WARN: active_width=175 > n_slots=70 — capping iteration
+    Reserves:  X=39.5076  Y=0.9956
+    Uncl.fees: X=0.0000  Y=0.0000
+    Reward mints: R0=? R1=?
+    Rewards:    none
+    Reserves NAV: 0.9998 SOL
+    Fees NAV:     0.0000 SOL
+    Rewards NAV:  0.0000 SOL
+
+  Position GWusKyEG...
+    Pool: ?/?
+    mintX=32CdQdBU...  mintY=So111111...
+    Decimals: X=6 Y=9
+    BinArrays: [-7, -6]
+    AC-3 PASS: 2/2 BinArray(s) fetched
+    WARN: active_width=133 > n_slots=70 — capping iteration
+    Reserves:  X=14521.3546  Y=0.7668
+    Uncl.fees: X=0.0000  Y=0.0000
+    WARN: Jupiter HTTP 429 for 32CdQdBU..., skipping
+    Reward mints: R0=? R1=?
+    Rewards:    none
+    Reserves NAV: 0.7668 SOL
+    Fees NAV:     0.0000 SOL
+    Rewards NAV:  0.0000 SOL
+
+  Position Gz35Eh1x...
+    Pool: ?/?
+    mintX=4UeLCRqA...  mintY=So111111...
+    Decimals: X=9 Y=9
+    BinArrays: [-15, -14]
+    AC-3 PASS: 2/2 BinArray(s) fetched
+    WARN: active_width=107 > n_slots=70 — capping iteration
+    Reserves:  X=0.0000  Y=1.0000
+    Uncl.fees: X=0.0000  Y=0.0000
+    Reward mints: R0=? R1=?
+    Rewards:    none
+    Reserves NAV: 1.0000 SOL
+    Fees NAV:     0.0000 SOL
+    Rewards NAV:  0.0000 SOL
+
+  Position HaBy8TrE...
+    Pool: ?/?
+    mintX=4UeLCRqA...  mintY=So111111...
+    Decimals: X=9 Y=9
+    BinArrays: [-15, -14, -13]
+    AC-3 PASS: 3/3 BinArray(s) fetched
+    WARN: active_width=107 > n_slots=70 — capping iteration
+    Reserves:  X=0.0000  Y=1.2000
+    Uncl.fees: X=0.0000  Y=0.0000
+    WARN: reward mints API lookup failed: HTTP Error 404: Not Found
+    WARN: reward mints unknown
+    Reward mints: R0=? R1=?
+    Rewards:    none
+    Reserves NAV: 1.2000 SOL
+    Fees NAV:     0.0000 SOL
+    Rewards NAV:  0.0000 SOL
+
+  Position Hkoptrcm...
+    Pool: ?/?
+    mintX=3KHMZhpt...  mintY=So111111...
+    Decimals: X=6 Y=9
+    BinArrays: [-6, -5, -4]
+    AC-3 PASS: 3/3 BinArray(s) fetched
+    WARN: active_width=89 > n_slots=70 — capping iteration
+    Reserves:  X=2.7223  Y=0.9997
+    Uncl.fees: X=0.0000  Y=0.0000
+    WARN: Jupiter HTTP 429 for 3KHMZhpt..., skipping
+    Reward mints: R0=? R1=?
+    Rewards:    none
+    Reserves NAV: 0.9997 SOL
+    Fees NAV:     0.0000 SOL
+    Rewards NAV:  0.0000 SOL
+
+  Position HqefBPb4...
+    Pool: ?/?
+    mintX=7HgfXftR...  mintY=So111111...
+    Decimals: X=6 Y=9
+    BinArrays: [-6, -5]
+    AC-3 PASS: 2/2 BinArray(s) fetched
+    WARN: active_width=77 > n_slots=70 — capping iteration
+    Reserves:  X=640.1978  Y=0.9715
+    Uncl.fees: X=0.0000  Y=0.0000
+    WARN: Jupiter HTTP 429 for 7HgfXftR..., skipping
+    Reward mints: R0=? R1=?
+    Rewards:    none
+    Reserves NAV: 0.9715 SOL
+    Fees NAV:     0.0000 SOL
+    Rewards NAV:  0.0000 SOL
+
+Step 6: Free SOL balance...
+  Free SOL: 10.8252
+
+Step 6b: Idle SPL tokens...
+  SPL token accounts: 173
+    WARN: Jupiter HTTP 429 for FyktJhVQ..., skipping
+    WARN: Jupiter HTTP 429 for 26yT7dmY..., skipping
+    WARN: Jupiter HTTP 429 for ExxobpXB..., skipping
+    WARN: Jupiter HTTP 429 for 5mbK36SZ..., skipping
+    WARN: Jupiter HTTP 429 for LAYER4xP..., skipping
+    WARN: Jupiter HTTP 429 for CVJXsa12..., skipping
+    WARN: Jupiter HTTP 429 for T3XtHFwm..., skipping
+    WARN: Jupiter HTTP 429 for 7kpGbjLn..., skipping
+    WARN: Jupiter HTTP 429 for LL2d4uyR..., skipping
+    WARN: Jupiter HTTP 429 for BBSAW49S..., skipping
+    WARN: Jupiter HTTP 429 for 3TYgKwkE..., skipping
+    WARN: Jupiter HTTP 429 for Rgc8QM5Z..., skipping
+    WARN: Jupiter HTTP 429 for EhKJrkwM..., skipping
+    WARN: Jupiter HTTP 429 for G2dJVAF2..., skipping
+    WARN: Jupiter HTTP 429 for E7NgL19J..., skipping
+    WARN: Jupiter HTTP 429 for 4nswj3o1..., skipping
+    WARN: Jupiter HTTP 429 for TNSRxcUx..., skipping
+    WARN: Jupiter HTTP 429 for DRAG1Twc..., skipping
+    WARN: Jupiter HTTP 429 for 4UeLCRqA..., skipping
+    WARN: Jupiter HTTP 429 for GibyGrdE..., skipping
+    WARN: Jupiter HTTP 429 for GMvCfcZg..., skipping
+    WARN: Jupiter HTTP 429 for FbmmdcCY..., skipping
+    WARN: Jupiter HTTP 429 for AdsLPtW1..., skipping
+    WARN: Jupiter HTTP 429 for BZd92HnP..., skipping
+    WARN: Jupiter HTTP 429 for 8kUBQX7x..., skipping
+    WARN: Jupiter HTTP 429 for Eppcp4Fh..., skipping
+    WARN: Jupiter HTTP 429 for 2uS7QJ27..., skipping
+    WARN: Jupiter HTTP 429 for JCBKQBPv..., skipping
+    WARN: Jupiter HTTP 429 for Cr2mM4sz..., skipping
+    WARN: Jupiter HTTP 429 for HjgwHz7Q..., skipping
+    WARN: Jupiter HTTP 429 for DvjbEsdc..., skipping
+    WARN: Jupiter HTTP 429 for 132STreS..., skipping
+    WARN: Jupiter HTTP 429 for 6VKDRsck..., skipping
+    WARN: Jupiter HTTP 429 for 74SBV4zD..., skipping
+    WARN: Jupiter HTTP 429 for A7bdiYdS..., skipping
+    WARN: Jupiter HTTP 429 for C4sDY6t7..., skipping
+    WARN: Jupiter HTTP 429 for EkDGB5fb..., skipping
+    WARN: Jupiter HTTP 429 for DQGmmFFv..., skipping
+    WARN: Jupiter HTTP 429 for 65zo375K..., skipping
+    WARN: Jupiter HTTP 429 for hRjhzK32..., skipping
+    WARN: Jupiter HTTP 429 for Aih3sbAb..., skipping
+    WARN: Jupiter HTTP 429 for EqquikmA..., skipping
+    WARN: Jupiter HTTP 429 for CizLY8Ya..., skipping
+    WARN: Jupiter HTTP 429 for GVCjUXWt..., skipping
+    WARN: Jupiter HTTP 429 for F5RVEHnZ..., skipping
+    WARN: Jupiter HTTP 429 for GyH11AoE..., skipping
+    WARN: Jupiter HTTP 429 for CuXmQvh4..., skipping
+    WARN: Jupiter HTTP 429 for 5NGM6UJM..., skipping
+    WARN: Jupiter HTTP 429 for 7mtXLUoA..., skipping
+    WARN: Jupiter HTTP 429 for C9mrUSm7..., skipping
+    WARN: Jupiter HTTP 429 for 97PVGU2D..., skipping
+    WARN: Jupiter HTTP 429 for 26ZLYqvp..., skipping
+    WARN: Jupiter HTTP 429 for D67BSPqE..., skipping
+    WARN: Jupiter HTTP 429 for Dfh5DzRg..., skipping
+    5UUH9RTD... = 0.000405 tokens = 0.0000 SOL
+    WARN: Jupiter HTTP 429 for FRsV3m92..., skipping
+    WARN: Jupiter HTTP 429 for 6rAkwPyY..., skipping
+    WARN: Jupiter HTTP 429 for CFB4Ff7W..., skipping
+    WARN: Jupiter HTTP 429 for a3W4quto..., skipping
+    WARN: Jupiter HTTP 429 for VDoRrZix..., skipping
+    WARN: Jupiter HTTP 429 for 74RAZUav..., skipping
+    WARN: Jupiter HTTP 429 for HmBdm8vb..., skipping
+    WARN: Jupiter HTTP 429 for FA95L6nz..., skipping
+    WARN: Jupiter HTTP 429 for 7W4geAJy..., skipping
+    WARN: Jupiter HTTP 429 for 67ezHLk8..., skipping
+    WARN: Jupiter HTTP 429 for CPLTbYbt..., skipping
+    WARN: Jupiter HTTP 429 for BTCcxBqE..., skipping
+    WARN: Jupiter HTTP 429 for GuMGpj1A..., skipping
+    WARN: Jupiter HTTP 429 for 7eMJmn1b..., skipping
+    WARN: Jupiter HTTP 429 for FDcjznQL..., skipping
+    WARN: no Jupiter route for 73hAHsSX..., skipping
+    WARN: Jupiter HTTP 429 for EXS5Qtsf..., skipping
+    WARN: Jupiter HTTP 429 for UGoRwdj9..., skipping
+    WARN: Jupiter HTTP 429 for HmCxqpgx..., skipping
+    WARN: Jupiter HTTP 429 for GKjAe1bQ..., skipping
+    WARN: Jupiter HTTP 429 for CxWPdDBq..., skipping
+    WARN: Jupiter HTTP 429 for 9AvytnUK..., skipping
+    WARN: Jupiter HTTP 429 for CKyngN43..., skipping
+    WARN: Jupiter HTTP 429 for 2TsmuYUr..., skipping
+    WARN: Jupiter HTTP 429 for BNi62dTk..., skipping
+    WARN: Jupiter HTTP 429 for Awh5tTwv..., skipping
+    WARN: Jupiter HTTP 429 for J7kewDF4..., skipping
+    WARN: Jupiter HTTP 429 for EwEJ5R1i..., skipping
+    WARN: Jupiter HTTP 429 for 8116V1BW..., skipping
+    WARN: Jupiter HTTP 429 for FVPpivr7..., skipping
+    WARN: Jupiter HTTP 429 for Cbjr1Nvc..., skipping
+    WARN: Jupiter HTTP 429 for JD9C1Xzk..., skipping
+    WARN: Jupiter HTTP 429 for AWc8uws9..., skipping
+    WARN: Jupiter HTTP 429 for 6R7UD3L7..., skipping
+    WARN: Jupiter HTTP 429 for 6nR8wBnf..., skipping
+    WARN: Jupiter HTTP 429 for CZRsbB6B..., skipping
+    WARN: Jupiter HTTP 429 for HQbFvHdV..., skipping
+    WARN: Jupiter HTTP 429 for Dmi1Lusz..., skipping
+    WARN: Jupiter HTTP 429 for 4NrB9ihG..., skipping
+    WARN: Jupiter HTTP 429 for 5USAxtTk..., skipping
+    WARN: Jupiter HTTP 429 for XA4R1zwK..., skipping
+    WARN: Jupiter HTTP 429 for FWGC5ziw..., skipping
+    WARN: Jupiter HTTP 429 for 9D1FaL8C..., skipping
+    WARN: Jupiter HTTP 429 for 4NGbC4RR..., skipping
+    WARN: Jupiter HTTP 429 for D8YeG9vY..., skipping
+    WARN: Jupiter HTTP 429 for A1AdZpXR..., skipping
+    WARN: no Jupiter route for B8YVF2CA..., skipping
+    WARN: no Jupiter route for 4qLce3X2..., skipping
+    WARN: Jupiter HTTP 429 for D7UShu6F..., skipping
+    WARN: Jupiter HTTP 429 for BPxxfRCX..., skipping
+    WARN: Jupiter HTTP 429 for dB4NwbjT..., skipping
+    WARN: Jupiter HTTP 429 for 9KbdV5CJ..., skipping
+    WARN: Jupiter HTTP 429 for 4LLbsb5R..., skipping
+    WARN: Jupiter HTTP 429 for GgVKiDwK..., skipping
+    WARN: Jupiter HTTP 429 for 6feT9qYK..., skipping
+    WARN: Jupiter HTTP 429 for G5Ydwbcs..., skipping
+    WARN: Jupiter HTTP 429 for fRfKGCri..., skipping
+    WARN: Jupiter HTTP 429 for FeR8VBqN..., skipping
+    WARN: Jupiter HTTP 429 for ExoZ7rM8..., skipping
+    WARN: Jupiter HTTP 429 for BwTu5zJq..., skipping
+    WARN: Jupiter HTTP 429 for ChAy7yc8..., skipping
+    WARN: no Jupiter route for 927AfY5w..., skipping
+    WARN: Jupiter HTTP 429 for zRSBtynH..., skipping
+    WARN: Jupiter HTTP 429 for CxiR3c9A..., skipping
+    WARN: Jupiter HTTP 429 for FFYLoYzP..., skipping
+    WARN: Jupiter HTTP 429 for WHkuwfwm..., skipping
+    WARN: Jupiter HTTP 429 for GJ9LEQZg..., skipping
+    WARN: Jupiter HTTP 429 for HYPSgRBP..., skipping
+    WARN: Jupiter HTTP 429 for E4vUZnKS..., skipping
+    WARN: Jupiter HTTP 429 for oreoU2P8..., skipping
+    WARN: Jupiter HTTP 429 for 35M17k96..., skipping
+    WARN: Jupiter HTTP 429 for Dq3Fwkvo..., skipping
+    WARN: Jupiter HTTP 429 for Fnmq5udT..., skipping
+    WARN: Jupiter HTTP 429 for BCXRYfuA..., skipping
+    WARN: Jupiter HTTP 429 for 8dktTBKs..., skipping
+    WARN: Jupiter HTTP 429 for DAephZiN..., skipping
+    WARN: Jupiter HTTP 429 for 4gLeXLnP..., skipping
+    WARN: Jupiter HTTP 429 for 9V7jznWg..., skipping
+    WARN: Jupiter HTTP 429 for D8FYTqJG..., skipping
+    WARN: Jupiter HTTP 429 for 31k88G5M..., skipping
+    WARN: Jupiter HTTP 429 for Grass7B4..., skipping
+    WARN: Jupiter HTTP 429 for 29tcY3zP..., skipping
+    WARN: Jupiter HTTP 429 for DGEtPq5e..., skipping
+    WARN: Jupiter HTTP 429 for 8iMCGF8y..., skipping
+    WARN: Jupiter HTTP 429 for GkyPYa7N..., skipping
+    WARN: Jupiter HTTP 429 for BBKPiLM9..., skipping
+    WARN: Jupiter HTTP 429 for 3HfLqhtF..., skipping
+    WARN: Jupiter HTTP 429 for 5M1cmwsw..., skipping
+    WARN: Jupiter HTTP 429 for HmLAruzJ..., skipping
+    WARN: Jupiter HTTP 429 for BCXpjsHY..., skipping
+    WARN: Jupiter HTTP 429 for J948jWGH..., skipping
+    WARN: Jupiter HTTP 429 for DcUwezFD..., skipping
+    WARN: Jupiter HTTP 429 for 9Bhbkx3s..., skipping
+    WARN: Jupiter HTTP 429 for DoBAMMqc..., skipping
+    WARN: Jupiter HTTP 429 for DpBzjtgG..., skipping
+    WARN: Jupiter HTTP 429 for GEuuznWp..., skipping
+    WARN: Jupiter HTTP 429 for Gj4Towiz..., skipping
+    WARN: Jupiter HTTP 429 for EMg2QkFZ..., skipping
+
+============================================================
+RESULTS
+============================================================
+Wallet: J4tkGDbTUVtAkcziKruadhRkP3A9HquvmBXK6bsSVArF
+Active positions found: 50
+
+Addr       Pair                  Reserves(SOL)  Fees(SOL)  Rewards(SOL)
+------------------------------------------------------------------------
+1rprQ6QS   ?/?                          1.3750     0.0000        0.0000
+85fgwHwo   ?/?                          0.4000     0.0000        0.0000
+GG4ongcE   ?/?                          0.9998     0.0000        0.0000
+vRW9iaY8   ?/?                          0.9996     0.0000        0.0000
+2LdpiGVB   ?/?                          1.0000     0.0000        0.0000
+2agRHfUV   ?/?                          0.9998     0.0000        0.0000
+2spc5dvD   ?/?                          0.9999     0.0000        0.0000
+35XzYAB2   ?/?                          0.9997     0.0000        0.0000
+37UqZNJf   ?/?                          1.1526     0.0000        0.0000
+3WbaG4G7   ?/?                          0.9715     0.0000        0.0000
+3e7cCrYW   ?/?                          0.9997     0.0000        0.0000
+4q4yshRm   ?/?                          0.8774     0.0000        0.0000
+51Yq1Wff   ?/?                          0.9997     0.0000        0.0000
+5CHWA7gE   ?/?                          0.4771     0.0000        0.0000
+6FnB5M8i   ?/?                          1.9970     0.0000        0.0000
+6KibbgHF   ?/?                          1.0000     0.0000        0.0000
+6ZHCM8Li   ?/?                          1.3402     0.0000        0.0000
+6dGLekxF   ?/?                          1.0000     0.0000        0.0000
+6fSoUmGA   ?/?                          0.9963     0.0000        0.0000
+7ZoN2rvy   ?/?                          1.0000     0.0000        0.0000
+7b69GakZ   ?/?                          1.0000     0.0000        0.0000
+8Cpm82p4   ?/?                          0.9671     0.0000        0.0000
+8DtJjN3p   ?/?                          0.9999     0.0000        0.0000
+8nzmkzKL   ?/?                          0.9995     0.0000        0.0000
+994yCUEE   ?/?                          1.1983     0.0000        0.0000
+9FVPeMHz   ?/?                          1.0201     0.0000        0.0000
+9QrrSGJC   ?/?                          1.0000     0.0000        0.0000
+9RXZhRTy   ?/?                          0.9997     0.0000        0.0000
+9bCsYjpB   ?/?                          0.9879     0.0000        0.0000
+9dQqSLd8   ?/?                          0.9983     0.0000        0.0000
+AThRvuSS   ?/?                          0.9996     0.0000        0.0000
+AmDP6kp8   ?/?                          0.8774     0.0000        0.0000
+BNrPTLBn   ?/?                          1.1905     0.0000        0.0000
+BaLvbs8u   ?/?                          1.0000     0.0000        0.0000
+BvSeLF8n   ?/?                          0.9997     0.0000        0.0000
+Cua9yfyo   ?/?                          1.0000     0.0000        0.0000
+D2DyfzYm   ?/?                          0.9916     0.0000        0.0000
+E856wuDM   ?/?                          1.1907     0.0000        0.0000
+FJT8FAro   ?/?                          0.5590     0.0000        0.0000
+Fci4G4LA   ?/?                          1.3750     0.0000        0.0000
+FqkaP1NG   ?/?                          1.3750     0.0000        0.0000
+G7rEmFSD   ?/?                          1.0000     0.0000        0.0000
+GECNeTkV   ?/?                          1.0000     0.0000        0.0000
+GEKnxVvA   ?/?                          0.9453     0.0000        0.0000
+GVcP3i9h   ?/?                          0.9998     0.0000        0.0000
+GWusKyEG   ?/?                          0.7668     0.0000        0.0000
+Gz35Eh1x   ?/?                          1.0000     0.0000        0.0000
+HaBy8TrE   ?/?                          1.2000     0.0000        0.0000
+Hkoptrcm   ?/?                          0.9997     0.0000        0.0000
+HqefBPb4   ?/?                          0.9715     0.0000        0.0000
+
+Active positions NAV:        51.1978 SOL
+Unclaimed fees:               0.0000 SOL
+Unclaimed rewards:            0.0000 SOL
+Free SOL:                    10.8252 SOL
+Idle SPL tokens:              0.0000 SOL
+----------------------------------------------
+internal_nav_sol:            62.0230 SOL
+lpagent_nav_sol:             67.1000 SOL   (user-supplied)
+diff_pct:                       7.6%
+verdict:                        FAIL  (threshold 5%)
+
+DECISION: KILL — diff_pct=7.6% > 5% threshold.
+  Largest component: Active positions = 51.1978 SOL — investigate first.
+============================================================

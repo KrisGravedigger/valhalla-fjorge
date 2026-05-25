@@ -1,0 +1,117 @@
+﻿PositionV2 trailing bytes inspection
+program_id=LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo
+wallet=J4tkGDbTUVtAkcziKruadhRkP3A9HquvmBXK6bsSVArF
+position_v2_fixed_len=8120
+position_v2_discriminator_bytes=[117, 176, 212, 199, 245, 180, 133, 182]
+position_v2_discriminator_b58=LgkNAEYaVX3
+filters=[{"memcmp":{"offset":0,"bytes":"LgkNAEYaVX3"}},{"memcmp":{"offset":40,"bytes":"J4tkGDbTUVtAkcziKruadhRkP3A9HquvmBXK6bsSVArF"}}]
+python : Traceback (most recent call last):
+At line:2 char:1
++ python tools/inspect_trailing.py *> notes\trailing_bytes_inspection.t ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Traceback (most recent call last)::String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  File "C:\Python313\Lib\urllib\request.py", line 1319, in do_open
+    h.request(req.get_method(), req.selector, req.data, headers,
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+              encode_chunked=req.has_header('Transfer-encoding'))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\http\client.py", line 1338, in request
+    self._send_request(method, url, body, headers, encode_chunked)
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\http\client.py", line 1384, in _send_request
+    self.endheaders(body, encode_chunked=encode_chunked)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\http\client.py", line 1333, in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\http\client.py", line 1093, in _send_output
+    self.send(msg)
+    ~~~~~~~~~^^^^^
+  File "C:\Python313\Lib\http\client.py", line 1037, in send
+    self.connect()
+    ~~~~~~~~~~~~^^
+  File "C:\Python313\Lib\http\client.py", line 1472, in connect
+    super().connect()
+    ~~~~~~~~~~~~~~~^^
+  File "C:\Python313\Lib\http\client.py", line 1003, in connect
+    self.sock = self._create_connection(
+                ~~~~~~~~~~~~~~~~~~~~~~~^
+        (self.host,self.port), self.timeout, self.source_address)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\socket.py", line 864, in create_connection
+    raise exceptions[0]
+  File "C:\Python313\Lib\socket.py", line 849, in create_connection
+    sock.connect(sa)
+    ~~~~~~~~~~~~^^^^
+PermissionError: [WinError 10013] Zosta�a podj�ta pr�ba uzyskania dost�pu do gniazda w spos�b zabroniony przez
+
+przypisane do niego uprawnienia dost�pu
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\nju\ai\claude\projects\IaaS\valhalla-fjorge\tools\inspect_trailing.py", line 315, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "C:\nju\ai\claude\projects\IaaS\valhalla-fjorge\tools\inspect_trailing.py", line 179, in main
+    accounts = rpc_call(
+        rpc_url,
+    ...<8 lines>...
+        ],
+    )
+  File "C:\nju\ai\claude\projects\IaaS\valhalla-fjorge\tools\inspect_trailing.py", line 93, in rpc_call
+    with urllib.request.urlopen(req, timeout=45) as resp:
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\urllib\request.py", line 189, in urlopen
+    return opener.open(url, data, timeout)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\urllib\request.py", line 489, in open
+    response = self._open(req, data)
+  File "C:\Python313\Lib\urllib\request.py", line 506, in _open
+    result = self._call_chain(self.handle_open, protocol, protocol +
+                              '_open', req)
+  File "C:\Python313\Lib\urllib\request.py", line 466, in _call_chain
+    result = func(*args)
+  File "C:\Python313\Lib\urllib\request.py", line 1367, in https_open
+    return self.do_open(http.client.HTTPSConnection, req,
+           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        context=self._context)
+                        ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\urllib\request.py", line 1322, in do_open
+    raise URLError(err)
+urllib.error.URLError: <urlopen error [WinError 10013] Zosta�a podj�ta pr�ba uzyskania dost�pu do gniazda w spos�b zabr
+oniony przez
+
+przypisane do niego uprawnienia dost�pu>
+
+--- Research note added after blocked RPC run ---
+
+Local script status:
+- Command run: python tools/inspect_trailing.py
+- It loaded .env and built the requested PositionV2 discriminator+owner getProgramAccounts query.
+- It did not reach Helius RPC data because this Codex sandbox blocks outbound HTTPS sockets:
+  urllib.error.URLError / WinError 10013.
+- Syntax check without writing pyc passed:
+  python -B -c "from pathlib import Path; import ast; ast.parse(Path('tools/inspect_trailing.py').read_text(encoding='utf-8')); print('syntax_ok')"
+
+External IDL/docs research:
+- Official Meteora DLMM docs say PositionV2 supports up to 1,400 bins per position, increased from the previous 70-bin limit.
+- The same docs say this is achieved through extended byte data attached to the position account and allocated on demand as the position grows.
+- Official Meteora dlmm.json IDL contains PositionBinData with bytemuck C layout:
+  liquidity_share u128 (16B) + reward_info UserRewardInfo (48B) + fee_info FeeInfo (48B) = 112B.
+
+Interpretation:
+- For a 9464B PositionV2 account, raw_len - 8120 = 1344B.
+- 1344B = 12 * 112B and also 42 * 32B, but the official Dynamic Positions docs make 12 extra PositionBinData slots the structurally expected interpretation.
+- That means the bytes after 8120 are most likely PositionV2 dynamic extension bin records, not LimitOrder headers and not LimitOrderBinData.
+- These bytes can have NAV value when their liquidity_share is non-zero, because they extend the position's bin range/liquidity accounting.
+- The current script now tests all three interpretations once RPC access is available:
+  LimitOrder header, LimitOrderBinData, and PositionBinData extension.
+
+Expected decisive live-RPC signal:
+- If bytes[8120:8152] as a pubkey does not match the account lb_pair at offset 8, LimitOrder header is rejected.
+- If bytes[8120:8128] as amount plus bin_id/is_ask at 8136/8140 are nonsensical, LimitOrderBinData is rejected.
+- If the 1344 trailing bytes split into 12 x 112B records with plausible PositionBinData fields, the trailing bytes are PositionV2 dynamic bin data.
+
