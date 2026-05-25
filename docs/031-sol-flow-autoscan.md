@@ -251,8 +251,9 @@ python tools/chart_sol_flows.py
 # Expected: output/sol_flows.png exists, non-zero size
 
 # 7. Pipeline integration
-python run_pipeline.py --skip-pull --nav-dry-run --skip-flow-scan
-# Expected: "Step 5" line appears in output, exits 0
+python run_pipeline.py --skip-pull --nav-dry-run --allow-degraded --skip-flow-scan
+# Expected: "[pipeline] Step 5: SOL flow autoscan -- skipped" in output, exits 0
+# Note: --allow-degraded is needed locally when Jupiter rate-limits pump token prices
 
 # 8. Full test suite green
 python -m pytest tests/test_sol_flow_scanner.py -v
