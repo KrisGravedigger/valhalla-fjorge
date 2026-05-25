@@ -4,9 +4,11 @@ Valhalla full pipeline — non-interactive equivalent of:
   main.py [1] → cli.py [2] → recalc_pending → record_internal_nav
 
 Usage:
-  python run_pipeline.py               # normal run
-  python run_pipeline.py --skip-pull   # skip Discord pull, run parser + NAV only
-  python run_pipeline.py --nav-dry-run # skip snapshot write (prints NAV, no CSV)
+  python run_pipeline.py                 # normal run
+  python run_pipeline.py --skip-pull     # skip Discord pull
+  python run_pipeline.py --nav-dry-run   # print NAV, no CSV write
+  python run_pipeline.py --allow-degraded  # write NAV even if Jupiter prices partial
+  python run_pipeline.py --skip-flow-scan  # skip SOL flow autoscan + chart
 """
 import io
 import json
@@ -62,6 +64,8 @@ def main() -> None:
     args = sys.argv[1:]
     skip_pull = "--skip-pull" in args
     nav_dry_run = "--nav-dry-run" in args
+    nav_allow_degraded = "--allow-degraded" in args
+    skip_flow = "--skip-flow-scan" in args
 
     now = datetime.now(timezone.utc)
 
@@ -112,11 +116,33 @@ def main() -> None:
     nav_cmd = [sys.executable, str(ROOT / "tools" / "record_internal_nav.py")]
     if nav_dry_run:
         nav_cmd.append("--dry-run")
+    if nav_allow_degraded:
+        nav_cmd.append("--allow-degraded")
 
     rc = _run("Internal NAV snapshot", nav_cmd)
     if rc != 0:
         print("[pipeline] record_internal_nav failed — no snapshot written.", file=sys.stderr)
         sys.exit(rc)
+
+    # Step 5: SOL flow autoscan
+    if skip_flow:
+        print("\n[pipeline] Step 5: SOL flow autoscan -- skipped (--skip-flow-scan).")
+    else:
+        rc = _run(
+            "Step 5: SOL flow autoscan",
+            [sys.executable, str(ROOT / "tools" / "autoscan_sol_flows.py")],
+        )
+        if rc != 0:
+            print("[pipeline] SOL flow autoscan failed -- continuing.", file=sys.stderr)
+
+    # Step 6: SOL flows chart
+    if not skip_flow:
+        rc = _run(
+            "Step 6: SOL flows chart",
+            [sys.executable, str(ROOT / "tools" / "chart_sol_flows.py")],
+        )
+        if rc != 0:
+            print("[pipeline] SOL flows chart failed -- continuing.", file=sys.stderr)
 
     print("\n[pipeline] All steps complete.")
 

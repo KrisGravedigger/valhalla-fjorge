@@ -565,10 +565,10 @@ def _get_reward_mints(rpc_url: str, lb_pair: str) -> list[Optional[str]]:
             if len(infos) > 1:
                 reward_mints[1] = reward_mints[1] or _reward_mint_from_info(infos[1])
     except Exception as exc:
-        logging.warning("Reward mints API lookup failed for %s: %s", lb_pair, exc)
+        logging.debug("Reward mints API lookup failed for %s: %s", lb_pair, exc)
 
     if not reward_mints[0] and not reward_mints[1]:
-        logging.warning("Reward mints unknown for %s", lb_pair)
+        logging.debug("Reward mints unknown for %s", lb_pair)
     _reward_mints_cache[lb_pair] = reward_mints
     return reward_mints
 
