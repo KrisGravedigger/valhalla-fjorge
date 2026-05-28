@@ -135,10 +135,10 @@ def main() -> None:
         if rc != 0:
             print("[pipeline] SOL flow autoscan failed -- continuing.", file=sys.stderr)
 
-    # Step 6: SOL flows chart
+    # Step 6: Portfolio NAV chart (generated after NAV snapshot so today's data is included)
     if not skip_flow:
         rc = _run(
-            "Step 6: SOL flows chart",
+            "Step 6: Portfolio NAV chart",
             [sys.executable, str(ROOT / "tools" / "chart_sol_flows.py")],
         )
         if rc != 0:
