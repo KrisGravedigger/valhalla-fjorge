@@ -14,7 +14,7 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_FLOWS_PATH = PROJECT_ROOT / "output" / "capital_flows.csv"
 DEFAULT_SNAPSHOTS_PATH = PROJECT_ROOT / "output" / "portfolio_snapshots.csv"
-DEFAULT_OUTPUT_PATH = PROJECT_ROOT / "output" / "sol_flows.png"
+DEFAULT_OUTPUT_PATH = PROJECT_ROOT / "output" / "portfolio_nav_pnl.png"
 WINDOW_DAYS = 30
 
 
@@ -119,13 +119,12 @@ def generate_chart(flows_path: Path, snapshots_path: Path, output_path: Path) ->
         )
 
     ax.set_ylabel("SOL")
-    ax.set_xlabel("Date")
     ax.set_title(f"Portfolio NAV vs Investment — last {WINDOW_DAYS} days")
     ax.set_xlim(cutoff, today)
     ax.legend(loc="best")
+    ax.xaxis.set_major_locator(mdates.DayLocator())
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%m-%d"))
-    ax.xaxis.set_major_locator(mdates.AutoDateLocator())
-    plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha="right")
+    plt.setp(ax.xaxis.get_majorticklabels(), rotation=90, ha="center")
     ax.grid(True, alpha=0.3, axis="y")
     fig.tight_layout()
 

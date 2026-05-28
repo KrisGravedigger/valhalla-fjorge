@@ -63,10 +63,14 @@ BIN_SIZE = 144
 BIN_AMOUNT_X = 0
 BIN_AMOUNT_Y = 8
 BIN_LIQ_SUPPLY = 32
+LBPAIR_MINT_X = 88
+LBPAIR_MINT_Y = 120
 
 SOL_MINT_BYTES = base58.b58decode(SOL_MINT)
 _ZERO = Decimal("0")
 _decimals_cache: dict[str, int] = {}
+# Price cache: SOL per 1 raw token unit, populated per-process to avoid redundant Jupiter calls.
+_jupiter_price_cache: dict[str, Decimal] = {}
 _reward_mints_cache: dict[str, list[Optional[str]]] = {}
 
 
@@ -151,6 +155,7 @@ def _compute_position_nav(
     mint_y = pool.get("mint_y")
     if not mint_x or not mint_y:
         logging.warning("Could not determine token mints for %s", lb_pair_str)
+        _add_degraded(degraded_mints, f"lbpair-mints:{lb_pair_str}")
         return _ZERO, _ZERO, _ZERO
 
     lb_pair_pk = Pubkey.from_bytes(pos["lb_pair_bytes"])
@@ -501,6 +506,12 @@ def _lbpair_mints_onchain(
         logging.warning("On-chain LbPair fetch failed for %s: %s", lb_pair, exc)
         return None, None
 
+    if len(data) >= LBPAIR_MINT_Y + 32:
+        mint_x = data[LBPAIR_MINT_X : LBPAIR_MINT_X + 32]
+        mint_y = data[LBPAIR_MINT_Y : LBPAIR_MINT_Y + 32]
+        if any(byte != 0 for byte in mint_x) and any(byte != 0 for byte in mint_y):
+            return base58.b58encode(mint_x).decode(), base58.b58encode(mint_y).decode()
+
     for offset in range(8, len(data) - 31):
         if data[offset : offset + 32] == SOL_MINT_BYTES and offset + 64 <= len(data):
             mint_y = data[offset + 32 : offset + 64]
@@ -597,6 +608,10 @@ def _jupiter_to_sol(mint: str, amount_raw: int) -> tuple[Decimal, bool]:
     if amount_raw <= 100:
         return _ZERO, False
 
+    # Reuse price from earlier in this same NAV run (SOL per 1 raw unit).
+    if mint in _jupiter_price_cache:
+        return _jupiter_price_cache[mint] * Decimal(amount_raw), False
+
     url = (
         "https://api.jup.ag/swap/v1/quote"
         f"?inputMint={mint}&outputMint={SOL_MINT}"
@@ -607,7 +622,9 @@ def _jupiter_to_sol(mint: str, amount_raw: int) -> tuple[Decimal, bool]:
         time.sleep(JUPITER_DELAY)
         try:
             data = _http_get(url)
-            return Decimal(int(data["outAmount"])) / Decimal(LAMPORTS), False
+            out_sol = Decimal(int(data["outAmount"])) / Decimal(LAMPORTS)
+            _jupiter_price_cache[mint] = out_sol / Decimal(amount_raw)
+            return out_sol, False
         except urllib.error.HTTPError as exc:
             body = exc.read().decode(errors="replace")
             no_route = any(
