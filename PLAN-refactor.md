@@ -1,0 +1,178 @@
+# PLAN: Refaktoryzacja `valhalla-fjorge`
+
+> Status: **KONSENSUS Claude ↔ Codex** (iteracja 1, uzgodniony). Żadne zmiany w kodzie jeszcze nie wykonane — czeka na akceptację użytkownika.
+> Autor orkiestracji: Claude Code. Głos doradczy: Codex (advisory input + runda debaty z 2026-05-29).
+> Data: 2026-05-29.
+
+---
+
+## TL;DR
+
+1. **Diagnoza strukturalna Codexa jest trafna i empirycznie potwierdzona** — `match_positions()` to praktycznie jednofunkcyjny plik (~735 linii), `main()` w `cli.py` ~930 linii, `merge_with_existing_csv()` ~470 linii. Mieszanie warstw (CLI / I/O / domena / render / terminal) jest realne.
+2. **Codex niezależnie odtworzył istniejący backlog projektu** (`TODO.md` #137–#146). To dobra wiadomość: dwa niezależne przeglądy się zbiegły. Plan poniżej mapuje się 1:1 na te tickety.
+3. **Pozorna sprzeczność z `docs/022` w większości się rozpływa.** Doc 022 wetował split **na pliki/pakiety**, nie ekstrakcję metod **wewnątrz pliku**. Dla `matcher`/`merge`/`loss_analyzer` proponujemy in-file extraction — to jest zgodne z 022. Jedyny realny spór dotyczy `charts.py` (i tak odkładany przez wszystkich).
+4. **Fundament weryfikacji wymaga naprawy, ale jest w lepszym stanie niż sugeruje Codex.** Testy przechodzą (231 passed, 1 skipped) po `-p no:anchorpy` i ograniczeniu do `tests/`. Istnieje też pełny baseline harness (`tests/verify_baseline.py`). Problem: snapshot baseline jest z **25 kwietnia** (nieaktualny), brak setup-files, `pytest.ini` skasowany.
+5. **#146 (sprzeczny PnL z 4 źródeł) zostaje POZA refaktorem.** Baseline z założenia zamraża obecne — być może błędne — liczby. Refaktor zachowuje zachowanie; korekta PnL to osobne śledztwo.
+
+Największy praktyczny zwrot, kolejno: **fundament weryfikacji → `cli.py` → `matcher.py` → `merge.py`**.
+
+---
+
+## 1. Stan faktyczny (zweryfikowany, nie z pamięci)
+
+### 1a. Rozmiary (potwierdzone `wc -l` + `grep`)
+
+| Plik | Linie | Największa jednostka | Uwaga |
+|---|---|---|---|
+| `charts.py` | 1528 | `generate_charts()` ~500 | kohezyjny per-wykres |
+| `reconcile.py` | 1355 | — | dataclasses + loaders + renderers + CLI |
+| `loss_analyzer.py` | 1113 | `WalletScorecardAnalyzer.analyze()` ~290 | 6 niezależnych klas |
+| `cli.py` | 1058 | **`main()` ~930** | jedna funkcja = cały workflow |
+| `matcher.py` | 757 | **`match_positions()` ~735** | jedna metoda = cały plik |
+| `internal_nav.py` | 649 | — | powstał po doc 022 |
+| `merge.py` | 644 | **`merge_with_existing_csv()` ~470** | I/O + dedupe + upgrade + terminal |
+| `loss_report/report_builder.py` | 620 | `generate_loss_report()` ~597 | analiza + markdown + format |
+| `event_parser.py` | 588 | router + ~12 `_parse_*` | jedna odpowiedzialność |
+
+### 1b. Stan test harness
+
+- ✅ `python -m pytest tests/ -p no:anchorpy` → **231 passed, 1 skipped** (~5 s).
+- ✅ Istnieje `tests/verify_baseline.py` — golden-diff vs `_baseline_pre_refactor/`, czyste CLI (`--parse`, `--report`, `--include-charts`), sensowne kody wyjścia.
+- ⚠️ `pytest.ini` skasowany w worktree (`D pytest.ini`), istnieje tylko `pytest [conflicted].ini` z `addopts = -p no:anchorpy --basetemp=pytest_basetemp` — **bez `testpaths = tests`**.
+- ⚠️ Bare `pytest` zbiera `tools/test_meteora.py`, które robi `exit(1)` bez `WALLET_ADDRESS` → kolekcja pada.
+- ⚠️ Brak `pyproject.toml` / `requirements*.txt` / lockfile → środowisko nieodtwarzalne.
+- 🔴 **Baseline jest nieaktualny**: `_baseline_pre_refactor/positions.csv` z 25 kwietnia (3.2 MB) vs `output/positions.csv` z 29 maja (4.7 MB). `verify_baseline.py` w obecnym stanie diffowałby brudno albo maskował regresje.
+
+**Wniosek:** krok 1 to nie „wepnij zielony check", tylko „napraw konfigurację + **zrób świeży baseline z aktualnego HEAD** i udowodnij, że jest zielony".
+
+### 1b-bis. 🔴 BLOKER ŚRODOWISKOWY: narzędzie synchronizacji tworzy pliki „[conflicted]" (odkryty w S1)
+
+Podczas realizacji S1 wykryto, że na `C:\nju` działa narzędzie synchronizacji/backupu, które przy **nadpisywaniu istniejącego pliku** (gdy ma własną rozbieżną kopię) tworzy kopię z sufiksem `[conflicted]` zamiast czysto nadpisać. Dowody:
+- `pytest [conflicted].ini` + `D pytest.ini` (kanoniczny plik **zniknął** z worktree — to groźny kierunek rozwiązania konfliktu).
+- `_test_output/loss_analysis [conflicted].md` powstał **na żywo** podczas `verify_baseline.py --report` (timestamp z przebiegu).
+- `archive/messages_for_cli (10) [conflicted].txt`.
+- Kod NIE produkuje tego sufiksu (grep czysty); nowy, nieistniejący wcześniej plik zapisuje się czysto (test `__synctest.md`). Więc konfliktowane są tylko pliki z rozbieżną kopią po stronie narzędzia.
+- Żaden znany proces (Dropbox/OneDrive/Syncthing/Resilio/pCloud/MEGA/Nextcloud/GDrive) nie pasował do `Get-Process` — nazwa narzędzia jest wiedzą użytkownika.
+
+**Dlaczego to blokuje refaktor:** edycja in-place śledzonego źródła (`cli.py`, `matcher.py`, `merge.py`) może wylądować w `cli [conflicted].py`, a kanoniczny plik wrócić do wersji narzędzia → **cicha korupcja refaktoru**. Przypadek `pytest.ini` dowodzi, że kanoniczna nazwa potrafi zostać utracona. Redirect temp-dirów NIE wystarcza — ryzyko dotyczy źródeł, nie tylko artefaktów. **S1 wstrzymana do rozwiązania (exclude/pause sync na `C:\nju` albo przeniesienie repo poza synchronizację).**
+
+### 1b-ter. Realia harnessu (do zapamiętania przy wznowieniu)
+
+- **`input/` jest puste** (pliki archiwizowane po przetworzeniu) → tryb `--parse` zwraca exit(4), **nie da się go zwalidować bez stagingu** slice'a wejścia już reprezentowanego w baseline. **`--report` jest codziennym checkiem**; `--parse` wymaga ręcznego podstawienia inputu.
+- Świeży baseline `loss_analysis.md` brać z **regeneracji harnessu** (czysty `_test_output` po `--report`), NIE z kopii `output/` — wtedy `--report` jest zielony z konstrukcji. Potem potwierdzić drugim przebiegiem (determinizm).
+- ⚠️ Zaobserwowano delta 38531 vs 38662 B (~131 B) między regenerowanym a `output/` `loss_analysis.md` — możliwa resztkowa niedeterministyczność (drift recommendations-state?), której strip volatile-lines nie łapie. Zweryfikować przy wznowieniu.
+
+### 1c. Higiena repo
+
+- Worktree jest w praktyce czysty poza `pytest.ini` (reszta śmieci — `*.pytest-basetemp*`, `_temp/`, `_baseline_pre_refactor/` — już w `.gitignore`).
+- `.gitignore` ma bardzo szerokie reguły (`docs/`, `*.txt`, `*.csv`, `*.json`) — chronią prywatne dane, ale ryzyko ukrycia ważnych plików (= TODO #142).
+- Entry-pointy to cienkie shimy: `valhalla_parser_v2.py` → `valhalla.cli.main`, `main.py` → `valhalla.pipeline`. Kompatybilność łatwa do utrzymania.
+
+---
+
+## 2. Rozstrzygnięcie sporu z `docs/022` (sedno orkiestracji)
+
+`docs/022-valhalla-package-review.md` orzekł **DO NOT SPLIT** dla `charts`, `loss_analyzer`, `matcher`, `merge`, `event_parser`. Codex i `TODO.md` #144 mówią „rozbić". Pozorny konflikt. Rozróżnienie, które go rozwiązuje:
+
+> **Czy propozycja zmienia powierzchnię plików/importów, czy tylko wewnętrzną strukturę jednego pliku?**
+
+Doc 022 wetował explicite **split na osobne pliki** (cyt. dla matchera: „splitting a single method's helpers **across files** would be anti-cohesive"). Nie wypowiedział się przeciw ekstrakcji 735-liniowej metody na nazwane metody prywatne w tej samej klasie.
+
+### Bucketing modułów
+
+**Bucket A — objęte werdyktem 022 → tylko in-file extraction (zero zmian importów):**
+- `matcher.py` — ekstrakcja helperów *wewnątrz* `PositionMatcher`. Zgodne z 022.
+- `merge.py` — ekstrakcja helperów *wewnątrz* modułu. Zgodne z 022.
+- `loss_analyzer.py` — punktowy refaktor `WalletScorecardAnalyzer.analyze()`. Codex sam mówi „nie rozbijać na siłę" = zgodne z 022.
+- `event_parser.py` — **nie ruszać** (022: „not now", Codex: „not first" — zgoda).
+- `charts.py` — **odłożone**. Jedyny realny head-to-head: 022 wetuje pakiet `charts/` z konkretnym argumentem technicznym (`_draw_*` sprzężone ze stanem figure/axes z `generate_charts()`). Jeśli kiedyś wracamy — plan MUSI obalić ten argument, nie tylko powiedzieć „za duży".
+
+**Bucket B — powstałe/rozrośnięte PO doc 022 → brak sprzeczności, swoboda projektowa:**
+- `cli.py` (tworzony przez doc 020, 022 go nie analizował)
+- `reconcile.py` (doc 029)
+- `loss_report/report_builder.py` (doc 018)
+- `internal_nav.py` (doc 030)
+
+**Loose end:** po refaktorze dopisać do `docs/022` (lub krótki nowy doc) notkę: „022 dotyczy split-na-pliki; ten plan robi in-file extraction" — żeby kolejny czytelnik nie trafił na ten sam pozorny konflikt.
+
+---
+
+## 3. Sieć bezpieczeństwa (warunek pod warunkiem)
+
+1. **Świeży baseline z HEAD.** Przed jakimkolwiek refaktorem semantycznie-ryzykownym: uruchomić `verify_baseline.py --parse --report` na obecnym kodzie, zregenerować `_baseline_pre_refactor/` z aktualnego wyjścia, potwierdzić zielony przebieg. Bramka: **żaden refaktor Bucket A / matcher / merge nie startuje, dopóki świeży baseline nie jest zielony.**
+   - ⚠️ **Baseline pokrywa WĘŻSZY zakres niż „całe zachowanie" (flag Codexa).** `verify_baseline.py` ma świadome wykluczenia: `wallet_trend.md` wykluczony z diffa, porównanie wykresów (`--include-charts`) opt-in, `loss_analysis.md` ma stripowane generowane nagłówki. „Baseline zielony" ≠ „zachowanie w pełni zachowane". Dla matcher/merge to luka — dlatego krok 3/5 (testy kontraktowe) jest obowiązkowy, nie opcjonalny.
+2. **Luka harnessu — diff plików, nie stdout.** `verify_baseline.py` porównuje pliki wyjściowe, nie terminal. Codex wskazał „komunikaty terminalowe" jako jeden z mieszanych concernów, a #143 to wprost relokacja `print()`/`input()`. **Decyzja do podjęcia (punkt sporny D):** czy stdout jest częścią zachowania chronionego? Jeśli tak — albo łapać konsolę w baseline, albo trzymać całą relokację print poza krokami strukturalnymi (osobny późniejszy pass #143).
+3. **Testy kontraktowe przed `matcher`/`merge`.** Oprócz baseline (output-level) dodać testy na konkretne ścieżki: close_reason (open/close/rug/failsafe/TP/SL), źródła PnL (meteora/discord/pending), unknown_open; dla merge — wszystkie upgrade paths.
+4. **Kolejność, nie wielkie bang.** Każdy etap kończy się zielonym checkiem + krótką notką o zachowanej kompatybilności.
+5. **Lazy imports w `cli.py`** — `main()` używa wielu importów lokalnych; to często ukrywa unikanie cykli. Split na `commands/*` może te cykle ujawnić. Zachować strukturę leniwych importów; nie „porządkować" ich przy okazji.
+
+---
+
+## 4. Sekwencja prac (mapa na TODO #137–#146)
+
+| Faza | Zakres | TODO | Ryzyko | Bramka wyjścia |
+|---|---|---|---|---|
+| **0. Fundament** | `pyproject.toml`/`requirements*.txt`; przywrócić `pytest.ini` z `testpaths=tests` + `-p no:anchorpy`; usunąć `pytest [conflicted].ini`; gate `tools/test_meteora.py`; `scripts/check.ps1` (compile+pytest+baseline, wszystkie wywołania z `-NoProfile` — TODO #145); **świeży baseline z HEAD** | #137, #141, #145 | niskie | jedna komenda = zielono, świeży baseline zielony |
+| **0.5. Pin domenowych seamów** ⟵ *reorder (Codex)* | **minimalne** testy kontraktowe matcher + merge PRZED tknięciem cli.py — bo CLI woła w te seamy i może je zmienić zanim zostaną przypięte | #141 | niskie | testy zielone |
+| **1. cli.py — szkielet** | wydzielić `args.py` (argparse) + cienki dispatch w `main()` | #140 | średnie | CLI dział, baseline zielony |
+| **2. cli.py — per command** | `commands/parse.py`, `report.py`, `cross_check.py`, `recalc.py`, `backtest.py`, `track.py`; shim `valhalla_parser_v2.py` bez zmian | #140 | średnie | każda komenda osobno + baseline |
+| **3. matcher — kontrakty** | testy kontraktowe na obecne zachowanie | #141 | niskie | testy zielone (baseline behavior) |
+| **4. matcher — in-file extract** | helpery: indeksowanie eventów, close_reason, builder `MatchedPosition`, strategie PnL, unknown_open. **Bez zmiany semantyki, bez zmiany importów.** | #144 | **wysokie** | baseline + kontrakty zielone |
+| **5. merge — kontrakty** | testy na wszystkie upgrade paths | #141 | niskie | testy zielone |
+| **6. merge — in-file extract** | CSV read/write, row→model, merge policy, upgrade decision, reporting. **In-file.** | #144 | **wysokie (dane)** | baseline + kontrakty zielone |
+| **7. report_builder** | renderery sekcji (exec summary, action items, recent losses, scorecard, filter recs, per-wallet); snapshot markdown | #144 | średni | markdown snapshot zielony |
+| **8. loss_analyzer punktowo** | rozbić `WalletScorecardAnalyzer.analyze()` (~290) | #144 | średni | testy zielone |
+| **9. odłożone** | `charts.py` (obalić arg. 022 najpierw), `reconcile.py`, `event_parser.py` | #144 | — | dopiero po decyzji |
+| **op. równoległe** | #138 config poza kodem, #142 gitignore, #139 daily run | #138/#142/#139 | niskie | wg potrzeby |
+
+> 🔒 **#143 (relokacja `print()`/`input()`) jest ZAKAZANE w fazach 1–8.** Baseline diffuje pliki, nie stdout — przesunięcie wyjścia konsolowego przeszłoby niezauważone jako „refaktor bez zmiany zachowania". #143 idzie w osobny, późniejszy pass, ALBO musi być poprzedzone dodaniem testu transkryptu CLI / smoke. (Konsensus pkt D.)
+
+---
+
+## 4b. Mapa sesji (dzień-po-dniu, każda zostawia projekt w pełni używalny)
+
+> **Inwariant bezpieczeństwa budżetu:** każda sesja kończy się na `scripts/check.ps1` zielonym ORAZ działającym pipeline (`python main.py` / `valhalla_parser_v2.py`). Między sesjami użytkownik robi normalny przebieg pipeline'a. Jeśli budżet padnie w środku sesji — ostatni *commit* na branchu jest zielony, a niedokończona sesja jest porzucana (`git`), nigdy nie zostawiając połowicznego stanu na używanej ścieżce. Refaktor jest „no-semantic-change", więc nawet po połowie sesji pipeline daje te same wyniki.
+
+| Sesja | Fazy | Co | Ryzyko | Stan na końcu |
+|---|---|---|---|---|
+| **S1** ⟵ *teraz* | 0 | fundament: setup-files, `pytest.ini`, `check.ps1`, gate test_meteora, **świeży baseline z HEAD** | niskie | tylko DODANO infrastrukturę; pipeline bez zmian; check zielony |
+| **S2** | 0.5 | minimalne testy kontraktowe matcher + merge (czyste dodatki, zero zmian produkcyjnych) | niskie | testy przypinają seamy; pipeline bez zmian |
+| **S3** | 1 | `cli.py`: `args.py` + cienki dispatch w `main()` | średnie | CLI działa identycznie; baseline zielony |
+| **S4** | 2 | `cli.py`: `commands/*` (parse/report/cross_check/recalc/backtest/track) | średnie | jw.; shim `valhalla_parser_v2.py` bez zmian |
+| **S5** | 4 | `matcher.py`: in-file extraction (helpery wewnątrz `PositionMatcher`) | **wysokie** | baseline + kontrakty zielone |
+| **S6** | 6 | `merge.py`: in-file extraction | **wysokie (dane)** | jw. |
+| **S7** | 7 | `report_builder.py`: renderery sekcji | średni | markdown snapshot zielony |
+| **S8** | 8 | `loss_analyzer.py`: rozbić `WalletScorecardAnalyzer.analyze()` | średni | testy zielone |
+
+Sesje operacyjne (#138/#142/#139) — wstawiane elastycznie między powyższe, bo są niezależne i niskiego ryzyka. `charts`/`reconcile`/`event_parser` (#144 reszta) — dopiero po decyzji, poza tą sekwencją.
+
+**Reguła rozbicia sesji:** jeśli S3 albo S5/S6 okaże się za duże na jeden budżet, dzielimy je po jednym wydzielonym helperze/komendzie — każdy mikro-krok kończy się zielonym baseline i jest osobnym commitem. Nigdy nie zostawiamy modułu w stanie „pół-wyekstrahowanym" bez zielonego checka.
+
+---
+
+## 5. Punkty sporne do debaty z Codexem
+
+> **ROZSTRZYGNIĘTE w rundzie debaty z Codexem (2026-05-29). Konsensus we wszystkich czterech.**
+
+- **(A) In-file extraction vs split-na-pliki — ✅ ZGODA.** Codex potwierdza: in-file extraction spełnia jego intencję strukturalną bez łamania doc 022 (kryterium 022 to „dwa+ niezależnie użyteczne podsystemy"; matcher i merge są single-domain). Brak konkretnego powodu na split-na-pliki teraz. **Zastrzeżenie Codexa:** ekstrakcja musi być realną strukturą (nazwane fazy, małe helpery, testy wokół close_reason / upgrade decision), nie arbitralnym cięciem na kawałki.
+- **(B) Stan harnessu — ✅ ZGODA.** Codex wycofuje „pytest nie startuje" jako nagłówek. Przyjęta re-diagnoza: zweryfikowane 231/1, realny problem to krucha konfiguracja, brak setup-files, narzędzia spoza testów uciekające do discovery.
+- **(C) Strategia baseline — ✅ ZGODA.** Świeży baseline z HEAD przed jakąkolwiek pracą nad matcher/merge jest obowiązkowy. Stary albo blokuje legalne obecne zachowanie, albo uczy ignorować czerwień.
+- **(D) stdout w kontrakcie — ✅ ZGODA (kwarantanna).** Relokacja `print()`/`input()` idzie do osobnego passu #143, NIE do kroków strukturalnych. Harness porównuje pliki (`compare_outputs()`), nie transkrypt. Rozszerzanie kontraktu matcher/merge o stdout nieuzasadnione teraz — chyba że ktoś wcześniej doda osobny smoke test transkryptu CLI.
+
+---
+
+## 6. Poza zakresem (świadomie)
+
+- **#146 — „jaki w końcu jest PnL"** (loss ~20 SOL vs wallet_trend ~5 vs własne ~15 vs LpAgent). To problem **poprawności**, nie struktury. Baseline z definicji zamraża obecne liczby (być może błędne). Refaktor zachowuje zachowanie; #146 to osobne śledztwo. **Zakaz „naprawiania PnL przy okazji".**
+- Zmiany semantyki klasyfikacji pozycji lub reguł PnL.
+- Naprawianie niezwiązanego brudnego worktree bez decyzji użytkownika.
+
+---
+
+## 7. Zasady bezpieczeństwa (z advisory Codexa, przyjęte)
+
+- Nie robić szerokiego refaktoru bez zielonego, powtarzalnego checka.
+- Nie mieszać refaktoru strukturalnego ze zmianą semantyki PnL.
+- Przy `matcher`/`merge` zachować baseline output.
+- Każdy etap kończy się testami i krótką notką o kompatybilności.
+- Nie naprawiać unrelated dirty worktree bez decyzji użytkownika.
