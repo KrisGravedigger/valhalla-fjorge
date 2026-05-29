@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "valhalla-fjorge"
+version = "0.0.0"
+description = "Valhalla Fjorge parser and reporting tools."
+requires-python = ">=3.10"
+dependencies = [
+    # Required by valhalla.alias_resolver.
+    "pandas",
+    # Required by valhalla.internal_nav.
+    "base58",
+    "solders",
+]
+
+[project.optional-dependencies]
+# Optional chart generation in valhalla.charts, valhalla.utilization, and tools/chart_sol_flows.py.
+charts = [
+    "matplotlib",
+]
+# Optional .env loading in CLI and tools. Code falls back to existing environment variables.
+env = [
+    "python-dotenv",
+]
+# Developer/test harness dependencies. Use with installed optional groups as needed.
+dev = [
+    "pytest",
+]
+# No direct requests/httpx/solana/anchorpy imports were found in valhalla/ or tools/.
+
+[tool.setuptools.packages.find]
+include = ["valhalla*"]
