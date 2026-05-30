@@ -60,7 +60,7 @@ Podczas realizacji S1 wykryto, że na `C:\nju` działa narzędzie synchronizacji
 
 - **`input/` jest puste** (pliki archiwizowane po przetworzeniu) → tryb `--parse` zwraca exit(4), **nie da się go zwalidować bez stagingu** slice'a wejścia już reprezentowanego w baseline. **`--report` jest codziennym checkiem**; `--parse` wymaga ręcznego podstawienia inputu.
 - Świeży baseline `loss_analysis.md` brać z **regeneracji harnessu** (czysty `_test_output` po `--report`), NIE z kopii `output/` — wtedy `--report` jest zielony z konstrukcji. Potem potwierdzić drugim przebiegiem (determinizm).
-- ⚠️ Zaobserwowano delta 38531 vs 38662 B (~131 B) między regenerowanym a `output/` `loss_analysis.md` — możliwa resztkowa niedeterministyczność (drift recommendations-state?), której strip volatile-lines nie łapie. Zweryfikować przy wznowieniu.
+- ✅ **ROZWIĄZANE (S1.5, 2026-05-30):** „delta ~131 B / drift" NIE był resztkową tajemnicą ani driftem recommendations-state (rec-state stabilny od 9 kwietnia). Root cause: rekomendacja **utilization** liczyła okno 72h względem wall-clock `now()` (`utilization.py`), a drugi seam — okno 24h insuf-events w `action_items.py`. Wszystkie pozostałe rekomendacje kotwiczą do danych. Z dnia na dzień okno zsuwało się → znikały 3 itemy „capital utilization" + adnotacje „↑ capital (util)". Naprawione w S1.5 (kotwica do `max(datetime_close)` przez `models.latest_position_datetime`). Po fixie loss_analysis.md jest deterministyczny (podwójny przebieg identyczny). Baseline odtworzony na poprawionym zachowaniu.
 
 ### 1c. Higiena repo
 
@@ -135,8 +135,9 @@ Doc 022 wetował explicite **split na osobne pliki** (cyt. dla matchera: „spli
 
 | Sesja | Fazy | Co | Ryzyko | Stan na końcu |
 |---|---|---|---|---|
-| **S1** ⟵ *teraz* | 0 | fundament: setup-files, `pytest.ini`, `check.ps1`, gate test_meteora, **świeży baseline z HEAD** | niskie | tylko DODANO infrastrukturę; pipeline bez zmian; check zielony |
-| **S2** | 0.5 | minimalne testy kontraktowe matcher + merge (czyste dodatki, zero zmian produkcyjnych) | niskie | testy przypinają seamy; pipeline bez zmian |
+| **S1** ✅ | 0 | fundament: setup-files, `pytest.ini`, `check.ps1`, gate test_meteora, **świeży baseline z HEAD** | niskie | tylko DODANO infrastrukturę; pipeline bez zmian; check zielony |
+| **S1.5** ✅ *(correctness pre-step, 2026-05-30)* | — | kotwica okna utilization + insuf-24h do daty danych (`models.latest_position_datetime`); re-baseline; rozwiązuje nieodtwarzalność loss_analysis.md (§1b-ter) | niskie (izolowane, świadoma zmiana zachowania, osobny commit) | check zielony i deterministyczny; TODO #147 |
+| **S2** ⟵ *teraz* | 0.5 | minimalne testy kontraktowe matcher + merge (czyste dodatki, zero zmian produkcyjnych) | niskie | testy przypinają seamy; pipeline bez zmian |
 | **S3** | 1 | `cli.py`: `args.py` + cienki dispatch w `main()` | średnie | CLI działa identycznie; baseline zielony |
 | **S4** | 2 | `cli.py`: `commands/*` (parse/report/cross_check/recalc/backtest/track) | średnie | jw.; shim `valhalla_parser_v2.py` bez zmian |
 | **S5** | 4 | `matcher.py`: in-file extraction (helpery wewnątrz `PositionMatcher`) | **wysokie** | baseline + kontrakty zielone |
@@ -164,6 +165,8 @@ Sesje operacyjne (#138/#142/#139) — wstawiane elastycznie między powyższe, b
 ## 6. Poza zakresem (świadomie)
 
 - **#146 — „jaki w końcu jest PnL"** (loss ~20 SOL vs wallet_trend ~5 vs własne ~15 vs LpAgent). To problem **poprawności**, nie struktury. Baseline z definicji zamraża obecne liczby (być może błędne). Refaktor zachowuje zachowanie; #146 to osobne śledztwo. **Zakaz „naprawiania PnL przy okazji".**
+
+> **Doprecyzowanie zasady „brak zmian semantyki" (po S1.5):** zakaz dotyczy mieszania korekt poprawności w **kroki strukturalne** (fazy 1–8). Świadome, izolowane korekty *między* etapami — osobny branch/commit + re-baseline + nota w TODO — są dozwolone i są wręcz **celem** rozbicia refaktoru na sesje (decyzja użytkownika, 2026-05-30). S1.5 (kotwica utilization) to wzorcowy przykład: nie był to fix PnL, nie tknął matcher/merge/positions.csv, a po nim baseline jest deterministyczny.
 - Zmiany semantyki klasyfikacji pozycji lub reguł PnL.
 - Naprawianie niezwiązanego brudnego worktree bez decyzji użytkownika.
 
