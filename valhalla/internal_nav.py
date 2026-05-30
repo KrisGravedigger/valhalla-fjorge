@@ -12,7 +12,8 @@ import urllib.request
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from decimal import Decimal
-from typing import Any, Optional, cast
+from pathlib import Path
+from typing import Any, Callable, Optional, cast
 
 import base58
 from solders.pubkey import Pubkey
@@ -71,7 +72,12 @@ _ZERO = Decimal("0")
 _decimals_cache: dict[str, int] = {}
 # Price cache: SOL per 1 raw token unit, populated per-process to avoid redundant Jupiter calls.
 _jupiter_price_cache: dict[str, Decimal] = {}
+_jupiter_failed_cache: set[str] = set()
+_jupiter_skip_cache: Optional[set[str]] = None
 _reward_mints_cache: dict[str, list[Optional[str]]] = {}
+JUPITER_SKIP_CACHE_PATH = (
+    Path(__file__).resolve().parents[1] / "output" / "internal_nav_skipped_mints.json"
+)
 
 
 class _IdleJupiterWarningFilter(logging.Filter):
@@ -87,12 +93,26 @@ class _IdleJupiterWarningFilter(logging.Filter):
         )
 
 
-def compute_nav(rpc_url: str, wallet: str) -> NavResult:
+ProgressCallback = Callable[[str], None]
+
+
+def compute_nav(
+    rpc_url: str, wallet: str, progress: Optional[ProgressCallback] = None
+) -> NavResult:
     """Compute portfolio NAV from on-chain Solana state."""
     degraded_mints: list[str] = []
+    started_at = time.perf_counter()
 
+    def emit(message: str) -> None:
+        if progress:
+            elapsed = time.perf_counter() - started_at
+            progress(f"{message} ({elapsed:.1f}s)")
+
+    emit(f"starting NAV for {wallet[:8]}...")
     pos_addrs = _get_position_addresses(rpc_url, wallet)
+    emit(f"found {len(pos_addrs)} Meteora position accounts")
     position_data = _fetch_accounts(rpc_url, pos_addrs)
+    emit(f"fetched {len(position_data)} position accounts")
     positions: list[dict[str, Any]] = []
     for addr, raw in zip(pos_addrs, position_data):
         if raw is None:
@@ -110,18 +130,22 @@ def compute_nav(rpc_url: str, wallet: str) -> NavResult:
             s > 0 for s in pos["ext_liq_shares"]
         ):
             positions.append(pos)
+    emit(f"decoded {len(positions)} active positions")
 
     positions_nav_sol = _ZERO
     fees_sol = _ZERO
     rewards_sol = _ZERO
-    for pos in positions:
+    for idx, pos in enumerate(positions, start=1):
+        emit(f"computing position {idx}/{len(positions)} {pos['address'][:8]}...")
         pos_nav, pos_fees, pos_rewards = _compute_position_nav(
-            rpc_url, pos, degraded_mints
+            rpc_url, pos, degraded_mints, progress=emit
         )
         positions_nav_sol += pos_nav
         fees_sol += pos_fees
         rewards_sol += pos_rewards
+    emit("finished active position NAV")
 
+    emit("fetching free SOL balance")
     balance = _rpc_call(rpc_url, "getBalance", [wallet])
     free_sol = Decimal(int(balance["value"])) / Decimal(LAMPORTS)
     if not pos_addrs and free_sol == 0:
@@ -129,8 +153,12 @@ def compute_nav(rpc_url: str, wallet: str) -> NavResult:
             "zero NAV result: 0 positions and 0 free SOL - RPC failure suspected"
         )
 
-    idle_spl_sol = _compute_idle_spl_sol(rpc_url, wallet, degraded_mints)
+    emit("fetching idle SPL balances")
+    idle_spl_sol = _compute_idle_spl_sol(
+        rpc_url, wallet, degraded_mints, progress=emit
+    )
     total_nav_sol = positions_nav_sol + fees_sol + rewards_sol + free_sol + idle_spl_sol
+    emit(f"NAV total computed: {total_nav_sol:.6f} SOL")
     return NavResult(
         wallet=wallet,
         timestamp=datetime.now(timezone.utc),
@@ -147,9 +175,14 @@ def compute_nav(rpc_url: str, wallet: str) -> NavResult:
 
 
 def _compute_position_nav(
-    rpc_url: str, pos: dict[str, Any], degraded_mints: list[str]
+    rpc_url: str,
+    pos: dict[str, Any],
+    degraded_mints: list[str],
+    progress: Optional[ProgressCallback] = None,
 ) -> tuple[Decimal, Decimal, Decimal]:
     lb_pair_str = str(pos["lb_pair"])
+    if progress:
+        progress(f"  resolving pool mints for {lb_pair_str[:8]}...")
     pool = _get_pool_mints(rpc_url, lb_pair_str)
     mint_x = pool.get("mint_x")
     mint_y = pool.get("mint_y")
@@ -169,6 +202,8 @@ def _compute_position_nav(
     ba_addr_map = {
         idx: _bin_array_address(lb_pair_pk, idx) for idx in required_arrays
     }
+    if progress:
+        progress(f"  fetching {len(required_arrays)} bin arrays")
     ba_raw_list = _fetch_accounts(rpc_url, [str(ba_addr_map[idx]) for idx in required_arrays])
 
     bin_arrays: dict[int, dict[int, dict[str, int]]] = {}
@@ -205,6 +240,8 @@ def _compute_position_nav(
     )
 
     rewards_sol = _ZERO
+    if progress:
+        progress("  resolving reward mints")
     reward_mints = _get_reward_mints(rpc_url, lb_pair_str)
     reward_raws = [int(pos["reward0_raw"]), int(pos["reward1_raw"])]
     for idx, (mint, amount_raw) in enumerate(zip(reward_mints, reward_raws)):
@@ -219,7 +256,10 @@ def _compute_position_nav(
 
 
 def _compute_idle_spl_sol(
-    rpc_url: str, wallet: str, degraded_mints: list[str]
+    rpc_url: str,
+    wallet: str,
+    degraded_mints: list[str],
+    progress: Optional[ProgressCallback] = None,
 ) -> Decimal:
     result = _rpc_call(
         rpc_url,
@@ -227,10 +267,18 @@ def _compute_idle_spl_sol(
         [wallet, {"programId": TOKEN_PROGRAM}, {"encoding": "jsonParsed"}],
     )
     idle_spl_sol = _ZERO
-    for token_account in result.get("value", []):
+    token_accounts = result.get("value", [])
+    if progress:
+        progress(f"idle SPL token accounts: {len(token_accounts)}")
+    priced_accounts = 0
+    for token_account in token_accounts:
         info = token_account["account"]["data"]["parsed"]["info"]
         mint = info["mint"]
         amount_raw = int(info["tokenAmount"]["amount"])
+        if mint != SOL_MINT and amount_raw > 100:
+            priced_accounts += 1
+            if progress:
+                progress(f"  pricing idle SPL {priced_accounts}: {mint[:8]}...")
         idle_spl_sol += _convert_idle_amount(rpc_url, mint, Decimal(amount_raw))
     return idle_spl_sol
 
@@ -611,6 +659,8 @@ def _jupiter_to_sol(mint: str, amount_raw: int) -> tuple[Decimal, bool]:
     # Reuse price from earlier in this same NAV run (SOL per 1 raw unit).
     if mint in _jupiter_price_cache:
         return _jupiter_price_cache[mint] * Decimal(amount_raw), False
+    if mint in _jupiter_failed_cache or mint in _load_jupiter_skip_cache():
+        return _ZERO, True
 
     url = (
         "https://api.jup.ag/swap/v1/quote"
@@ -637,13 +687,68 @@ def _jupiter_to_sol(mint: str, amount_raw: int) -> tuple[Decimal, bool]:
             )
             if no_route:
                 logging.warning("No Jupiter route for %s", mint)
+                _cache_jupiter_no_route(mint)
                 return _ZERO, True
             if exc.code == 429 and attempt < retries - 1:
                 time.sleep(2**attempt)
                 continue
             logging.warning("Jupiter HTTP %s for %s", exc.code, mint)
+            _jupiter_failed_cache.add(mint)
             return _ZERO, True
         except Exception as exc:
             logging.warning("Jupiter error for %s: %s", mint, exc)
+            _jupiter_failed_cache.add(mint)
             return _ZERO, True
+    _jupiter_failed_cache.add(mint)
     return _ZERO, True
+
+
+def _load_jupiter_skip_cache() -> set[str]:
+    global _jupiter_skip_cache
+    if _jupiter_skip_cache is not None:
+        return _jupiter_skip_cache
+
+    try:
+        data = json.loads(JUPITER_SKIP_CACHE_PATH.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        _jupiter_skip_cache = set()
+        return _jupiter_skip_cache
+    except Exception as exc:
+        logging.warning("Failed to read Jupiter skip cache: %s", exc)
+        _jupiter_skip_cache = set()
+        return _jupiter_skip_cache
+
+    if isinstance(data, dict):
+        raw_mints = data.get("no_route_mints", [])
+    elif isinstance(data, list):
+        raw_mints = data
+    else:
+        raw_mints = []
+    _jupiter_skip_cache = {
+        str(mint) for mint in raw_mints if _is_probable_solana_mint(str(mint))
+    }
+    return _jupiter_skip_cache
+
+
+def _cache_jupiter_no_route(mint: str) -> None:
+    if not _is_probable_solana_mint(mint):
+        return
+    cache = _load_jupiter_skip_cache()
+    if mint in cache:
+        return
+    cache.add(mint)
+    payload = {
+        "updated_at_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "no_route_mints": sorted(cache),
+    }
+    try:
+        JUPITER_SKIP_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+        JUPITER_SKIP_CACHE_PATH.write_text(
+            json.dumps(payload, indent=2) + "\n", encoding="utf-8"
+        )
+    except Exception as exc:
+        logging.warning("Failed to write Jupiter skip cache: %s", exc)
+
+
+def _is_probable_solana_mint(value: str) -> bool:
+    return 32 <= len(value) <= 44 and value.isalnum()

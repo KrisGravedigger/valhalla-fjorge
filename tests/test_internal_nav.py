@@ -124,6 +124,37 @@ def test_jupiter_degraded_no_route(monkeypatch: pytest.MonkeyPatch) -> None:
     assert internal_nav._jupiter_to_sol("MINT", 1000) == (Decimal("0"), True)
 
 
+def test_jupiter_no_route_persistent_skip_cache(monkeypatch: pytest.MonkeyPatch) -> None:
+    mint = "A" * 32
+    cache_path = _tmp_dir() / "skipped_mints.json"
+    calls = 0
+
+    def fail(_: str) -> dict[str, Any]:
+        nonlocal calls
+        calls += 1
+        raise _http_error(400, b'{"error":"NO_ROUTES_FOUND"}')
+
+    monkeypatch.setattr(internal_nav.time, "sleep", lambda _: None)
+    monkeypatch.setattr(internal_nav, "JUPITER_SKIP_CACHE_PATH", cache_path)
+    monkeypatch.setattr(internal_nav, "_jupiter_skip_cache", None)
+    monkeypatch.setattr(internal_nav, "_jupiter_failed_cache", set())
+    monkeypatch.setattr(internal_nav, "_jupiter_price_cache", {})
+    monkeypatch.setattr(internal_nav, "_http_get", fail)
+
+    assert internal_nav._jupiter_to_sol(mint, 1000) == (Decimal("0"), True)
+    assert calls == 1
+    assert mint in cache_path.read_text(encoding="utf-8")
+
+    monkeypatch.setattr(
+        internal_nav,
+        "_http_get",
+        lambda _url: (_ for _ in ()).throw(AssertionError("HTTP should be skipped")),
+    )
+
+    assert internal_nav._jupiter_to_sol(mint, 2000) == (Decimal("0"), True)
+    assert calls == 1
+
+
 def test_jupiter_degraded_429_exhausted(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(internal_nav.time, "sleep", lambda _: None)
     calls = 0

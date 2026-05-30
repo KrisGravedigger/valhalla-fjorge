@@ -30,6 +30,34 @@ STATE_FILE = ROOT / ".dce_state.json"
 _ENV = {**os.environ, "PYTHONIOENCODING": "utf-8", "PYTHONUTF8": "1"}
 
 
+def _start_sleep_guard():
+    """Keep Windows from sleeping while the full pipeline is running."""
+    if os.name != "nt":
+        return lambda: None
+
+    try:
+        import ctypes
+
+        es_continuous = 0x80000000
+        es_system_required = 0x00000001
+        kernel32 = ctypes.windll.kernel32
+        result = kernel32.SetThreadExecutionState(
+            es_continuous | es_system_required
+        )
+        if result == 0:
+            print("[pipeline] WARNING: failed to disable system sleep for this run.")
+            return lambda: None
+        print("[pipeline] System sleep disabled while pipeline runs.")
+
+        def restore() -> None:
+            kernel32.SetThreadExecutionState(es_continuous)
+
+        return restore
+    except Exception as exc:
+        print(f"[pipeline] WARNING: sleep guard unavailable: {exc}")
+        return lambda: None
+
+
 def _load_last_pull() -> "datetime | None":
     if not STATE_FILE.exists():
         return None
@@ -148,4 +176,8 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    _restore_sleep = _start_sleep_guard()
+    try:
+        main()
+    finally:
+        _restore_sleep()

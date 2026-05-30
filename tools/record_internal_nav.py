@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import inspect
 import os
 import sys
 from datetime import datetime, timezone
@@ -73,8 +74,14 @@ def main(argv: Optional[list[str]] = None) -> int:
         print("ERROR: set LPAGENT_WALLET in .env or pass --wallet")
         return 1
 
+    def progress(message: str) -> None:
+        print(f"[nav] {message}", flush=True)
+
     try:
-        result = compute_nav(rpc_url, wallet)
+        if "progress" in inspect.signature(compute_nav).parameters:
+            result = compute_nav(rpc_url, wallet, progress=progress)
+        else:
+            result = compute_nav(rpc_url, wallet)
     except RuntimeError as exc:
         if "zero NAV result" in str(exc):
             print("ERROR: zero NAV result - RPC failure suspected")
