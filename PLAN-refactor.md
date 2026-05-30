@@ -60,7 +60,7 @@ Podczas realizacji S1 wykryto, że na `C:\nju` działa narzędzie synchronizacji
 
 - **`input/` jest puste** (pliki archiwizowane po przetworzeniu) → tryb `--parse` zwraca exit(4), **nie da się go zwalidować bez stagingu** slice'a wejścia już reprezentowanego w baseline. **`--report` jest codziennym checkiem**; `--parse` wymaga ręcznego podstawienia inputu.
 - Świeży baseline `loss_analysis.md` brać z **regeneracji harnessu** (czysty `_test_output` po `--report`), NIE z kopii `output/` — wtedy `--report` jest zielony z konstrukcji. Potem potwierdzić drugim przebiegiem (determinizm).
-- ⚠️ Zaobserwowano delta 38531 vs 38662 B (~131 B) między regenerowanym a `output/` `loss_analysis.md` — możliwa resztkowa niedeterministyczność (drift recommendations-state?), której strip volatile-lines nie łapie. Zweryfikować przy wznowieniu.
+- ✅ **ROZWIĄZANE (S1.5, 2026-05-30):** „delta ~131 B / drift" NIE był resztkową tajemnicą ani driftem recommendations-state (rec-state stabilny od 9 kwietnia). Root cause: rekomendacja **utilization** liczyła okno 72h względem wall-clock `now()` (`utilization.py`), a drugi seam — okno 24h insuf-events w `action_items.py`. Wszystkie pozostałe rekomendacje kotwiczą do danych. Z dnia na dzień okno zsuwało się → znikały 3 itemy „capital utilization" + adnotacje „↑ capital (util)". Naprawione w S1.5 (kotwica do `max(datetime_close)` przez `models.latest_position_datetime`). Po fixie loss_analysis.md jest deterministyczny (podwójny przebieg identyczny). Baseline odtworzony na poprawionym zachowaniu.
 
 ### 1c. Higiena repo
 
@@ -101,6 +101,11 @@ Doc 022 wetował explicite **split na osobne pliki** (cyt. dla matchera: „spli
 
 1. **Świeży baseline z HEAD.** Przed jakimkolwiek refaktorem semantycznie-ryzykownym: uruchomić `verify_baseline.py --parse --report` na obecnym kodzie, zregenerować `_baseline_pre_refactor/` z aktualnego wyjścia, potwierdzić zielony przebieg. Bramka: **żaden refaktor Bucket A / matcher / merge nie startuje, dopóki świeży baseline nie jest zielony.**
    - ⚠️ **Baseline pokrywa WĘŻSZY zakres niż „całe zachowanie" (flag Codexa).** `verify_baseline.py` ma świadome wykluczenia: `wallet_trend.md` wykluczony z diffa, porównanie wykresów (`--include-charts`) opt-in, `loss_analysis.md` ma stripowane generowane nagłówki. „Baseline zielony" ≠ „zachowanie w pełni zachowane". Dla matcher/merge to luka — dlatego krok 3/5 (testy kontraktowe) jest obowiązkowy, nie opcjonalny.
+1-bis. 🔴 **Luka harnessu — bramka `--report` NIE porównuje CSV (odkryte w S1.5, 2026-05-30).** `REPORT_FILES = ["loss_analysis.md"]` — `--report` regeneruje `positions.csv`/`summary.csv` do `_test_output`, ale ich nie diffuje. Gdy je porównać do baseline (kod z `main`, więc problem pre-istniejący):
+   - `positions.csv` — różni się TYLKO formatowaniem floatów (`1.0000`→`1.0`); wartości identyczne, deterministyczne. PnL nietknięte.
+   - `summary.csv` — różnice z 3 przyczyn: (a) `skips` 23→0 = **artefakt trybu** (ścieżka merge przekazuje pustą listę skip_events, `merge.py:628`); (b) kolumny `*_24h/72h/7d` recency-windowed (ta sama klasa „daty" co utilization, niezakotwiczone); (c) drobny shift wins/losses (np. 569→565) = ścieżka merge przelicza staty inaczej niż capture. Deterministyczne w obrębie dnia.
+   - **Znaczenie:** S5/S6 (matcher/merge) PRZEPISUJĄ `positions.csv`, a bramka ich nie chroni bezpośrednio. Pokrycie pośrednie (przez loss_analysis.md) istnieje, ale słabe. **→ krok S1.6 (przed S5):** re-capture deterministycznego CSV baseline + dodać `positions.csv` do `REPORT_FILES` + rozstrzygnąć okna summary. NIE blokuje S2.
+
 2. **Luka harnessu — diff plików, nie stdout.** `verify_baseline.py` porównuje pliki wyjściowe, nie terminal. Codex wskazał „komunikaty terminalowe" jako jeden z mieszanych concernów, a #143 to wprost relokacja `print()`/`input()`. **Decyzja do podjęcia (punkt sporny D):** czy stdout jest częścią zachowania chronionego? Jeśli tak — albo łapać konsolę w baseline, albo trzymać całą relokację print poza krokami strukturalnymi (osobny późniejszy pass #143).
 3. **Testy kontraktowe przed `matcher`/`merge`.** Oprócz baseline (output-level) dodać testy na konkretne ścieżki: close_reason (open/close/rug/failsafe/TP/SL), źródła PnL (meteora/discord/pending), unknown_open; dla merge — wszystkie upgrade paths.
 4. **Kolejność, nie wielkie bang.** Każdy etap kończy się zielonym checkiem + krótką notką o zachowanej kompatybilności.
@@ -135,8 +140,10 @@ Doc 022 wetował explicite **split na osobne pliki** (cyt. dla matchera: „spli
 
 | Sesja | Fazy | Co | Ryzyko | Stan na końcu |
 |---|---|---|---|---|
-| **S1** ⟵ *teraz* | 0 | fundament: setup-files, `pytest.ini`, `check.ps1`, gate test_meteora, **świeży baseline z HEAD** | niskie | tylko DODANO infrastrukturę; pipeline bez zmian; check zielony |
-| **S2** | 0.5 | minimalne testy kontraktowe matcher + merge (czyste dodatki, zero zmian produkcyjnych) | niskie | testy przypinają seamy; pipeline bez zmian |
+| **S1** ✅ | 0 | fundament: setup-files, `pytest.ini`, `check.ps1`, gate test_meteora, **świeży baseline z HEAD** | niskie | tylko DODANO infrastrukturę; pipeline bez zmian; check zielony |
+| **S1.5** ✅ *(correctness pre-step, 2026-05-30)* | — | kotwica okna utilization + insuf-24h do daty danych (`models.latest_position_datetime`); re-baseline; rozwiązuje nieodtwarzalność loss_analysis.md (§1b-ter) | niskie (izolowane, świadoma zmiana zachowania, osobny commit) | check zielony i deterministyczny; TODO #147 |
+| **S2** ⟵ *teraz* | 0.5 | minimalne testy kontraktowe matcher + merge (czyste dodatki, zero zmian produkcyjnych) | niskie | testy przypinają seamy; pipeline bez zmian |
+| **S1.6** *(harden CSV gate — PRZED S5)* | — | domknąć lukę bramki CSV (patrz §3.1-bis): re-capture deterministycznego baseline `positions.csv`/`summary.csv` z czystego `--report`; decyzja o oknach `summary.csv` (kotwica do danych vs akceptacja artefaktu trybu `skips=0`); dodać `positions.csv` (min.) do `REPORT_FILES` | średnie | bramka chroni CSV; S5/S6 mają realną siatkę |
 | **S3** | 1 | `cli.py`: `args.py` + cienki dispatch w `main()` | średnie | CLI działa identycznie; baseline zielony |
 | **S4** | 2 | `cli.py`: `commands/*` (parse/report/cross_check/recalc/backtest/track) | średnie | jw.; shim `valhalla_parser_v2.py` bez zmian |
 | **S5** | 4 | `matcher.py`: in-file extraction (helpery wewnątrz `PositionMatcher`) | **wysokie** | baseline + kontrakty zielone |
@@ -164,6 +171,8 @@ Sesje operacyjne (#138/#142/#139) — wstawiane elastycznie między powyższe, b
 ## 6. Poza zakresem (świadomie)
 
 - **#146 — „jaki w końcu jest PnL"** (loss ~20 SOL vs wallet_trend ~5 vs własne ~15 vs LpAgent). To problem **poprawności**, nie struktury. Baseline z definicji zamraża obecne liczby (być może błędne). Refaktor zachowuje zachowanie; #146 to osobne śledztwo. **Zakaz „naprawiania PnL przy okazji".**
+
+> **Doprecyzowanie zasady „brak zmian semantyki" (po S1.5):** zakaz dotyczy mieszania korekt poprawności w **kroki strukturalne** (fazy 1–8). Świadome, izolowane korekty *między* etapami — osobny branch/commit + re-baseline + nota w TODO — są dozwolone i są wręcz **celem** rozbicia refaktoru na sesje (decyzja użytkownika, 2026-05-30). S1.5 (kotwica utilization) to wzorcowy przykład: nie był to fix PnL, nie tknął matcher/merge/positions.csv, a po nim baseline jest deterministyczny.
 - Zmiany semantyki klasyfikacji pozycji lub reguł PnL.
 - Naprawianie niezwiązanego brudnego worktree bez decyzji użytkownika.
 

@@ -141,6 +141,33 @@ def parse_iso_datetime(dt_str: str) -> Optional[datetime]:
         return None
 
 
+def latest_position_datetime(positions) -> Optional[datetime]:
+    """
+    Return the latest parseable position datetime to anchor recency windows to
+    the data's latest moment deterministically rather than wall-clock time.
+    """
+    closed_times = [
+        dt
+        for pos in positions
+        if getattr(pos, "close_reason", "") != "still_open"
+        for dt in [parse_iso_datetime(getattr(pos, "datetime_close", "") or "")]
+        if dt is not None
+    ]
+    if closed_times:
+        return max(closed_times)
+
+    open_times = [
+        dt
+        for pos in positions
+        for dt in [parse_iso_datetime(getattr(pos, "datetime_open", "") or "")]
+        if dt is not None
+    ]
+    if open_times:
+        return max(open_times)
+
+    return None
+
+
 # ============================================================================
 # Dataclasses
 # ============================================================================
