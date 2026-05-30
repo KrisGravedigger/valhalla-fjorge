@@ -41,17 +41,19 @@ def compute_hourly_utilization(
     Args:
         positions: All MatchedPosition objects (including still_open).
         lookback_hours: Number of hours to look back (default 72).
-        reference_time: End of the window. Defaults to datetime.now() floored
-                        to the current hour.
+        reference_time: End of the window. Defaults to the data's latest
+                        position datetime floored to the current hour, falling
+                        back to datetime.now() only when no parseable dates
+                        exist.
 
     Returns:
         List of HourlyUtilizationPoint sorted oldest-first.
     """
-    from valhalla.models import parse_iso_datetime
+    from valhalla.models import latest_position_datetime, parse_iso_datetime
 
     if reference_time is None:
-        now = datetime.now()
-        reference_time = now.replace(minute=0, second=0, microsecond=0)
+        reference_time = latest_position_datetime(positions) or datetime.now()
+        reference_time = reference_time.replace(minute=0, second=0, microsecond=0)
     else:
         reference_time = reference_time.replace(minute=0, second=0, microsecond=0)
 

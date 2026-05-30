@@ -10,7 +10,7 @@ from valhalla.analysis_config import (
     UTILIZATION_LOW_THRESHOLD,
     UTILIZATION_MAX_INSUF_EVENTS_24H,
 )
-from valhalla.models import make_iso_datetime, parse_iso_datetime
+from valhalla.models import latest_position_datetime, make_iso_datetime, parse_iso_datetime
 from valhalla.recommendations import (
     check_position_size_guard,
     filter_recent_positions,
@@ -139,7 +139,8 @@ def build_action_items(
             # Count insuf-balance events in last 24h
             insuf_24h = 0
             if insufficient_balance_events:
-                cutoff_dt = datetime.now() - timedelta(hours=24)
+                ref = latest_position_datetime(positions) or datetime.now()
+                cutoff_dt = ref - timedelta(hours=24)
                 cutoff_date = cutoff_dt.date()
                 for ev in insufficient_balance_events:
                     # Support both InsufficientBalanceEvent (.date/.timestamp)
