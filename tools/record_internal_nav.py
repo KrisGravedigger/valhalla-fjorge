@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import csv
 import inspect
+import logging
 import os
 import sys
 from datetime import datetime, timezone
@@ -61,7 +62,15 @@ def main(argv: Optional[list[str]] = None) -> int:
         action="store_true",
         help="Write snapshot even when internal NAV is degraded.",
     )
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Show per-position/per-mint detail (otherwise only milestones).",
+    )
     args = parser.parse_args(argv)
+
+    if args.verbose:
+        logging.basicConfig(level=logging.DEBUG, format="[nav] %(message)s")
 
     _load_env_file()
 
