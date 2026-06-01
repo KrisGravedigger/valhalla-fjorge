@@ -17,6 +17,10 @@ try {
     Write-Host "== baseline: --report =="
     python tests/verify_baseline.py --report
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+    Write-Host "== baseline: --parse =="
+    python tests/verify_baseline.py --parse
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 }
 finally {
     Pop-Location

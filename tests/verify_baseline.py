@@ -39,6 +39,7 @@ BASELINE_DIR = PROJECT_ROOT / "_baseline_pre_refactor"
 TEST_OUTPUT_DIR = PROJECT_ROOT / "_test_output"
 OUTPUT_DIR = PROJECT_ROOT / "output"
 INPUT_DIR = PROJECT_ROOT / "input"
+PARSE_INPUT_DIR = PROJECT_ROOT / "_parse_fixture"
 PARSER_SCRIPT = PROJECT_ROOT / "valhalla_parser_v2.py"
 
 # ---------------------------------------------------------------------------
@@ -48,7 +49,10 @@ PARSER_SCRIPT = PROJECT_ROOT / "valhalla_parser_v2.py"
 # Files verified after --parse mode
 PARSE_FILES = [
     "positions.csv",
-    "summary.csv",
+    # summary.csv intentionally stays out of --parse: its skips column
+    # legitimately differs between --report (--no-input -> 0 skips) and
+    # --parse (the stable slice contains real skip_events). positions.csv
+    # covers parse correctness here; summary.csv remains guarded by --report.
     "skip_events.csv",
     "insufficient_balance.csv",
     # address_cache.json excluded: contains RPC-resolved addresses,
@@ -295,7 +299,7 @@ def run_parse_mode(
     include_charts: bool = False,
 ) -> bool:
     """
-    Run parser on input/ files -> _test_output/, then diff against baseline.
+    Run parser on _parse_fixture/ files -> _test_output/, then diff against baseline.
     Returns True if all comparisons pass.
     """
     print("=" * 60)
@@ -304,10 +308,11 @@ def run_parse_mode(
 
     clear_dir(test_output_dir)
 
-    # Collect input files explicitly so the parser doesn't depend on cwd
-    input_files = sorted(INPUT_DIR.glob("*.txt")) + sorted(INPUT_DIR.glob("*.html"))
+    # Collect input files explicitly so the parser doesn't depend on cwd.
+    # Use the stable fixture instead of live input/, which archiving can empty.
+    input_files = sorted(PARSE_INPUT_DIR.glob("*.txt")) + sorted(PARSE_INPUT_DIR.glob("*.html"))
     if not input_files:
-        print(f"ERROR: no input files found in {INPUT_DIR}", file=sys.stderr)
+        print(f"ERROR: no parse fixture files found in {PARSE_INPUT_DIR}", file=sys.stderr)
         sys.exit(4)
 
     # Seed _test_output/ with baseline state so the parser's merge path runs

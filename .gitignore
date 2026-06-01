@@ -34,6 +34,7 @@ _temp/
 DiscordChatExporter.Cli.win-x64/*.json
 TODO.md
 _baseline_pre_refactor/
+_parse_fixture/
 scripts/*
 !scripts/check.ps1
 .claude/
