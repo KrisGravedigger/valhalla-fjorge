@@ -58,6 +58,22 @@ PARSE_FILES = [
 # Files verified after --report mode
 REPORT_FILES = [
     "loss_analysis.md",
+    # positions.csv + summary.csv added in S1.6 (2026-06-01) to close the CSV
+    # gate gap: S5/S6 rewrite positions.csv via the merge/report path, and
+    # before this they were unguarded (only loss_analysis.md was diffed).
+    # Both are deterministic across runs AND fixed points of the report-mode
+    # re-merge (verified empirically), so re-capturing the baseline from a
+    # clean --report makes them green by construction.
+    #
+    # KNOWN PINNED QUIRKS baked into the baseline (current behavior, NOT bugs to
+    # fix here — see docs/refactor TODO; candidates for a post-S6 isolated fix):
+    #   * positions.csv: 'still_open' rows lose target_wallet_address on the
+    #     CSV round-trip (merge.py rebuilds OpenEvent without that field).
+    #   * summary.csv: skips=0 in --report mode (a mode artifact — --no-input
+    #     parses no skip_events; the merge path also recomputes wins/losses and
+    #     time-window aggregates slightly differently than the capture path).
+    "positions.csv",
+    "summary.csv",
     # wallet_trend.md excluded: contains reference_date derived from most
     # recent position timestamp — shifts as positions.csv accumulates,
     # producing false diffs between baseline capture time and now.
