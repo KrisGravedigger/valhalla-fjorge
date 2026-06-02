@@ -122,6 +122,146 @@ def _interactive_menu():
         print("  Invalid choice, try again.")
 
 
+def _read_and_parse_input_files(input_files, args):
+    event_parser = EventParser()
+    processed_files = []
+
+    # Step 1: Read and parse all input files
+    all_messages = []
+
+    # Dedup: same position_id across files = same Discord message, keep first seen
+    seen_open_ids = set()
+    seen_close_ids = set()
+    seen_failsafe_ids = set()
+    seen_rug_ids = set()
+
+    for input_file in input_files:
+        # Detect format and create appropriate reader
+        print(f"\nReading Discord logs: {input_file}")
+
+        fmt = args.input_format
+        if fmt == 'auto':
+            fmt = detect_input_format(input_file)
+            print(f"  Auto-detected format: {fmt}")
+
+        if fmt == 'html':
+            reader = HtmlReader(input_file)
+        else:
+            reader = PlainTextReader(input_file)
+
+        messages = reader.read()
+        print(f"  Found {len(messages)} Valhalla messages")
+
+        # Determine date for this file - priority order:
+        # 1. Embedded in timestamps ([YYYY-MM-DDTHH:MM] format) - no base_date needed
+        # 2. Filename prefix (YYYYMMDD_*.txt)
+        # 3. In-file date header (first line)
+        # 4. User prompt if neither found
+        file_date = None
+        date_source = None
+
+        # Check if messages contain full datetime timestamps
+        has_full_timestamps = any(
+            '[' in msg.timestamp and 'T' in msg.timestamp and len(msg.timestamp) > 7
+            for msg in messages
+        )
+
+        if has_full_timestamps:
+            # Dates are embedded in timestamps - no base_date needed
+            date_source = "embedded timestamps"
+            print(f"  Dates embedded in timestamps (no base date needed)")
+        else:
+            # Try filename first
+            file_date = extract_date_from_filename(input_file)
+            if file_date:
+                date_source = "filename"
+            # Then try in-file header
+            elif reader.header_date:
+                file_date = reader.header_date
+                date_source = "in-file header"
+            # Finally, prompt user
+            else:
+                print(f"  No date found in filename or file header")
+                user_input = input(f"  Enter date for {Path(input_file).name} (YYYYMMDD): ").strip()
+                if user_input and len(user_input) == 8 and user_input.isdigit():
+                    try:
+                        year = int(user_input[0:4])
+                        month = int(user_input[4:6])
+                        day = int(user_input[6:8])
+                        datetime(year, month, day)
+                        file_date = f"{year:04d}-{month:02d}-{day:02d}"
+                        date_source = "user input"
+                    except ValueError:
+                        print(f"  Invalid date format, continuing without date")
+
+            if file_date:
+                print(f"  Date detected from {date_source}: {file_date}")
+            elif not has_full_timestamps:
+                print(f"  No date available")
+
+        # Parse events with date context
+        print(f"Parsing events (date: {file_date or 'none'})...")
+        file_parser = EventParser(base_date=file_date)
+        file_parser.parse_messages(messages)
+
+        # Merge events into main parser (deduplicate by position_id across files)
+        dedup_count = 0
+        for e in file_parser.open_events:
+            if e.position_id not in seen_open_ids:
+                seen_open_ids.add(e.position_id)
+                event_parser.open_events.append(e)
+            else:
+                dedup_count += 1
+        for e in file_parser.close_events:
+            if e.position_id not in seen_close_ids:
+                seen_close_ids.add(e.position_id)
+                event_parser.close_events.append(e)
+            else:
+                dedup_count += 1
+        for e in file_parser.failsafe_events:
+            if e.position_id not in seen_failsafe_ids:
+                seen_failsafe_ids.add(e.position_id)
+                event_parser.failsafe_events.append(e)
+            else:
+                dedup_count += 1
+        for e in file_parser.rug_events:
+            pid = e.position_id or id(e)  # rug events may lack position_id
+            if pid not in seen_rug_ids:
+                seen_rug_ids.add(pid)
+                event_parser.rug_events.append(e)
+            else:
+                dedup_count += 1
+        # Non-position events: no dedup needed
+        event_parser.skip_events.extend(file_parser.skip_events)
+        event_parser.swap_events.extend(file_parser.swap_events)
+        event_parser.add_liquidity_events.extend(file_parser.add_liquidity_events)
+        event_parser.insufficient_balance_events.extend(file_parser.insufficient_balance_events)
+        event_parser.already_closed_events.extend(file_parser.already_closed_events)
+        if dedup_count:
+            print(f"  Skipped {dedup_count} duplicate events (already seen in earlier file)")
+
+        # Collect per-file datetime range for archive naming
+        file_datetimes = []
+        for evt in (file_parser.open_events + file_parser.close_events +
+                    file_parser.failsafe_events + file_parser.rug_events):
+            ts = evt.timestamp  # "[HH:MM]" or "[YYYY-MM-DDTHH:MM]"
+            if not ts:
+                continue
+            if 'T' in ts:
+                # Extract "YYYY-MM-DDTHH:MM" from "[YYYY-MM-DDTHH:MM]"
+                dt_str = ts.strip('[]')
+                file_datetimes.append(dt_str)
+            elif file_date:
+                # [HH:MM] timestamp - build full datetime from file_date + time
+                time_part = ts.strip('[]')  # "HH:MM"
+                file_datetimes.append(f"{file_date}T{time_part}")
+
+        # Track for archiving
+        processed_files.append((input_file, file_date, file_datetimes))
+
+    return event_parser, processed_files
+
+
 def main():
     # If run with no arguments, show interactive menu
     if len(sys.argv) == 1:
@@ -234,138 +374,7 @@ def main():
         # Determine cache file path
         cache_file = args.cache_file if args.cache_file else str(output_dir / 'address_cache.json')
 
-        # Step 1: Read and parse all input files
-        all_messages = []
-
-        # Dedup: same position_id across files = same Discord message, keep first seen
-        seen_open_ids = set()
-        seen_close_ids = set()
-        seen_failsafe_ids = set()
-        seen_rug_ids = set()
-
-        for input_file in input_files:
-            # Detect format and create appropriate reader
-            print(f"\nReading Discord logs: {input_file}")
-
-            fmt = args.input_format
-            if fmt == 'auto':
-                fmt = detect_input_format(input_file)
-                print(f"  Auto-detected format: {fmt}")
-
-            if fmt == 'html':
-                reader = HtmlReader(input_file)
-            else:
-                reader = PlainTextReader(input_file)
-
-            messages = reader.read()
-            print(f"  Found {len(messages)} Valhalla messages")
-
-            # Determine date for this file - priority order:
-            # 1. Embedded in timestamps ([YYYY-MM-DDTHH:MM] format) - no base_date needed
-            # 2. Filename prefix (YYYYMMDD_*.txt)
-            # 3. In-file date header (first line)
-            # 4. User prompt if neither found
-            file_date = None
-            date_source = None
-
-            # Check if messages contain full datetime timestamps
-            has_full_timestamps = any(
-                '[' in msg.timestamp and 'T' in msg.timestamp and len(msg.timestamp) > 7
-                for msg in messages
-            )
-
-            if has_full_timestamps:
-                # Dates are embedded in timestamps - no base_date needed
-                date_source = "embedded timestamps"
-                print(f"  Dates embedded in timestamps (no base date needed)")
-            else:
-                # Try filename first
-                file_date = extract_date_from_filename(input_file)
-                if file_date:
-                    date_source = "filename"
-                # Then try in-file header
-                elif reader.header_date:
-                    file_date = reader.header_date
-                    date_source = "in-file header"
-                # Finally, prompt user
-                else:
-                    print(f"  No date found in filename or file header")
-                    user_input = input(f"  Enter date for {Path(input_file).name} (YYYYMMDD): ").strip()
-                    if user_input and len(user_input) == 8 and user_input.isdigit():
-                        try:
-                            year = int(user_input[0:4])
-                            month = int(user_input[4:6])
-                            day = int(user_input[6:8])
-                            datetime(year, month, day)
-                            file_date = f"{year:04d}-{month:02d}-{day:02d}"
-                            date_source = "user input"
-                        except ValueError:
-                            print(f"  Invalid date format, continuing without date")
-
-                if file_date:
-                    print(f"  Date detected from {date_source}: {file_date}")
-                elif not has_full_timestamps:
-                    print(f"  No date available")
-
-            # Parse events with date context
-            print(f"Parsing events (date: {file_date or 'none'})...")
-            file_parser = EventParser(base_date=file_date)
-            file_parser.parse_messages(messages)
-
-            # Merge events into main parser (deduplicate by position_id across files)
-            dedup_count = 0
-            for e in file_parser.open_events:
-                if e.position_id not in seen_open_ids:
-                    seen_open_ids.add(e.position_id)
-                    event_parser.open_events.append(e)
-                else:
-                    dedup_count += 1
-            for e in file_parser.close_events:
-                if e.position_id not in seen_close_ids:
-                    seen_close_ids.add(e.position_id)
-                    event_parser.close_events.append(e)
-                else:
-                    dedup_count += 1
-            for e in file_parser.failsafe_events:
-                if e.position_id not in seen_failsafe_ids:
-                    seen_failsafe_ids.add(e.position_id)
-                    event_parser.failsafe_events.append(e)
-                else:
-                    dedup_count += 1
-            for e in file_parser.rug_events:
-                pid = e.position_id or id(e)  # rug events may lack position_id
-                if pid not in seen_rug_ids:
-                    seen_rug_ids.add(pid)
-                    event_parser.rug_events.append(e)
-                else:
-                    dedup_count += 1
-            # Non-position events: no dedup needed
-            event_parser.skip_events.extend(file_parser.skip_events)
-            event_parser.swap_events.extend(file_parser.swap_events)
-            event_parser.add_liquidity_events.extend(file_parser.add_liquidity_events)
-            event_parser.insufficient_balance_events.extend(file_parser.insufficient_balance_events)
-            event_parser.already_closed_events.extend(file_parser.already_closed_events)
-            if dedup_count:
-                print(f"  Skipped {dedup_count} duplicate events (already seen in earlier file)")
-
-            # Collect per-file datetime range for archive naming
-            file_datetimes = []
-            for evt in (file_parser.open_events + file_parser.close_events +
-                        file_parser.failsafe_events + file_parser.rug_events):
-                ts = evt.timestamp  # "[HH:MM]" or "[YYYY-MM-DDTHH:MM]"
-                if not ts:
-                    continue
-                if 'T' in ts:
-                    # Extract "YYYY-MM-DDTHH:MM" from "[YYYY-MM-DDTHH:MM]"
-                    dt_str = ts.strip('[]')
-                    file_datetimes.append(dt_str)
-                elif file_date:
-                    # [HH:MM] timestamp - build full datetime from file_date + time
-                    time_part = ts.strip('[]')  # "HH:MM"
-                    file_datetimes.append(f"{file_date}T{time_part}")
-
-            # Track for archiving
-            processed_files.append((input_file, file_date, file_datetimes))
+        event_parser, processed_files = _read_and_parse_input_files(input_files, args)
 
         # Step 2: Print aggregated event counts
         print(f"\nTotal parsed events across {len(input_files)} file(s):")
