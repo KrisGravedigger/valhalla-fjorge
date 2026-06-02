@@ -330,6 +330,56 @@ def _resolve_addresses(event_parser, args, cache_file, already_complete_ids, pos
     return resolved_addresses, cache
 
 
+def _calculate_meteora_pnl(event_parser, args, resolved_addresses, already_complete_ids, already_meteora_ids):
+    # Step 4: Calculate Meteora PnL
+    meteora_results: Dict[str, MeteoraPnlResult] = {}
+    meteora_failed: Dict[str, str] = {}  # pid -> full_addr for retry
+
+    if not args.skip_meteora and resolved_addresses:
+        print(f"\nFetching Meteora PnL data...")
+
+        meteora_calc = MeteoraPnlCalculator()
+
+        # Build closeable_ids set (only positions that will be used)
+        closeable_ids = set()
+        for e in event_parser.close_events:
+            closeable_ids.add(e.position_id)
+        for e in event_parser.rug_events:
+            if e.position_id:
+                closeable_ids.add(e.position_id)
+        for e in event_parser.failsafe_events:
+            closeable_ids.add(e.position_id)
+
+        # Filter to only fetch closeable positions that aren't already complete or already have Meteora data
+        addresses_to_fetch = {pid: addr for pid, addr in resolved_addresses.items()
+                              if pid in closeable_ids
+                              and pid not in already_complete_ids
+                              and pid not in already_meteora_ids}
+
+        total = len(addresses_to_fetch)
+        for i, (pid, full_addr) in enumerate(addresses_to_fetch.items(), 1):
+            print(f"  Fetching {i}/{total}: {pid}...", end='', flush=True)
+            result = meteora_calc.calculate_pnl(full_addr)
+            if result:
+                recovered = result.withdrawn_sol + result.fees_sol
+                if recovered < Decimal('0.001'):
+                    print(f" PnL: unknown (recovered {recovered:.4f} SOL ~= total loss, unreliable)")
+                else:
+                    meteora_results[pid] = result
+                    print(f" PnL: {result.pnl_sol:.4f} SOL (${result.pnl_usd:.2f})")
+            else:
+                print(f" FAILED")
+                meteora_failed[pid] = full_addr
+
+        print(f"  Retrieved PnL for {len(meteora_results)} positions")
+    elif args.skip_meteora:
+        print(f"\nSkipping Meteora API (--skip-meteora)")
+    else:
+        print(f"\nSkipping Meteora API (no resolved addresses)")
+
+    return meteora_results, meteora_failed
+
+
 def main():
     # If run with no arguments, show interactive menu
     if len(sys.argv) == 1:
@@ -480,51 +530,7 @@ def main():
 
         resolved_addresses, cache = _resolve_addresses(event_parser, args, cache_file, already_complete_ids, positions_csv)
 
-        # Step 4: Calculate Meteora PnL
-        meteora_results: Dict[str, MeteoraPnlResult] = {}
-        meteora_failed: Dict[str, str] = {}  # pid -> full_addr for retry
-
-        if not args.skip_meteora and resolved_addresses:
-            print(f"\nFetching Meteora PnL data...")
-
-            meteora_calc = MeteoraPnlCalculator()
-
-            # Build closeable_ids set (only positions that will be used)
-            closeable_ids = set()
-            for e in event_parser.close_events:
-                closeable_ids.add(e.position_id)
-            for e in event_parser.rug_events:
-                if e.position_id:
-                    closeable_ids.add(e.position_id)
-            for e in event_parser.failsafe_events:
-                closeable_ids.add(e.position_id)
-
-            # Filter to only fetch closeable positions that aren't already complete or already have Meteora data
-            addresses_to_fetch = {pid: addr for pid, addr in resolved_addresses.items()
-                                  if pid in closeable_ids
-                                  and pid not in already_complete_ids
-                                  and pid not in already_meteora_ids}
-
-            total = len(addresses_to_fetch)
-            for i, (pid, full_addr) in enumerate(addresses_to_fetch.items(), 1):
-                print(f"  Fetching {i}/{total}: {pid}...", end='', flush=True)
-                result = meteora_calc.calculate_pnl(full_addr)
-                if result:
-                    recovered = result.withdrawn_sol + result.fees_sol
-                    if recovered < Decimal('0.001'):
-                        print(f" PnL: unknown (recovered {recovered:.4f} SOL ~= total loss, unreliable)")
-                    else:
-                        meteora_results[pid] = result
-                        print(f" PnL: {result.pnl_sol:.4f} SOL (${result.pnl_usd:.2f})")
-                else:
-                    print(f" FAILED")
-                    meteora_failed[pid] = full_addr
-
-            print(f"  Retrieved PnL for {len(meteora_results)} positions")
-        elif args.skip_meteora:
-            print(f"\nSkipping Meteora API (--skip-meteora)")
-        else:
-            print(f"\nSkipping Meteora API (no resolved addresses)")
+        meteora_results, meteora_failed = _calculate_meteora_pnl(event_parser, args, resolved_addresses, already_complete_ids, already_meteora_ids)
 
         # Step 5: Match positions
         print(f"\nMatching positions...")
