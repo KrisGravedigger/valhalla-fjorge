@@ -122,6 +122,264 @@ def _interactive_menu():
         print("  Invalid choice, try again.")
 
 
+def _read_and_parse_input_files(input_files, args):
+    event_parser = EventParser()
+    processed_files = []
+
+    # Step 1: Read and parse all input files
+    all_messages = []
+
+    # Dedup: same position_id across files = same Discord message, keep first seen
+    seen_open_ids = set()
+    seen_close_ids = set()
+    seen_failsafe_ids = set()
+    seen_rug_ids = set()
+
+    for input_file in input_files:
+        # Detect format and create appropriate reader
+        print(f"\nReading Discord logs: {input_file}")
+
+        fmt = args.input_format
+        if fmt == 'auto':
+            fmt = detect_input_format(input_file)
+            print(f"  Auto-detected format: {fmt}")
+
+        if fmt == 'html':
+            reader = HtmlReader(input_file)
+        else:
+            reader = PlainTextReader(input_file)
+
+        messages = reader.read()
+        print(f"  Found {len(messages)} Valhalla messages")
+
+        # Determine date for this file - priority order:
+        # 1. Embedded in timestamps ([YYYY-MM-DDTHH:MM] format) - no base_date needed
+        # 2. Filename prefix (YYYYMMDD_*.txt)
+        # 3. In-file date header (first line)
+        # 4. User prompt if neither found
+        file_date = None
+        date_source = None
+
+        # Check if messages contain full datetime timestamps
+        has_full_timestamps = any(
+            '[' in msg.timestamp and 'T' in msg.timestamp and len(msg.timestamp) > 7
+            for msg in messages
+        )
+
+        if has_full_timestamps:
+            # Dates are embedded in timestamps - no base_date needed
+            date_source = "embedded timestamps"
+            print(f"  Dates embedded in timestamps (no base date needed)")
+        else:
+            # Try filename first
+            file_date = extract_date_from_filename(input_file)
+            if file_date:
+                date_source = "filename"
+            # Then try in-file header
+            elif reader.header_date:
+                file_date = reader.header_date
+                date_source = "in-file header"
+            # Finally, prompt user
+            else:
+                print(f"  No date found in filename or file header")
+                user_input = input(f"  Enter date for {Path(input_file).name} (YYYYMMDD): ").strip()
+                if user_input and len(user_input) == 8 and user_input.isdigit():
+                    try:
+                        year = int(user_input[0:4])
+                        month = int(user_input[4:6])
+                        day = int(user_input[6:8])
+                        datetime(year, month, day)
+                        file_date = f"{year:04d}-{month:02d}-{day:02d}"
+                        date_source = "user input"
+                    except ValueError:
+                        print(f"  Invalid date format, continuing without date")
+
+            if file_date:
+                print(f"  Date detected from {date_source}: {file_date}")
+            elif not has_full_timestamps:
+                print(f"  No date available")
+
+        # Parse events with date context
+        print(f"Parsing events (date: {file_date or 'none'})...")
+        file_parser = EventParser(base_date=file_date)
+        file_parser.parse_messages(messages)
+
+        # Merge events into main parser (deduplicate by position_id across files)
+        dedup_count = 0
+        for e in file_parser.open_events:
+            if e.position_id not in seen_open_ids:
+                seen_open_ids.add(e.position_id)
+                event_parser.open_events.append(e)
+            else:
+                dedup_count += 1
+        for e in file_parser.close_events:
+            if e.position_id not in seen_close_ids:
+                seen_close_ids.add(e.position_id)
+                event_parser.close_events.append(e)
+            else:
+                dedup_count += 1
+        for e in file_parser.failsafe_events:
+            if e.position_id not in seen_failsafe_ids:
+                seen_failsafe_ids.add(e.position_id)
+                event_parser.failsafe_events.append(e)
+            else:
+                dedup_count += 1
+        for e in file_parser.rug_events:
+            pid = e.position_id or id(e)  # rug events may lack position_id
+            if pid not in seen_rug_ids:
+                seen_rug_ids.add(pid)
+                event_parser.rug_events.append(e)
+            else:
+                dedup_count += 1
+        # Non-position events: no dedup needed
+        event_parser.skip_events.extend(file_parser.skip_events)
+        event_parser.swap_events.extend(file_parser.swap_events)
+        event_parser.add_liquidity_events.extend(file_parser.add_liquidity_events)
+        event_parser.insufficient_balance_events.extend(file_parser.insufficient_balance_events)
+        event_parser.already_closed_events.extend(file_parser.already_closed_events)
+        if dedup_count:
+            print(f"  Skipped {dedup_count} duplicate events (already seen in earlier file)")
+
+        # Collect per-file datetime range for archive naming
+        file_datetimes = []
+        for evt in (file_parser.open_events + file_parser.close_events +
+                    file_parser.failsafe_events + file_parser.rug_events):
+            ts = evt.timestamp  # "[HH:MM]" or "[YYYY-MM-DDTHH:MM]"
+            if not ts:
+                continue
+            if 'T' in ts:
+                # Extract "YYYY-MM-DDTHH:MM" from "[YYYY-MM-DDTHH:MM]"
+                dt_str = ts.strip('[]')
+                file_datetimes.append(dt_str)
+            elif file_date:
+                # [HH:MM] timestamp - build full datetime from file_date + time
+                time_part = ts.strip('[]')  # "HH:MM"
+                file_datetimes.append(f"{file_date}T{time_part}")
+
+        # Track for archiving
+        processed_files.append((input_file, file_date, file_datetimes))
+
+    return event_parser, processed_files
+
+
+def _resolve_addresses(event_parser, args, cache_file, already_complete_ids, positions_csv):
+    # Step 3: Resolve addresses
+    resolved_addresses: Dict[str, str] = {}
+    cache = AddressCache(cache_file)
+
+    if not args.skip_rpc:
+        print(f"\nResolving position addresses via Solana RPC...")
+        rpc_client = SolanaRpcClient(args.rpc_url)
+        resolver = PositionResolver(cache, rpc_client)
+
+        # Collect all events with position IDs and tx signatures
+        # Check cache first - only hit RPC for positions not already cached
+        seen_pids = set()
+        events_to_resolve = []
+        cache_hits = 0
+        for event in event_parser.open_events + event_parser.close_events + event_parser.failsafe_events:
+            if event.position_id not in seen_pids:
+                if event.position_id not in already_complete_ids:
+                    seen_pids.add(event.position_id)
+                    cached_addr = cache.get(event.position_id)
+                    if cached_addr:
+                        resolved_addresses[event.position_id] = cached_addr
+                        cache_hits += 1
+                    elif event.tx_signatures:
+                        events_to_resolve.append((event.position_id, event.tx_signatures))
+
+        total = len(events_to_resolve)
+        if cache_hits:
+            print(f"  {cache_hits} positions loaded from cache, {total} to resolve via RPC")
+        for i, (pid, sigs) in enumerate(events_to_resolve, 1):
+            print(f"  Resolving {i}/{total}: {pid}...", end='', flush=True)
+            full_addr = resolver.resolve(pid, sigs)
+            if full_addr:
+                resolved_addresses[pid] = full_addr
+                print(f" OK ({full_addr[:8]}...)")
+            else:
+                print(f" NOT FOUND")
+
+        print(f"  Resolved {len(resolved_addresses)} addresses")
+        cache.save()
+    else:
+        print(f"\nSkipping RPC resolution (--skip-rpc)")
+        # Load from cache only
+        for event in event_parser.open_events + event_parser.close_events + event_parser.failsafe_events:
+            cached = cache.get(event.position_id)
+            if cached:
+                resolved_addresses[event.position_id] = cached
+        print(f"  Loaded {len(resolved_addresses)} addresses from cache")
+
+    # Seed resolved_addresses from existing lpagent rows in positions.csv.
+    # Without this, lpagent_backfill positions that appear in a new Discord
+    # archive file can't have Meteora called (no cache hit, no tx_sig from Discord)
+    # -> Discord merge produces pnl_source=pending with empty full_address.
+    if positions_csv.exists():
+        lpagent_seeded = 0
+        with open(positions_csv, 'r', encoding='utf-8') as _f:
+            for _row in csv.DictReader(_f):
+                _pid = _row.get('position_id', '').strip()
+                _addr = _row.get('full_address', '').strip()
+                if _pid and _addr and _row.get('pnl_source') == 'lpagent' and _pid not in resolved_addresses:
+                    resolved_addresses[_pid] = _addr
+                    lpagent_seeded += 1
+        if lpagent_seeded:
+            print(f"  Seeded {lpagent_seeded} address(es) from lpagent_backfill rows")
+
+    return resolved_addresses, cache
+
+
+def _calculate_meteora_pnl(event_parser, args, resolved_addresses, already_complete_ids, already_meteora_ids):
+    # Step 4: Calculate Meteora PnL
+    meteora_results: Dict[str, MeteoraPnlResult] = {}
+    meteora_failed: Dict[str, str] = {}  # pid -> full_addr for retry
+
+    if not args.skip_meteora and resolved_addresses:
+        print(f"\nFetching Meteora PnL data...")
+
+        meteora_calc = MeteoraPnlCalculator()
+
+        # Build closeable_ids set (only positions that will be used)
+        closeable_ids = set()
+        for e in event_parser.close_events:
+            closeable_ids.add(e.position_id)
+        for e in event_parser.rug_events:
+            if e.position_id:
+                closeable_ids.add(e.position_id)
+        for e in event_parser.failsafe_events:
+            closeable_ids.add(e.position_id)
+
+        # Filter to only fetch closeable positions that aren't already complete or already have Meteora data
+        addresses_to_fetch = {pid: addr for pid, addr in resolved_addresses.items()
+                              if pid in closeable_ids
+                              and pid not in already_complete_ids
+                              and pid not in already_meteora_ids}
+
+        total = len(addresses_to_fetch)
+        for i, (pid, full_addr) in enumerate(addresses_to_fetch.items(), 1):
+            print(f"  Fetching {i}/{total}: {pid}...", end='', flush=True)
+            result = meteora_calc.calculate_pnl(full_addr)
+            if result:
+                recovered = result.withdrawn_sol + result.fees_sol
+                if recovered < Decimal('0.001'):
+                    print(f" PnL: unknown (recovered {recovered:.4f} SOL ~= total loss, unreliable)")
+                else:
+                    meteora_results[pid] = result
+                    print(f" PnL: {result.pnl_sol:.4f} SOL (${result.pnl_usd:.2f})")
+            else:
+                print(f" FAILED")
+                meteora_failed[pid] = full_addr
+
+        print(f"  Retrieved PnL for {len(meteora_results)} positions")
+    elif args.skip_meteora:
+        print(f"\nSkipping Meteora API (--skip-meteora)")
+    else:
+        print(f"\nSkipping Meteora API (no resolved addresses)")
+
+    return meteora_results, meteora_failed
+
+
 def main():
     # If run with no arguments, show interactive menu
     if len(sys.argv) == 1:
@@ -234,138 +492,7 @@ def main():
         # Determine cache file path
         cache_file = args.cache_file if args.cache_file else str(output_dir / 'address_cache.json')
 
-        # Step 1: Read and parse all input files
-        all_messages = []
-
-        # Dedup: same position_id across files = same Discord message, keep first seen
-        seen_open_ids = set()
-        seen_close_ids = set()
-        seen_failsafe_ids = set()
-        seen_rug_ids = set()
-
-        for input_file in input_files:
-            # Detect format and create appropriate reader
-            print(f"\nReading Discord logs: {input_file}")
-
-            fmt = args.input_format
-            if fmt == 'auto':
-                fmt = detect_input_format(input_file)
-                print(f"  Auto-detected format: {fmt}")
-
-            if fmt == 'html':
-                reader = HtmlReader(input_file)
-            else:
-                reader = PlainTextReader(input_file)
-
-            messages = reader.read()
-            print(f"  Found {len(messages)} Valhalla messages")
-
-            # Determine date for this file - priority order:
-            # 1. Embedded in timestamps ([YYYY-MM-DDTHH:MM] format) - no base_date needed
-            # 2. Filename prefix (YYYYMMDD_*.txt)
-            # 3. In-file date header (first line)
-            # 4. User prompt if neither found
-            file_date = None
-            date_source = None
-
-            # Check if messages contain full datetime timestamps
-            has_full_timestamps = any(
-                '[' in msg.timestamp and 'T' in msg.timestamp and len(msg.timestamp) > 7
-                for msg in messages
-            )
-
-            if has_full_timestamps:
-                # Dates are embedded in timestamps - no base_date needed
-                date_source = "embedded timestamps"
-                print(f"  Dates embedded in timestamps (no base date needed)")
-            else:
-                # Try filename first
-                file_date = extract_date_from_filename(input_file)
-                if file_date:
-                    date_source = "filename"
-                # Then try in-file header
-                elif reader.header_date:
-                    file_date = reader.header_date
-                    date_source = "in-file header"
-                # Finally, prompt user
-                else:
-                    print(f"  No date found in filename or file header")
-                    user_input = input(f"  Enter date for {Path(input_file).name} (YYYYMMDD): ").strip()
-                    if user_input and len(user_input) == 8 and user_input.isdigit():
-                        try:
-                            year = int(user_input[0:4])
-                            month = int(user_input[4:6])
-                            day = int(user_input[6:8])
-                            datetime(year, month, day)
-                            file_date = f"{year:04d}-{month:02d}-{day:02d}"
-                            date_source = "user input"
-                        except ValueError:
-                            print(f"  Invalid date format, continuing without date")
-
-                if file_date:
-                    print(f"  Date detected from {date_source}: {file_date}")
-                elif not has_full_timestamps:
-                    print(f"  No date available")
-
-            # Parse events with date context
-            print(f"Parsing events (date: {file_date or 'none'})...")
-            file_parser = EventParser(base_date=file_date)
-            file_parser.parse_messages(messages)
-
-            # Merge events into main parser (deduplicate by position_id across files)
-            dedup_count = 0
-            for e in file_parser.open_events:
-                if e.position_id not in seen_open_ids:
-                    seen_open_ids.add(e.position_id)
-                    event_parser.open_events.append(e)
-                else:
-                    dedup_count += 1
-            for e in file_parser.close_events:
-                if e.position_id not in seen_close_ids:
-                    seen_close_ids.add(e.position_id)
-                    event_parser.close_events.append(e)
-                else:
-                    dedup_count += 1
-            for e in file_parser.failsafe_events:
-                if e.position_id not in seen_failsafe_ids:
-                    seen_failsafe_ids.add(e.position_id)
-                    event_parser.failsafe_events.append(e)
-                else:
-                    dedup_count += 1
-            for e in file_parser.rug_events:
-                pid = e.position_id or id(e)  # rug events may lack position_id
-                if pid not in seen_rug_ids:
-                    seen_rug_ids.add(pid)
-                    event_parser.rug_events.append(e)
-                else:
-                    dedup_count += 1
-            # Non-position events: no dedup needed
-            event_parser.skip_events.extend(file_parser.skip_events)
-            event_parser.swap_events.extend(file_parser.swap_events)
-            event_parser.add_liquidity_events.extend(file_parser.add_liquidity_events)
-            event_parser.insufficient_balance_events.extend(file_parser.insufficient_balance_events)
-            event_parser.already_closed_events.extend(file_parser.already_closed_events)
-            if dedup_count:
-                print(f"  Skipped {dedup_count} duplicate events (already seen in earlier file)")
-
-            # Collect per-file datetime range for archive naming
-            file_datetimes = []
-            for evt in (file_parser.open_events + file_parser.close_events +
-                        file_parser.failsafe_events + file_parser.rug_events):
-                ts = evt.timestamp  # "[HH:MM]" or "[YYYY-MM-DDTHH:MM]"
-                if not ts:
-                    continue
-                if 'T' in ts:
-                    # Extract "YYYY-MM-DDTHH:MM" from "[YYYY-MM-DDTHH:MM]"
-                    dt_str = ts.strip('[]')
-                    file_datetimes.append(dt_str)
-                elif file_date:
-                    # [HH:MM] timestamp - build full datetime from file_date + time
-                    time_part = ts.strip('[]')  # "HH:MM"
-                    file_datetimes.append(f"{file_date}T{time_part}")
-
-            # Track for archiving
-            processed_files.append((input_file, file_date, file_datetimes))
+        event_parser, processed_files = _read_and_parse_input_files(input_files, args)
 
         # Step 2: Print aggregated event counts
         print(f"\nTotal parsed events across {len(input_files)} file(s):")
@@ -401,115 +528,9 @@ def main():
             if already_complete_ids:
                 print(f"  Skipping {len(already_complete_ids)} already-complete positions")
 
-        # Step 3: Resolve addresses
-        resolved_addresses: Dict[str, str] = {}
-        cache = AddressCache(cache_file)
+        resolved_addresses, cache = _resolve_addresses(event_parser, args, cache_file, already_complete_ids, positions_csv)
 
-        if not args.skip_rpc:
-            print(f"\nResolving position addresses via Solana RPC...")
-            rpc_client = SolanaRpcClient(args.rpc_url)
-            resolver = PositionResolver(cache, rpc_client)
-
-            # Collect all events with position IDs and tx signatures
-            # Check cache first - only hit RPC for positions not already cached
-            seen_pids = set()
-            events_to_resolve = []
-            cache_hits = 0
-            for event in event_parser.open_events + event_parser.close_events + event_parser.failsafe_events:
-                if event.position_id not in seen_pids:
-                    if event.position_id not in already_complete_ids:
-                        seen_pids.add(event.position_id)
-                        cached_addr = cache.get(event.position_id)
-                        if cached_addr:
-                            resolved_addresses[event.position_id] = cached_addr
-                            cache_hits += 1
-                        elif event.tx_signatures:
-                            events_to_resolve.append((event.position_id, event.tx_signatures))
-
-            total = len(events_to_resolve)
-            if cache_hits:
-                print(f"  {cache_hits} positions loaded from cache, {total} to resolve via RPC")
-            for i, (pid, sigs) in enumerate(events_to_resolve, 1):
-                print(f"  Resolving {i}/{total}: {pid}...", end='', flush=True)
-                full_addr = resolver.resolve(pid, sigs)
-                if full_addr:
-                    resolved_addresses[pid] = full_addr
-                    print(f" OK ({full_addr[:8]}...)")
-                else:
-                    print(f" NOT FOUND")
-
-            print(f"  Resolved {len(resolved_addresses)} addresses")
-            cache.save()
-        else:
-            print(f"\nSkipping RPC resolution (--skip-rpc)")
-            # Load from cache only
-            for event in event_parser.open_events + event_parser.close_events + event_parser.failsafe_events:
-                cached = cache.get(event.position_id)
-                if cached:
-                    resolved_addresses[event.position_id] = cached
-            print(f"  Loaded {len(resolved_addresses)} addresses from cache")
-
-        # Seed resolved_addresses from existing lpagent rows in positions.csv.
-        # Without this, lpagent_backfill positions that appear in a new Discord
-        # archive file can't have Meteora called (no cache hit, no tx_sig from Discord)
-        # -> Discord merge produces pnl_source=pending with empty full_address.
-        if positions_csv.exists():
-            lpagent_seeded = 0
-            with open(positions_csv, 'r', encoding='utf-8') as _f:
-                for _row in csv.DictReader(_f):
-                    _pid = _row.get('position_id', '').strip()
-                    _addr = _row.get('full_address', '').strip()
-                    if _pid and _addr and _row.get('pnl_source') == 'lpagent' and _pid not in resolved_addresses:
-                        resolved_addresses[_pid] = _addr
-                        lpagent_seeded += 1
-            if lpagent_seeded:
-                print(f"  Seeded {lpagent_seeded} address(es) from lpagent_backfill rows")
-
-        # Step 4: Calculate Meteora PnL
-        meteora_results: Dict[str, MeteoraPnlResult] = {}
-        meteora_failed: Dict[str, str] = {}  # pid -> full_addr for retry
-
-        if not args.skip_meteora and resolved_addresses:
-            print(f"\nFetching Meteora PnL data...")
-
-            meteora_calc = MeteoraPnlCalculator()
-
-            # Build closeable_ids set (only positions that will be used)
-            closeable_ids = set()
-            for e in event_parser.close_events:
-                closeable_ids.add(e.position_id)
-            for e in event_parser.rug_events:
-                if e.position_id:
-                    closeable_ids.add(e.position_id)
-            for e in event_parser.failsafe_events:
-                closeable_ids.add(e.position_id)
-
-            # Filter to only fetch closeable positions that aren't already complete or already have Meteora data
-            addresses_to_fetch = {pid: addr for pid, addr in resolved_addresses.items()
-                                  if pid in closeable_ids
-                                  and pid not in already_complete_ids
-                                  and pid not in already_meteora_ids}
-
-            total = len(addresses_to_fetch)
-            for i, (pid, full_addr) in enumerate(addresses_to_fetch.items(), 1):
-                print(f"  Fetching {i}/{total}: {pid}...", end='', flush=True)
-                result = meteora_calc.calculate_pnl(full_addr)
-                if result:
-                    recovered = result.withdrawn_sol + result.fees_sol
-                    if recovered < Decimal('0.001'):
-                        print(f" PnL: unknown (recovered {recovered:.4f} SOL ~= total loss, unreliable)")
-                    else:
-                        meteora_results[pid] = result
-                        print(f" PnL: {result.pnl_sol:.4f} SOL (${result.pnl_usd:.2f})")
-                else:
-                    print(f" FAILED")
-                    meteora_failed[pid] = full_addr
-
-            print(f"  Retrieved PnL for {len(meteora_results)} positions")
-        elif args.skip_meteora:
-            print(f"\nSkipping Meteora API (--skip-meteora)")
-        else:
-            print(f"\nSkipping Meteora API (no resolved addresses)")
+        meteora_results, meteora_failed = _calculate_meteora_pnl(event_parser, args, resolved_addresses, already_complete_ids, already_meteora_ids)
 
         # Step 5: Match positions
         print(f"\nMatching positions...")
