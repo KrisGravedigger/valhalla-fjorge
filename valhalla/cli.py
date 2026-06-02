@@ -262,6 +262,74 @@ def _read_and_parse_input_files(input_files, args):
     return event_parser, processed_files
 
 
+def _resolve_addresses(event_parser, args, cache_file, already_complete_ids, positions_csv):
+    # Step 3: Resolve addresses
+    resolved_addresses: Dict[str, str] = {}
+    cache = AddressCache(cache_file)
+
+    if not args.skip_rpc:
+        print(f"\nResolving position addresses via Solana RPC...")
+        rpc_client = SolanaRpcClient(args.rpc_url)
+        resolver = PositionResolver(cache, rpc_client)
+
+        # Collect all events with position IDs and tx signatures
+        # Check cache first - only hit RPC for positions not already cached
+        seen_pids = set()
+        events_to_resolve = []
+        cache_hits = 0
+        for event in event_parser.open_events + event_parser.close_events + event_parser.failsafe_events:
+            if event.position_id not in seen_pids:
+                if event.position_id not in already_complete_ids:
+                    seen_pids.add(event.position_id)
+                    cached_addr = cache.get(event.position_id)
+                    if cached_addr:
+                        resolved_addresses[event.position_id] = cached_addr
+                        cache_hits += 1
+                    elif event.tx_signatures:
+                        events_to_resolve.append((event.position_id, event.tx_signatures))
+
+        total = len(events_to_resolve)
+        if cache_hits:
+            print(f"  {cache_hits} positions loaded from cache, {total} to resolve via RPC")
+        for i, (pid, sigs) in enumerate(events_to_resolve, 1):
+            print(f"  Resolving {i}/{total}: {pid}...", end='', flush=True)
+            full_addr = resolver.resolve(pid, sigs)
+            if full_addr:
+                resolved_addresses[pid] = full_addr
+                print(f" OK ({full_addr[:8]}...)")
+            else:
+                print(f" NOT FOUND")
+
+        print(f"  Resolved {len(resolved_addresses)} addresses")
+        cache.save()
+    else:
+        print(f"\nSkipping RPC resolution (--skip-rpc)")
+        # Load from cache only
+        for event in event_parser.open_events + event_parser.close_events + event_parser.failsafe_events:
+            cached = cache.get(event.position_id)
+            if cached:
+                resolved_addresses[event.position_id] = cached
+        print(f"  Loaded {len(resolved_addresses)} addresses from cache")
+
+    # Seed resolved_addresses from existing lpagent rows in positions.csv.
+    # Without this, lpagent_backfill positions that appear in a new Discord
+    # archive file can't have Meteora called (no cache hit, no tx_sig from Discord)
+    # -> Discord merge produces pnl_source=pending with empty full_address.
+    if positions_csv.exists():
+        lpagent_seeded = 0
+        with open(positions_csv, 'r', encoding='utf-8') as _f:
+            for _row in csv.DictReader(_f):
+                _pid = _row.get('position_id', '').strip()
+                _addr = _row.get('full_address', '').strip()
+                if _pid and _addr and _row.get('pnl_source') == 'lpagent' and _pid not in resolved_addresses:
+                    resolved_addresses[_pid] = _addr
+                    lpagent_seeded += 1
+        if lpagent_seeded:
+            print(f"  Seeded {lpagent_seeded} address(es) from lpagent_backfill rows")
+
+    return resolved_addresses, cache
+
+
 def main():
     # If run with no arguments, show interactive menu
     if len(sys.argv) == 1:
@@ -410,69 +478,7 @@ def main():
             if already_complete_ids:
                 print(f"  Skipping {len(already_complete_ids)} already-complete positions")
 
-        # Step 3: Resolve addresses
-        resolved_addresses: Dict[str, str] = {}
-        cache = AddressCache(cache_file)
-
-        if not args.skip_rpc:
-            print(f"\nResolving position addresses via Solana RPC...")
-            rpc_client = SolanaRpcClient(args.rpc_url)
-            resolver = PositionResolver(cache, rpc_client)
-
-            # Collect all events with position IDs and tx signatures
-            # Check cache first - only hit RPC for positions not already cached
-            seen_pids = set()
-            events_to_resolve = []
-            cache_hits = 0
-            for event in event_parser.open_events + event_parser.close_events + event_parser.failsafe_events:
-                if event.position_id not in seen_pids:
-                    if event.position_id not in already_complete_ids:
-                        seen_pids.add(event.position_id)
-                        cached_addr = cache.get(event.position_id)
-                        if cached_addr:
-                            resolved_addresses[event.position_id] = cached_addr
-                            cache_hits += 1
-                        elif event.tx_signatures:
-                            events_to_resolve.append((event.position_id, event.tx_signatures))
-
-            total = len(events_to_resolve)
-            if cache_hits:
-                print(f"  {cache_hits} positions loaded from cache, {total} to resolve via RPC")
-            for i, (pid, sigs) in enumerate(events_to_resolve, 1):
-                print(f"  Resolving {i}/{total}: {pid}...", end='', flush=True)
-                full_addr = resolver.resolve(pid, sigs)
-                if full_addr:
-                    resolved_addresses[pid] = full_addr
-                    print(f" OK ({full_addr[:8]}...)")
-                else:
-                    print(f" NOT FOUND")
-
-            print(f"  Resolved {len(resolved_addresses)} addresses")
-            cache.save()
-        else:
-            print(f"\nSkipping RPC resolution (--skip-rpc)")
-            # Load from cache only
-            for event in event_parser.open_events + event_parser.close_events + event_parser.failsafe_events:
-                cached = cache.get(event.position_id)
-                if cached:
-                    resolved_addresses[event.position_id] = cached
-            print(f"  Loaded {len(resolved_addresses)} addresses from cache")
-
-        # Seed resolved_addresses from existing lpagent rows in positions.csv.
-        # Without this, lpagent_backfill positions that appear in a new Discord
-        # archive file can't have Meteora called (no cache hit, no tx_sig from Discord)
-        # -> Discord merge produces pnl_source=pending with empty full_address.
-        if positions_csv.exists():
-            lpagent_seeded = 0
-            with open(positions_csv, 'r', encoding='utf-8') as _f:
-                for _row in csv.DictReader(_f):
-                    _pid = _row.get('position_id', '').strip()
-                    _addr = _row.get('full_address', '').strip()
-                    if _pid and _addr and _row.get('pnl_source') == 'lpagent' and _pid not in resolved_addresses:
-                        resolved_addresses[_pid] = _addr
-                        lpagent_seeded += 1
-            if lpagent_seeded:
-                print(f"  Seeded {lpagent_seeded} address(es) from lpagent_backfill rows")
+        resolved_addresses, cache = _resolve_addresses(event_parser, args, cache_file, already_complete_ids, positions_csv)
 
         # Step 4: Calculate Meteora PnL
         meteora_results: Dict[str, MeteoraPnlResult] = {}
