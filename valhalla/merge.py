@@ -11,6 +11,95 @@ from .models import MatchedPosition, OpenEvent, normalize_token_age, make_iso_da
 from .csv_writer import CsvWriter
 
 
+def parse_optional_decimal(val: str) -> Optional[Decimal]:
+    if not val or val.strip() == '':
+        return None
+    return Decimal(val)
+
+
+def parse_int(val: str) -> int:
+    if not val or val.strip() == '':
+        return 0
+    return int(float(val))
+
+
+def parse_optional_int(val: str) -> Optional[int]:
+    if not val or val.strip() == '':
+        return None
+    return int(float(val))
+
+
+def parse_float(val: str) -> float:
+    if not val or val.strip() == '':
+        return 0.0
+    return float(val)
+
+
+def parse_optional_float(val: str) -> Optional[float]:
+    if not val or val.strip() == '':
+        return None
+    return float(val)
+
+
+def _row_to_matched_position(row, position_id):
+    return MatchedPosition(
+        target_wallet=row.get('target_wallet', ''),
+        token=row.get('token', ''),
+        position_type=row.get('position_type', ''),
+        sol_deployed=parse_optional_decimal(row.get('sol_deployed', '')),
+        sol_received=parse_optional_decimal(row.get('sol_received', '')),
+        pnl_sol=parse_optional_decimal(row.get('pnl_sol', '')),
+        pnl_pct=parse_optional_decimal(row.get('pnl_pct', '')),
+        close_reason=row.get('close_reason', ''),
+        mc_at_open=parse_float(row.get('mc_at_open', '0')),
+        jup_score=parse_int(row.get('jup_score', '0')),
+        token_age=row.get('token_age', ''),
+        token_age_days=parse_optional_int(row.get('token_age_days', '')),
+        token_age_hours=parse_optional_int(row.get('token_age_hours', '')),
+        price_drop_pct=parse_optional_float(row.get('price_drop_pct', '')),
+        position_id=position_id,
+        full_address=row.get('full_address', ''),
+        pnl_source=row.get('pnl_source', 'pending'),
+        meteora_deposited=parse_optional_decimal(row.get('meteora_deposited', '')),
+        meteora_withdrawn=parse_optional_decimal(row.get('meteora_withdrawn', '')),
+        meteora_fees=parse_optional_decimal(row.get('meteora_fees', '')),
+        meteora_pnl=parse_optional_decimal(row.get('meteora_pnl', '')),
+        datetime_open=row.get('datetime_open', ''),
+        datetime_close=row.get('datetime_close', ''),
+        target_wallet_address=row.get('target_wallet_address') or None,
+        target_tx_signature=row.get('target_tx_signature') or None,
+        source_wallet_hold_min=parse_optional_int(row.get('source_wallet_hold_min', '')),
+        source_wallet_pnl_pct=parse_optional_decimal(row.get('source_wallet_pnl_pct', '')),
+        source_wallet_scenario=row.get('source_wallet_scenario') or None,
+        original_wallet=row.get('original_wallet', '')
+    )
+
+
+def _open_event_to_matched_stub(event, position_id):
+    open_as_matched = MatchedPosition(
+        target_wallet=event.target,
+        token=event.token_name,
+        position_type=event.position_type,
+        sol_deployed=Decimal(str(event.your_sol)) if event.your_sol else None,
+        sol_received=None, pnl_sol=None, pnl_pct=None,
+        close_reason='', mc_at_open=event.market_cap,
+        jup_score=event.jup_score,
+        token_age=event.token_age,
+        token_age_days=None, token_age_hours=None,
+        price_drop_pct=None, position_id=position_id,
+        full_address='', pnl_source='',
+        meteora_deposited=None, meteora_withdrawn=None,
+        meteora_fees=None, meteora_pnl=None,
+        datetime_open=make_iso_datetime(event.date, event.timestamp) if event.timestamp else '',
+        datetime_close=''
+    )
+    if event.token_age:
+        days, hours = normalize_token_age(event.token_age)
+        open_as_matched.token_age_days = days
+        open_as_matched.token_age_hours = hours
+    return open_as_matched
+
+
 def merge_with_existing_csv(
     new_matched: List[MatchedPosition],
     new_still_open: List[OpenEvent],
@@ -44,32 +133,6 @@ def merge_with_existing_csv(
 
     print(f"  Existing positions: {len(existing_rows)}")
 
-    # Helper functions for parsing CSV values
-    def parse_optional_decimal(val: str) -> Optional[Decimal]:
-        if not val or val.strip() == '':
-            return None
-        return Decimal(val)
-
-    def parse_int(val: str) -> int:
-        if not val or val.strip() == '':
-            return 0
-        return int(float(val))
-
-    def parse_optional_int(val: str) -> Optional[int]:
-        if not val or val.strip() == '':
-            return None
-        return int(float(val))
-
-    def parse_float(val: str) -> float:
-        if not val or val.strip() == '':
-            return 0.0
-        return float(val)
-
-    def parse_optional_float(val: str) -> Optional[float]:
-        if not val or val.strip() == '':
-            return None
-        return float(val)
-
     # Convert existing rows to MatchedPosition objects, indexed by position_id
     existing_by_id = {}
 
@@ -80,37 +143,7 @@ def merge_with_existing_csv(
         if not position_id:
             continue
 
-        existing_pos = MatchedPosition(
-            target_wallet=row.get('target_wallet', ''),
-            token=row.get('token', ''),
-            position_type=row.get('position_type', ''),
-            sol_deployed=parse_optional_decimal(row.get('sol_deployed', '')),
-            sol_received=parse_optional_decimal(row.get('sol_received', '')),
-            pnl_sol=parse_optional_decimal(row.get('pnl_sol', '')),
-            pnl_pct=parse_optional_decimal(row.get('pnl_pct', '')),
-            close_reason=row.get('close_reason', ''),
-            mc_at_open=parse_float(row.get('mc_at_open', '0')),
-            jup_score=parse_int(row.get('jup_score', '0')),
-            token_age=row.get('token_age', ''),
-            token_age_days=parse_optional_int(row.get('token_age_days', '')),
-            token_age_hours=parse_optional_int(row.get('token_age_hours', '')),
-            price_drop_pct=parse_optional_float(row.get('price_drop_pct', '')),
-            position_id=position_id,
-            full_address=row.get('full_address', ''),
-            pnl_source=row.get('pnl_source', 'pending'),
-            meteora_deposited=parse_optional_decimal(row.get('meteora_deposited', '')),
-            meteora_withdrawn=parse_optional_decimal(row.get('meteora_withdrawn', '')),
-            meteora_fees=parse_optional_decimal(row.get('meteora_fees', '')),
-            meteora_pnl=parse_optional_decimal(row.get('meteora_pnl', '')),
-            datetime_open=row.get('datetime_open', ''),
-            datetime_close=row.get('datetime_close', ''),
-            target_wallet_address=row.get('target_wallet_address') or None,
-            target_tx_signature=row.get('target_tx_signature') or None,
-            source_wallet_hold_min=parse_optional_int(row.get('source_wallet_hold_min', '')),
-            source_wallet_pnl_pct=parse_optional_decimal(row.get('source_wallet_pnl_pct', '')),
-            source_wallet_scenario=row.get('source_wallet_scenario') or None,
-            original_wallet=row.get('original_wallet', '')
-        )
+        existing_pos = _row_to_matched_position(row, position_id)
 
         existing_by_id[position_id] = existing_pos
 
@@ -256,28 +289,7 @@ def merge_with_existing_csv(
             elif new_still_open_event:
                 # Open data came as still_open (new file only had the open, not the close)
                 # Build a temporary MatchedPosition from the OpenEvent to use enrich helper
-                open_as_matched = MatchedPosition(
-                    target_wallet=new_still_open_event.target,
-                    token=new_still_open_event.token_name,
-                    position_type=new_still_open_event.position_type,
-                    sol_deployed=Decimal(str(new_still_open_event.your_sol)) if new_still_open_event.your_sol else None,
-                    sol_received=None, pnl_sol=None, pnl_pct=None,
-                    close_reason='', mc_at_open=new_still_open_event.market_cap,
-                    jup_score=new_still_open_event.jup_score,
-                    token_age=new_still_open_event.token_age,
-                    token_age_days=None, token_age_hours=None,
-                    price_drop_pct=None, position_id=position_id,
-                    full_address='', pnl_source='',
-                    meteora_deposited=None, meteora_withdrawn=None,
-                    meteora_fees=None, meteora_pnl=None,
-                    datetime_open=make_iso_datetime(new_still_open_event.date, new_still_open_event.timestamp) if new_still_open_event.timestamp else '',
-                    datetime_close=''
-                )
-                # Normalize token_age
-                if new_still_open_event.token_age:
-                    days, hours = normalize_token_age(new_still_open_event.token_age)
-                    open_as_matched.token_age_days = days
-                    open_as_matched.token_age_hours = hours
+                open_as_matched = _open_event_to_matched_stub(new_still_open_event, position_id)
                 enriched = enrich_existing_with_open(existing_pos, open_as_matched)
                 merged_matched.append(enriched)
                 enriched_count += 1
@@ -335,27 +347,7 @@ def merge_with_existing_csv(
             elif new_still_open_event:
                 # Open event arrived for lpagent position — enrich with open-side data,
                 # keep lpagent financial fields (Meteora PnL data).
-                open_as_matched = MatchedPosition(
-                    target_wallet=new_still_open_event.target,
-                    token=new_still_open_event.token_name,
-                    position_type=new_still_open_event.position_type,
-                    sol_deployed=Decimal(str(new_still_open_event.your_sol)) if new_still_open_event.your_sol else None,
-                    sol_received=None, pnl_sol=None, pnl_pct=None,
-                    close_reason='', mc_at_open=new_still_open_event.market_cap,
-                    jup_score=new_still_open_event.jup_score,
-                    token_age=new_still_open_event.token_age,
-                    token_age_days=None, token_age_hours=None,
-                    price_drop_pct=None, position_id=position_id,
-                    full_address='', pnl_source='',
-                    meteora_deposited=None, meteora_withdrawn=None,
-                    meteora_fees=None, meteora_pnl=None,
-                    datetime_open=make_iso_datetime(new_still_open_event.date, new_still_open_event.timestamp) if new_still_open_event.timestamp else '',
-                    datetime_close=''
-                )
-                if new_still_open_event.token_age:
-                    days, hours = normalize_token_age(new_still_open_event.token_age)
-                    open_as_matched.token_age_days = days
-                    open_as_matched.token_age_hours = hours
+                open_as_matched = _open_event_to_matched_stub(new_still_open_event, position_id)
                 enriched = enrich_existing_with_open(existing_pos, open_as_matched)
                 # Mark as recovered-from-Discord-open but still awaiting Meteora close data
                 enriched.pnl_source = "pending_need_meteora_close"
@@ -409,27 +401,7 @@ def merge_with_existing_csv(
             if existing_pos.close_reason not in ('still_open', ''):
                 # Existing has close data (e.g. failsafe_unknown_open with pnl_source=pending).
                 # Don't downgrade to still_open — enrich the existing close with open data instead.
-                open_as_matched = MatchedPosition(
-                    target_wallet=new_still_open_event.target,
-                    token=new_still_open_event.token_name,
-                    position_type=new_still_open_event.position_type,
-                    sol_deployed=Decimal(str(new_still_open_event.your_sol)) if new_still_open_event.your_sol else None,
-                    sol_received=None, pnl_sol=None, pnl_pct=None,
-                    close_reason='', mc_at_open=new_still_open_event.market_cap,
-                    jup_score=new_still_open_event.jup_score,
-                    token_age=new_still_open_event.token_age,
-                    token_age_days=None, token_age_hours=None,
-                    price_drop_pct=None, position_id=position_id,
-                    full_address='', pnl_source='',
-                    meteora_deposited=None, meteora_withdrawn=None,
-                    meteora_fees=None, meteora_pnl=None,
-                    datetime_open=make_iso_datetime(new_still_open_event.date, new_still_open_event.timestamp) if new_still_open_event.timestamp else '',
-                    datetime_close=''
-                )
-                if new_still_open_event.token_age:
-                    days, hours = normalize_token_age(new_still_open_event.token_age)
-                    open_as_matched.token_age_days = days
-                    open_as_matched.token_age_hours = hours
+                open_as_matched = _open_event_to_matched_stub(new_still_open_event, position_id)
                 enriched = enrich_existing_with_open(existing_pos, open_as_matched)
                 merged_matched.append(enriched)
                 upgraded_count += 1
@@ -534,31 +506,6 @@ def merge_positions_csvs(csv_paths: List[str], output_dir: str) -> None:
             return Decimal('0')
         return Decimal(val)
 
-    def parse_optional_decimal(val: str) -> Optional[Decimal]:
-        if not val or val.strip() == '':
-            return None
-        return Decimal(val)
-
-    def parse_int(val: str) -> int:
-        if not val or val.strip() == '':
-            return 0
-        return int(float(val))
-
-    def parse_optional_int(val: str) -> Optional[int]:
-        if not val or val.strip() == '':
-            return None
-        return int(float(val))
-
-    def parse_float(val: str) -> float:
-        if not val or val.strip() == '':
-            return 0.0
-        return float(val)
-
-    def parse_optional_float(val: str) -> Optional[float]:
-        if not val or val.strip() == '':
-            return None
-        return float(val)
-
     matched_positions = []
 
     for row in deduplicated_rows:
@@ -566,37 +513,7 @@ def merge_positions_csvs(csv_paths: List[str], output_dir: str) -> None:
         if row.get('close_reason') == 'still_open':
             continue
 
-        matched_positions.append(MatchedPosition(
-            target_wallet=row.get('target_wallet', ''),
-            token=row.get('token', ''),
-            position_type=row.get('position_type', ''),
-            sol_deployed=parse_optional_decimal(row.get('sol_deployed', '')),
-            sol_received=parse_optional_decimal(row.get('sol_received', '')),
-            pnl_sol=parse_optional_decimal(row.get('pnl_sol', '')),
-            pnl_pct=parse_optional_decimal(row.get('pnl_pct', '')),
-            close_reason=row.get('close_reason', ''),
-            mc_at_open=parse_float(row.get('mc_at_open', '0')),
-            jup_score=parse_int(row.get('jup_score', '0')),
-            token_age=row.get('token_age', ''),
-            token_age_days=parse_optional_int(row.get('token_age_days', '')),
-            token_age_hours=parse_optional_int(row.get('token_age_hours', '')),
-            price_drop_pct=parse_optional_float(row.get('price_drop_pct', '')),
-            position_id=row.get('position_id', ''),
-            full_address=row.get('full_address', ''),
-            pnl_source=row.get('pnl_source', 'pending'),
-            meteora_deposited=parse_optional_decimal(row.get('meteora_deposited', '')),
-            meteora_withdrawn=parse_optional_decimal(row.get('meteora_withdrawn', '')),
-            meteora_fees=parse_optional_decimal(row.get('meteora_fees', '')),
-            meteora_pnl=parse_optional_decimal(row.get('meteora_pnl', '')),
-            datetime_open=row.get('datetime_open', ''),
-            datetime_close=row.get('datetime_close', ''),
-            target_wallet_address=row.get('target_wallet_address') or None,
-            target_tx_signature=row.get('target_tx_signature') or None,
-            source_wallet_hold_min=parse_optional_int(row.get('source_wallet_hold_min', '')),
-            source_wallet_pnl_pct=parse_optional_decimal(row.get('source_wallet_pnl_pct', '')),
-            source_wallet_scenario=row.get('source_wallet_scenario') or None,
-            original_wallet=row.get('original_wallet', '')
-        ))
+        matched_positions.append(_row_to_matched_position(row, row.get('position_id', '')))
 
     # Write merged positions.csv
     output_path = Path(output_dir)
