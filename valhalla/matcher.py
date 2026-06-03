@@ -19,6 +19,31 @@ class PositionMatcher:
     def __init__(self, parser: EventParser):
         self.parser = parser
 
+    def _build_event_indexes(self) -> Tuple[Dict[str, OpenEvent], set, Dict[str, List[AddLiquidityEvent]]]:
+        # Index opens by position_id
+        open_by_id: Dict[str, OpenEvent] = {}
+        for event in self.parser.open_events:
+            open_by_id[event.position_id] = event
+
+        # Index failsafe events by position_id
+        failsafe_ids = {e.position_id for e in self.parser.failsafe_events}
+
+        # Index add_liquidity events by position_id
+        liquidity_by_id: Dict[str, List[AddLiquidityEvent]] = defaultdict(list)
+        for event in self.parser.add_liquidity_events:
+            liquidity_by_id[event.position_id].append(event)
+
+        return open_by_id, failsafe_ids, liquidity_by_id
+
+    def _sol_deployed(self, open_event, liquidity_by_id) -> Decimal:
+        sol_deployed = Decimal(str(open_event.your_sol))
+        for liq in liquidity_by_id.get(open_event.position_id, []):
+            sol_deployed += Decimal(str(liq.amount_sol))
+        return sol_deployed
+
+    def _meteora_pnl_pct(self, pnl_sol, deposited_sol) -> Decimal:
+        return (pnl_sol / deposited_sol * Decimal('100')) if deposited_sol > 0 else Decimal('0')
+
     def match_positions(self, meteora_results: Dict[str, MeteoraPnlResult],
                        resolved_addresses: Dict[str, str],
                        use_discord_pnl: bool = False) -> Tuple[List[MatchedPosition], List[OpenEvent]]:
@@ -33,18 +58,7 @@ class PositionMatcher:
         """
         matched_positions: List[MatchedPosition] = []
 
-        # Index opens by position_id
-        open_by_id: Dict[str, OpenEvent] = {}
-        for event in self.parser.open_events:
-            open_by_id[event.position_id] = event
-
-        # Index failsafe events by position_id
-        failsafe_ids = {e.position_id for e in self.parser.failsafe_events}
-
-        # Index add_liquidity events by position_id
-        liquidity_by_id: Dict[str, List[AddLiquidityEvent]] = defaultdict(list)
-        for event in self.parser.add_liquidity_events:
-            liquidity_by_id[event.position_id].append(event)
+        open_by_id, failsafe_ids, liquidity_by_id = self._build_event_indexes()
 
         # Match closes to opens by position_id
         matched_ids = set()
@@ -57,11 +71,7 @@ class PositionMatcher:
 
             if pid in open_by_id:
                 open_event = open_by_id[pid]
-                sol_deployed = Decimal(str(open_event.your_sol))
-
-                # Add any extra liquidity
-                for liq in liquidity_by_id.get(pid, []):
-                    sol_deployed += Decimal(str(liq.amount_sol))
+                sol_deployed = self._sol_deployed(open_event, liquidity_by_id)
 
                 # Discord PnL (fallback)
                 sol_received = Decimal(str(close_event.ending_sol)) - Decimal(str(close_event.starting_sol))
@@ -85,7 +95,7 @@ class PositionMatcher:
                     # Use Meteora PnL (USD-based, accounts for both token sides)
                     pnl_source = "meteora"
                     meteora_pnl = meteora_result.pnl_sol
-                    meteora_pnl_pct = (meteora_pnl / meteora_result.deposited_sol * Decimal('100')) if meteora_result.deposited_sol > 0 else Decimal('0')
+                    meteora_pnl_pct = self._meteora_pnl_pct(meteora_pnl, meteora_result.deposited_sol)
 
                     matched_positions.append(MatchedPosition(
                         target_wallet=close_event.target,
@@ -180,7 +190,7 @@ class PositionMatcher:
                 if meteora_result:
                     # Use Meteora PnL even for unknown_open (Meteora gives us full position data)
                     meteora_pnl = meteora_result.pnl_sol
-                    meteora_pnl_pct = (meteora_pnl / meteora_result.deposited_sol * Decimal('100')) if meteora_result.deposited_sol > 0 else Decimal('0')
+                    meteora_pnl_pct = self._meteora_pnl_pct(meteora_pnl, meteora_result.deposited_sol)
 
                     matched_positions.append(MatchedPosition(
                         target_wallet=close_event.target,
@@ -268,11 +278,7 @@ class PositionMatcher:
 
                 if pid in open_by_id:
                     open_event = open_by_id[pid]
-                    sol_deployed = Decimal(str(open_event.your_sol))
-
-                    # Add any extra liquidity
-                    for liq in liquidity_by_id.get(pid, []):
-                        sol_deployed += Decimal(str(liq.amount_sol))
+                    sol_deployed = self._sol_deployed(open_event, liquidity_by_id)
 
                     full_addr = resolved_addresses.get(pid, "")
                     meteora_result = meteora_results.get(pid)
@@ -280,7 +286,7 @@ class PositionMatcher:
                     if meteora_result:
                         # Use Meteora PnL even for rug events
                         meteora_pnl = meteora_result.pnl_sol
-                        meteora_pnl_pct = (meteora_pnl / meteora_result.deposited_sol * Decimal('100')) if meteora_result.deposited_sol > 0 else Decimal('0')
+                        meteora_pnl_pct = self._meteora_pnl_pct(meteora_pnl, meteora_result.deposited_sol)
 
                         matched_positions.append(MatchedPosition(
                             target_wallet=rug_event.target,
@@ -371,7 +377,7 @@ class PositionMatcher:
                     if meteora_result:
                         # Use Meteora PnL
                         meteora_pnl = meteora_result.pnl_sol
-                        meteora_pnl_pct = (meteora_pnl / meteora_result.deposited_sol * Decimal('100')) if meteora_result.deposited_sol > 0 else Decimal('0')
+                        meteora_pnl_pct = self._meteora_pnl_pct(meteora_pnl, meteora_result.deposited_sol)
 
                         matched_positions.append(MatchedPosition(
                             target_wallet=rug_event.target,
@@ -502,15 +508,11 @@ class PositionMatcher:
 
             if pid in open_by_id:
                 open_event = open_by_id[pid]
-                sol_deployed = Decimal(str(open_event.your_sol))
-
-                # Add any extra liquidity
-                for liq in liquidity_by_id.get(pid, []):
-                    sol_deployed += Decimal(str(liq.amount_sol))
+                sol_deployed = self._sol_deployed(open_event, liquidity_by_id)
 
                 if meteora_result:
                     meteora_pnl = meteora_result.pnl_sol
-                    meteora_pnl_pct = (meteora_pnl / meteora_result.deposited_sol * Decimal('100')) if meteora_result.deposited_sol > 0 else Decimal('0')
+                    meteora_pnl_pct = self._meteora_pnl_pct(meteora_pnl, meteora_result.deposited_sol)
 
                     matched_positions.append(MatchedPosition(
                         target_wallet=open_event.target,
@@ -568,7 +570,7 @@ class PositionMatcher:
                 # Failsafe without matching open
                 if meteora_result:
                     meteora_pnl = meteora_result.pnl_sol
-                    meteora_pnl_pct = (meteora_pnl / meteora_result.deposited_sol * Decimal('100')) if meteora_result.deposited_sol > 0 else Decimal('0')
+                    meteora_pnl_pct = self._meteora_pnl_pct(meteora_pnl, meteora_result.deposited_sol)
 
                     matched_positions.append(MatchedPosition(
                         target_wallet="unknown",
@@ -632,16 +634,14 @@ class PositionMatcher:
 
             if pid in open_by_id:
                 open_event = open_by_id[pid]
-                sol_deployed = Decimal(str(open_event.your_sol))
-                for liq in liquidity_by_id.get(pid, []):
-                    sol_deployed += Decimal(str(liq.amount_sol))
+                sol_deployed = self._sol_deployed(open_event, liquidity_by_id)
 
                 full_addr = resolved_addresses.get(pid, "")
                 meteora_result = meteora_results.get(pid)
 
                 if meteora_result:
                     meteora_pnl = meteora_result.pnl_sol
-                    meteora_pnl_pct = (meteora_pnl / meteora_result.deposited_sol * Decimal('100')) if meteora_result.deposited_sol > 0 else Decimal('0')
+                    meteora_pnl_pct = self._meteora_pnl_pct(meteora_pnl, meteora_result.deposited_sol)
                     matched_positions.append(MatchedPosition(
                         target_wallet=ac_event.target,
                         token=open_event.token_name,
@@ -700,7 +700,7 @@ class PositionMatcher:
                 meteora_result = meteora_results.get(pid)
                 if meteora_result:
                     meteora_pnl = meteora_result.pnl_sol
-                    meteora_pnl_pct = (meteora_pnl / meteora_result.deposited_sol * Decimal('100')) if meteora_result.deposited_sol > 0 else Decimal('0')
+                    meteora_pnl_pct = self._meteora_pnl_pct(meteora_pnl, meteora_result.deposited_sol)
                     matched_positions.append(MatchedPosition(
                         target_wallet=ac_event.target,
                         token="unknown",
