@@ -20,45 +20,27 @@ from .action_items import build_action_items, load_insuf_balance_csv
 from .formatters import fmt_mc, fmt_pct, scorecard_action_hints, scenario_label
 from .tables import build_loss_detail_table, md_table
 
+# ------------------------------------------------------------------
+# Local helpers (preserved from original function)
+# ------------------------------------------------------------------
+def _fmt_age_hours(hours: float) -> str:
+    return f"{hours:.0f}h" if hours < 24 else f"{hours / 24:.0f}d"
 
-def generate_loss_report(
-    positions: List,
-    output_path: str,
-    insufficient_balance_csv: str = None,
-) -> None:
-    """Generate loss_analysis.md from matched positions."""
-    analyzer = LossAnalyzer()
-    result = analyzer.analyze(positions)
-    inactive_wallets = {sc.wallet for sc in result.wallet_scorecards if sc.status == "inactive" and sc.wallet}
+def _fmt_age_threshold(threshold: float) -> str:
+    """Format token_age_hours threshold: hours < 24 as Xh, hours >= 24 as Xd."""
+    if threshold < 24:
+        return f"{threshold:.0f}h"
+    return f"{threshold / 24:.0f}d"
 
-    # Load persistent recommendation state
-    state_path = str(Path(output_path).parent / ".recommendations_state.json")
-    rec_state = _tracker.load_state(state_path)
-    wallet_recs = generate_wallet_recommendations(positions)
-    now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
-    date_str = datetime.now().strftime("%Y-%m-%d")
+# PARAM_LABELS: used in Section 7 (Filter Backtest) and Section 8 (per-wallet loop)
+PARAM_LABELS = {
+    "jup_score": "jup_score (minimum threshold)",
+    "mc_at_open": "mc_at_open (minimum threshold)",
+    "token_age_hours": "token_age_hours (minimum threshold)",
+}
 
-    # ------------------------------------------------------------------
-    # Local helpers (preserved from original function)
-    # ------------------------------------------------------------------
-    def _fmt_age_hours(hours: float) -> str:
-        return f"{hours:.0f}h" if hours < 24 else f"{hours / 24:.0f}d"
-
-    def _fmt_age_threshold(threshold: float) -> str:
-        """Format token_age_hours threshold: hours < 24 as Xh, hours >= 24 as Xd."""
-        if threshold < 24:
-            return f"{threshold:.0f}h"
-        return f"{threshold / 24:.0f}d"
-
-    # PARAM_LABELS: used in Section 7 (Filter Backtest) and Section 8 (per-wallet loop)
-    PARAM_LABELS = {
-        "jup_score": "jup_score (minimum threshold)",
-        "mc_at_open": "mc_at_open (minimum threshold)",
-        "token_age_hours": "token_age_hours (minimum threshold)",
-    }
-
+def _render_header(date_str: str, now_str: str) -> List[str]:
     lines: List[str] = []
-
     # ------------------------------------------------------------------
     # Report header
     # ------------------------------------------------------------------
@@ -80,7 +62,11 @@ def generate_loss_report(
     lines.append("- [7. Global Filter Backtest](#filter-backtest)")
     lines.append("- [8. Per-Wallet Details](#per-wallet-details)")
     lines.append("")
+    return lines
 
+
+def _render_executive_summary(result) -> List[str]:
+    lines: List[str] = []
     # ------------------------------------------------------------------
     # Section 1: Executive Summary
     # ------------------------------------------------------------------
@@ -125,7 +111,19 @@ def generate_loss_report(
     elif active_scorecards:
         lines.append("> All wallets within normal range — no urgent actions.")
     lines.append("")
+    return lines
 
+
+def _render_action_items(
+    result,
+    positions,
+    wallet_recs,
+    insuf_events,
+    _util_points,
+    inactive_wallets,
+    rec_state,
+) -> tuple[List[str], List[str]]:
+    lines: List[str] = []
     # ------------------------------------------------------------------
     # Section 2: Pilne działania
     # ------------------------------------------------------------------
@@ -147,12 +145,6 @@ def generate_loss_report(
         )
     lines.append("")
 
-    insuf_events = load_insuf_balance_csv(insufficient_balance_csv) if insufficient_balance_csv else []
-    # Compute utilization once for both chart and action items
-    _util_points = None
-    if PORTFOLIO_TOTAL_SOL > 0:
-        from valhalla.utilization import compute_hourly_utilization
-        _util_points = compute_hourly_utilization(positions, UTILIZATION_LOOKBACK_HOURS)
     action_items = build_action_items(result, positions, wallet_recs, insuf_events, _util_points)
     action_items = [item for item in action_items if not any(item.startswith(w) for w in inactive_wallets)]
 
@@ -169,13 +161,21 @@ def generate_loss_report(
             badge = _tracker.STATUS_BADGE[status]
             lines.append(f"{idx}. `{rec_id}` {badge} {item}")
     lines.append("")
+    return lines, active_action_items
 
+
+def _render_recent_large_losses(positions) -> List[str]:
+    lines: List[str] = []
     # ------------------------------------------------------------------
     # Section 3: Recent Large Losses
     # ------------------------------------------------------------------
     loss_detail_section = build_loss_detail_table(positions)
     lines.append(loss_detail_section)
+    return lines
 
+
+def _render_wallet_scorecard(result, positions, inactive_wallets, active_action_items) -> List[str]:
+    lines: List[str] = []
     # ------------------------------------------------------------------
     # Section 4: Wallet Scorecard
     # ------------------------------------------------------------------
@@ -243,7 +243,11 @@ def generate_loss_report(
         else:
             lines.append("_No wallets with recent activity._")
     lines.append("")
+    return lines
 
+
+def _render_filter_recommendations(wallet_recs, inactive_wallets) -> List[str]:
+    lines: List[str] = []
     # ------------------------------------------------------------------
     # Section 5: Rekomendacje filtrów
     # ------------------------------------------------------------------
@@ -262,7 +266,11 @@ def generate_loss_report(
         for rec in filter_recs:
             lines.append(f"- {rec.strip()}")
     lines.append("")
+    return lines
 
+
+def _render_loss_analysis(result, positions) -> List[str]:
+    lines: List[str] = []
     # ------------------------------------------------------------------
     # Section 6: Analiza strat
     # ------------------------------------------------------------------
@@ -440,7 +448,11 @@ def generate_loss_report(
         lines.append("- `comparable`: similar outcomes on both sides — no clear lesson from this position")
         lines.append("- `no_data` / `no_data`: API error or missing transaction data — could not analyze")
     lines.append("")
+    return lines
 
+
+def _render_global_filter_backtest(result) -> List[str]:
+    lines: List[str] = []
     # ------------------------------------------------------------------
     # Section 7: Filter Backtest (globalny)
     # ------------------------------------------------------------------
@@ -490,7 +502,11 @@ def generate_loss_report(
             table_rows,
         ))
         lines.append("")
+    return lines
 
+
+def _render_per_wallet_details(positions, inactive_wallets) -> List[str]:
+    lines: List[str] = []
     # ------------------------------------------------------------------
     # Section 8: Szczegóły per wallet
     # ------------------------------------------------------------------
@@ -614,6 +630,53 @@ def generate_loss_report(
     if wallet_sections_written == 0:
         lines.append("_No wallets with sufficient data for per-wallet analysis._")
         lines.append("")
+
+    return lines
+
+
+def generate_loss_report(
+    positions: List,
+    output_path: str,
+    insufficient_balance_csv: str = None,
+) -> None:
+    """Generate loss_analysis.md from matched positions."""
+    analyzer = LossAnalyzer()
+    result = analyzer.analyze(positions)
+    inactive_wallets = {sc.wallet for sc in result.wallet_scorecards if sc.status == "inactive" and sc.wallet}
+
+    # Load persistent recommendation state
+    state_path = str(Path(output_path).parent / ".recommendations_state.json")
+    rec_state = _tracker.load_state(state_path)
+    wallet_recs = generate_wallet_recommendations(positions)
+    now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
+    date_str = datetime.now().strftime("%Y-%m-%d")
+
+    insuf_events = load_insuf_balance_csv(insufficient_balance_csv) if insufficient_balance_csv else []
+    # Compute utilization once for both chart and action items
+    _util_points = None
+    if PORTFOLIO_TOTAL_SOL > 0:
+        from valhalla.utilization import compute_hourly_utilization
+        _util_points = compute_hourly_utilization(positions, UTILIZATION_LOOKBACK_HOURS)
+
+    lines: List[str] = []
+    lines += _render_header(date_str, now_str)
+    lines += _render_executive_summary(result)
+    section2_lines, active_action_items = _render_action_items(
+        result,
+        positions,
+        wallet_recs,
+        insuf_events,
+        _util_points,
+        inactive_wallets,
+        rec_state,
+    )
+    lines += section2_lines
+    lines += _render_recent_large_losses(positions)
+    lines += _render_wallet_scorecard(result, positions, inactive_wallets, active_action_items)
+    lines += _render_filter_recommendations(wallet_recs, inactive_wallets)
+    lines += _render_loss_analysis(result, positions)
+    lines += _render_global_filter_backtest(result)
+    lines += _render_per_wallet_details(positions, inactive_wallets)
 
     # Write file
     with open(output_path, 'w', encoding='utf-8') as f:
