@@ -136,9 +136,11 @@ def compute_nav(
     fees_sol = _ZERO
     rewards_sol = _ZERO
     for idx, pos in enumerate(positions, start=1):
-        emit(f"computing position {idx}/{len(positions)} {pos['address'][:8]}...")
+        logging.debug(
+            "computing position %s/%s %s", idx, len(positions), pos["address"][:8]
+        )
         pos_nav, pos_fees, pos_rewards = _compute_position_nav(
-            rpc_url, pos, degraded_mints, progress=emit
+            rpc_url, pos, degraded_mints
         )
         positions_nav_sol += pos_nav
         fees_sol += pos_fees
@@ -178,11 +180,9 @@ def _compute_position_nav(
     rpc_url: str,
     pos: dict[str, Any],
     degraded_mints: list[str],
-    progress: Optional[ProgressCallback] = None,
 ) -> tuple[Decimal, Decimal, Decimal]:
     lb_pair_str = str(pos["lb_pair"])
-    if progress:
-        progress(f"  resolving pool mints for {lb_pair_str[:8]}...")
+    logging.debug("resolving pool mints for %s", lb_pair_str[:8])
     pool = _get_pool_mints(rpc_url, lb_pair_str)
     mint_x = pool.get("mint_x")
     mint_y = pool.get("mint_y")
@@ -202,8 +202,7 @@ def _compute_position_nav(
     ba_addr_map = {
         idx: _bin_array_address(lb_pair_pk, idx) for idx in required_arrays
     }
-    if progress:
-        progress(f"  fetching {len(required_arrays)} bin arrays")
+    logging.debug("fetching %s bin arrays", len(required_arrays))
     ba_raw_list = _fetch_accounts(rpc_url, [str(ba_addr_map[idx]) for idx in required_arrays])
 
     bin_arrays: dict[int, dict[int, dict[str, int]]] = {}
@@ -240,8 +239,7 @@ def _compute_position_nav(
     )
 
     rewards_sol = _ZERO
-    if progress:
-        progress("  resolving reward mints")
+    logging.debug("resolving reward mints")
     reward_mints = _get_reward_mints(rpc_url, lb_pair_str)
     reward_raws = [int(pos["reward0_raw"]), int(pos["reward1_raw"])]
     for idx, (mint, amount_raw) in enumerate(zip(reward_mints, reward_raws)):
@@ -277,8 +275,7 @@ def _compute_idle_spl_sol(
         amount_raw = int(info["tokenAmount"]["amount"])
         if mint != SOL_MINT and amount_raw > 100:
             priced_accounts += 1
-            if progress:
-                progress(f"  pricing idle SPL {priced_accounts}: {mint[:8]}...")
+            logging.debug("pricing idle SPL %s: %s", priced_accounts, mint[:8])
         idle_spl_sol += _convert_idle_amount(rpc_url, mint, Decimal(amount_raw))
     return idle_spl_sol
 

@@ -9,6 +9,7 @@ Usage:
   python run_pipeline.py --nav-dry-run   # print NAV, no CSV write
   python run_pipeline.py --allow-degraded  # write NAV even if Jupiter prices partial
   python run_pipeline.py --skip-flow-scan  # skip SOL flow autoscan + chart
+  python run_pipeline.py --nav-verbose     # show per-position NAV detail (debug)
 """
 import io
 import json
@@ -93,6 +94,7 @@ def main() -> None:
     skip_pull = "--skip-pull" in args
     nav_dry_run = "--nav-dry-run" in args
     nav_allow_degraded = "--allow-degraded" in args
+    nav_verbose = "--nav-verbose" in args
     skip_flow = "--skip-flow-scan" in args
 
     now = datetime.now(timezone.utc)
@@ -146,6 +148,8 @@ def main() -> None:
         nav_cmd.append("--dry-run")
     if nav_allow_degraded:
         nav_cmd.append("--allow-degraded")
+    if nav_verbose:
+        nav_cmd.append("--verbose")
 
     rc = _run("Internal NAV snapshot", nav_cmd)
     if rc != 0:
