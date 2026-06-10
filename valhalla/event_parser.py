@@ -71,7 +71,7 @@ class EventParser:
     SWAP_PATTERN = r'Swapped\s+([\d,]+|all)\s+(.+?)\s+\((\S+)\)'
 
     # Insufficient balance patterns
-    INSUF_TARGET_PATTERN = r'Trade copied from:\s*(\S+)'
+    INSUF_TARGET_PATTERN = r'Trade copied from:\**\s*(\S+)'
     INSUF_SOL_BALANCE_PATTERN = r'Your SOL balance:\s*([\d.]+)\s*SOL'
     INSUF_EFFECTIVE_PATTERN = r'Total effective balance:\s*([\d.]+)\s*SOL'
     INSUF_REQUIRED_PATTERN = r'Required amount for this trade:\s*([\d.]+)\s*SOL'
