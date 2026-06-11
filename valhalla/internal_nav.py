@@ -32,6 +32,15 @@ class NavResult:
     n_positions: int
     degraded: bool
     degraded_mints: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
+class _MintQuoteResult:
+    value_sol: Decimal
+    degraded: bool
+    reason: str = ""
+    warning: Optional[str] = None
 
 
 # Verified constants - DO NOT derive from Meteora IDL docs.
@@ -42,6 +51,10 @@ SOL_MINT = "So11111111111111111111111111111111111111112"
 TOKEN_PROGRAM = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
 LAMPORTS = 1_000_000_000
 JUPITER_DELAY = 0.15
+U64_MAX = 2**64 - 1
+JUPITER_REFERENCE_AMOUNT_RAW = 1_000_000_000
+IMMATERIAL_NAV_THRESHOLD_SOL = Decimal("0.01")
+SUSPICIOUS_SPL_RAW_AMOUNT = U64_MAX // 10
 
 # PositionV2 layout constants
 POS_LB_PAIR = 8
@@ -114,6 +127,7 @@ def compute_nav(
     position_data = _fetch_accounts(rpc_url, pos_addrs)
     emit(f"fetched {len(position_data)} position accounts")
     positions: list[dict[str, Any]] = []
+    warning_mints: list[str] = []
     for addr, raw in zip(pos_addrs, position_data):
         if raw is None:
             logging.warning("Position account %s missing, skipping", addr)
@@ -140,7 +154,7 @@ def compute_nav(
             "computing position %s/%s %s", idx, len(positions), pos["address"][:8]
         )
         pos_nav, pos_fees, pos_rewards = _compute_position_nav(
-            rpc_url, pos, degraded_mints
+            rpc_url, pos, degraded_mints, warning_mints
         )
         positions_nav_sol += pos_nav
         fees_sol += pos_fees
@@ -157,7 +171,7 @@ def compute_nav(
 
     emit("fetching idle SPL balances")
     idle_spl_sol = _compute_idle_spl_sol(
-        rpc_url, wallet, degraded_mints, progress=emit
+        rpc_url, wallet, degraded_mints, warning_mints, progress=emit
     )
     total_nav_sol = positions_nav_sol + fees_sol + rewards_sol + free_sol + idle_spl_sol
     emit(f"NAV total computed: {total_nav_sol:.6f} SOL")
@@ -173,6 +187,7 @@ def compute_nav(
         n_positions=len(positions),
         degraded=bool(degraded_mints),
         degraded_mints=degraded_mints,
+        warnings=warning_mints,
     )
 
 
@@ -180,6 +195,7 @@ def _compute_position_nav(
     rpc_url: str,
     pos: dict[str, Any],
     degraded_mints: list[str],
+    warning_mints: list[str],
 ) -> tuple[Decimal, Decimal, Decimal]:
     lb_pair_str = str(pos["lb_pair"])
     logging.debug("resolving pool mints for %s", lb_pair_str[:8])
@@ -228,14 +244,26 @@ def _compute_position_nav(
     )
     total_x_raw, total_y_raw = _accumulate_bin_reserves(position_bins, bin_arrays)
 
-    positions_nav_sol = _convert_amount(rpc_url, mint_x, total_x_raw, degraded_mints)
-    positions_nav_sol += _convert_amount(rpc_url, mint_y, total_y_raw, degraded_mints)
+    positions_nav_sol = _convert_amount(
+        rpc_url, mint_x, total_x_raw, degraded_mints, warning_mints
+    )
+    positions_nav_sol += _convert_amount(
+        rpc_url, mint_y, total_y_raw, degraded_mints, warning_mints
+    )
 
     fees_sol = _convert_amount(
-        rpc_url, mint_x, Decimal(int(pos["fee_x_pending_raw"])), degraded_mints
+        rpc_url,
+        mint_x,
+        Decimal(int(pos["fee_x_pending_raw"])),
+        degraded_mints,
+        warning_mints,
     )
     fees_sol += _convert_amount(
-        rpc_url, mint_y, Decimal(int(pos["fee_y_pending_raw"])), degraded_mints
+        rpc_url,
+        mint_y,
+        Decimal(int(pos["fee_y_pending_raw"])),
+        degraded_mints,
+        warning_mints,
     )
 
     rewards_sol = _ZERO
@@ -246,9 +274,22 @@ def _compute_position_nav(
         if amount_raw <= 0:
             continue
         if not mint:
-            logging.warning("reward%s raw=%s but reward mint unknown", idx, amount_raw)
+            marker = f"reward-mint:{lb_pair_str}:{idx}"
+            warning = (
+                f"reward{idx} raw={amount_raw} for {lb_pair_str} "
+                "but reward mint unknown"
+            )
+            logging.warning(warning)
+            _add_degraded(degraded_mints, marker)
+            _add_warning(warning_mints, warning)
             continue
-        rewards_sol += _convert_amount(rpc_url, mint, Decimal(amount_raw), degraded_mints)
+        rewards_sol += _value_mint_amount(
+            mint,
+            Decimal(amount_raw),
+            degraded_mints,
+            warning_mints,
+            suppress_immaterial_warning=False,
+        )
 
     return positions_nav_sol, fees_sol, rewards_sol
 
@@ -257,6 +298,7 @@ def _compute_idle_spl_sol(
     rpc_url: str,
     wallet: str,
     degraded_mints: list[str],
+    warning_mints: list[str],
     progress: Optional[ProgressCallback] = None,
 ) -> Decimal:
     result = _rpc_call(
@@ -276,45 +318,131 @@ def _compute_idle_spl_sol(
         if mint != SOL_MINT and amount_raw > 100:
             priced_accounts += 1
             logging.debug("pricing idle SPL %s: %s", priced_accounts, mint[:8])
-        idle_spl_sol += _convert_idle_amount(rpc_url, mint, Decimal(amount_raw))
+        idle_spl_sol += _convert_idle_amount(
+            rpc_url, mint, Decimal(amount_raw), degraded_mints, warning_mints
+        )
     return idle_spl_sol
 
 
 def _convert_amount(
-    rpc_url: str, mint: str, amount_raw: Decimal, degraded_mints: list[str]
+    rpc_url: str,
+    mint: str,
+    amount_raw: Decimal,
+    degraded_mints: list[str],
+    warning_mints: Optional[list[str]] = None,
 ) -> Decimal:
     del rpc_url
-    if amount_raw <= 0:
-        return _ZERO
-    if mint == SOL_MINT:
-        return amount_raw / Decimal(LAMPORTS)
-    sol_value, degraded = _jupiter_to_sol(mint, int(amount_raw))
-    if degraded:
-        _add_degraded(degraded_mints, mint)
-    return sol_value
+    return _value_mint_amount(
+        mint,
+        amount_raw,
+        degraded_mints,
+        warning_mints if warning_mints is not None else [],
+        suppress_immaterial_warning=False,
+    )
 
 
-def _convert_idle_amount(rpc_url: str, mint: str, amount_raw: Decimal) -> Decimal:
+def _convert_idle_amount(
+    rpc_url: str,
+    mint: str,
+    amount_raw: Decimal,
+    degraded_mints: Optional[list[str]] = None,
+    warning_mints: Optional[list[str]] = None,
+) -> Decimal:
     del rpc_url
-    if amount_raw <= 0:
-        return _ZERO
-    if mint == SOL_MINT:
-        return amount_raw / Decimal(LAMPORTS)
     root_logger = logging.getLogger()
     warning_filter = _IdleJupiterWarningFilter()
     root_logger.addFilter(warning_filter)
     try:
-        sol_value, degraded = _jupiter_to_sol(mint, int(amount_raw))
+        return _value_mint_amount(
+            mint,
+            amount_raw,
+            degraded_mints if degraded_mints is not None else [],
+            warning_mints if warning_mints is not None else [],
+            suppress_immaterial_warning=True,
+        )
     finally:
         root_logger.removeFilter(warning_filter)
-    if degraded:
-        logging.debug("Idle SPL mint %s has no reliable Jupiter value; using 0", mint)
-    return sol_value
+
+
+def _value_mint_amount(
+    mint: str,
+    amount_raw: Decimal,
+    degraded_mints: list[str],
+    warnings: list[str],
+    *,
+    suppress_immaterial_warning: bool,
+) -> Decimal:
+    if amount_raw <= 0:
+        return _ZERO
+    if mint == SOL_MINT:
+        return amount_raw / Decimal(LAMPORTS)
+
+    amount_raw_int = int(amount_raw)
+    logging.debug("pricing mint %s amount_raw=%s", mint[:8], amount_raw_int)
+
+    if amount_raw_int > U64_MAX:
+        warning = (
+            f"Jupiter amount exceeds u64 for {mint} amount_raw={amount_raw_int}; "
+            "likely decode artifact"
+        )
+        logging.warning(warning)
+        _add_degraded(degraded_mints, mint)
+        _add_warning(warnings, warning)
+        return _ZERO
+
+    suspicious_warning = None
+    if amount_raw_int > SUSPICIOUS_SPL_RAW_AMOUNT:
+        suspicious_warning = (
+            f"suspicious large raw amount {mint} amount_raw={amount_raw_int}"
+        )
+        logging.warning(
+            "Very large Jupiter amount for %s amount_raw=%s; verify decoded raw amount",
+            mint,
+            amount_raw_int,
+        )
+
+    quote = _quote_jupiter_to_sol(mint, amount_raw_int)
+    suppress_warning = (
+        suppress_immaterial_warning and quote.reason == "reference-immaterial"
+    )
+    if quote.warning and not suppress_warning:
+        _add_warning(warnings, quote.warning)
+
+    if suspicious_warning:
+        if not suppress_immaterial_warning or quote.value_sol >= IMMATERIAL_NAV_THRESHOLD_SOL:
+            _add_warning(warnings, suspicious_warning)
+        if quote.value_sol >= IMMATERIAL_NAV_THRESHOLD_SOL:
+            logging.warning(
+                "Material Jupiter value for suspicious amount %s amount_raw=%s value_sol=%s",
+                mint,
+                amount_raw_int,
+                quote.value_sol,
+            )
+            _add_degraded(degraded_mints, mint)
+            return quote.value_sol
+
+    if quote.degraded:
+        _add_degraded(degraded_mints, mint)
+        if quote.warning:
+            _add_warning(warnings, quote.warning)
+        else:
+            _add_warning(
+                warnings,
+                f"degraded Jupiter valuation for {mint} amount_raw={amount_raw_int}",
+            )
+        return quote.value_sol
+
+    return quote.value_sol
 
 
 def _add_degraded(degraded_mints: list[str], mint: str) -> None:
     if mint not in degraded_mints:
         degraded_mints.append(mint)
+
+
+def _add_warning(warnings: list[str], warning: str) -> None:
+    if warning not in warnings:
+        warnings.append(warning)
 
 
 def _accumulate_bin_reserves(
@@ -646,32 +774,36 @@ def _get_decimals(rpc_url: str, mint: str) -> int:
 
 
 def _jupiter_to_sol(mint: str, amount_raw: int) -> tuple[Decimal, bool]:
-    if mint == SOL_MINT:
-        return Decimal(amount_raw) / Decimal(LAMPORTS), False
-    if amount_raw <= 0:
-        return _ZERO, False
-    if amount_raw <= 100:
-        return _ZERO, False
+    result = _quote_jupiter_to_sol(mint, amount_raw)
+    return result.value_sol, result.degraded
 
+
+def _quote_jupiter_to_sol(mint: str, amount_raw: int) -> _MintQuoteResult:
+    if mint == SOL_MINT:
+        return _MintQuoteResult(Decimal(amount_raw) / Decimal(LAMPORTS), False)
+    if amount_raw <= 0:
+        return _MintQuoteResult(_ZERO, False)
+    if amount_raw <= 100:
+        return _MintQuoteResult(_ZERO, False)
     # Reuse price from earlier in this same NAV run (SOL per 1 raw unit).
     if mint in _jupiter_price_cache:
-        return _jupiter_price_cache[mint] * Decimal(amount_raw), False
-    if mint in _jupiter_failed_cache or mint in _load_jupiter_skip_cache():
-        return _ZERO, True
+        return _MintQuoteResult(
+            _jupiter_price_cache[mint] * Decimal(amount_raw), False, "direct-cache"
+        )
+    if mint in _jupiter_failed_cache:
+        return _MintQuoteResult(_ZERO, True, "quote_failed")
+    if mint in _load_jupiter_skip_cache():
+        return _MintQuoteResult(
+            _ZERO, False, "no_route", f"no-route treated as 0: {mint}"
+        )
 
-    url = (
-        "https://api.jup.ag/swap/v1/quote"
-        f"?inputMint={mint}&outputMint={SOL_MINT}"
-        f"&amount={amount_raw}&slippageBps=50"
-    )
     retries = 4
     for attempt in range(retries):
         time.sleep(JUPITER_DELAY)
         try:
-            data = _http_get(url)
-            out_sol = Decimal(int(data["outAmount"])) / Decimal(LAMPORTS)
+            out_sol = _jupiter_quote_to_sol(mint, amount_raw)
             _jupiter_price_cache[mint] = out_sol / Decimal(amount_raw)
-            return out_sol, False
+            return _MintQuoteResult(out_sol, False, "direct")
         except urllib.error.HTTPError as exc:
             body = exc.read().decode(errors="replace")
             no_route = any(
@@ -685,19 +817,109 @@ def _jupiter_to_sol(mint: str, amount_raw: int) -> tuple[Decimal, bool]:
             if no_route:
                 logging.warning("No Jupiter route for %s", mint)
                 _cache_jupiter_no_route(mint)
-                return _ZERO, True
+                return _MintQuoteResult(
+                    _ZERO, False, "no_route", f"no-route treated as 0: {mint}"
+                )
             if exc.code == 429 and attempt < retries - 1:
                 time.sleep(2**attempt)
                 continue
+            if 500 <= exc.code < 600 and attempt < retries - 1:
+                time.sleep(2**attempt)
+                continue
+            if exc.code != 429:
+                fallback = _jupiter_immaterial_reference_to_sol(mint, amount_raw)
+                if fallback is not None:
+                    warning = (
+                        f"immaterial reference-priced mint {mint} "
+                        f"value<{IMMATERIAL_NAV_THRESHOLD_SOL} SOL"
+                    )
+                    logging.warning(
+                        "Jupiter full quote failed for %s amount_raw=%s; reference quote proves immaterial value",
+                        mint,
+                        amount_raw,
+                    )
+                    return _MintQuoteResult(
+                        fallback, False, "reference-immaterial", warning
+                    )
             logging.warning("Jupiter HTTP %s for %s", exc.code, mint)
             _jupiter_failed_cache.add(mint)
-            return _ZERO, True
+            return _MintQuoteResult(_ZERO, True, "quote_failed")
         except Exception as exc:
+            if attempt < retries - 1:
+                time.sleep(2**attempt)
+                continue
+            fallback = _jupiter_immaterial_reference_to_sol(mint, amount_raw)
+            if fallback is not None:
+                warning = (
+                    f"immaterial reference-priced mint {mint} "
+                    f"value<{IMMATERIAL_NAV_THRESHOLD_SOL} SOL"
+                )
+                logging.warning(
+                    "Jupiter full quote errored for %s amount_raw=%s; reference quote proves immaterial value",
+                    mint,
+                    amount_raw,
+                )
+                return _MintQuoteResult(fallback, False, "reference-immaterial", warning)
             logging.warning("Jupiter error for %s: %s", mint, exc)
             _jupiter_failed_cache.add(mint)
-            return _ZERO, True
+            return _MintQuoteResult(_ZERO, True, "quote_failed")
     _jupiter_failed_cache.add(mint)
-    return _ZERO, True
+    return _MintQuoteResult(_ZERO, True, "quote_failed")
+
+
+def _jupiter_quote_to_sol(mint: str, amount_raw: int) -> Decimal:
+    url = (
+        "https://api.jup.ag/swap/v1/quote"
+        f"?inputMint={mint}&outputMint={SOL_MINT}"
+        f"&amount={amount_raw}&slippageBps=50"
+    )
+    data = _http_get(url)
+    return Decimal(int(data["outAmount"])) / Decimal(LAMPORTS)
+
+
+def _jupiter_immaterial_reference_to_sol(
+    mint: str, amount_raw: int
+) -> Optional[Decimal]:
+    if (
+        amount_raw <= 0
+        or amount_raw == JUPITER_REFERENCE_AMOUNT_RAW
+        or amount_raw > JUPITER_REFERENCE_AMOUNT_RAW
+    ):
+        return None
+    retries = 5
+    for attempt in range(retries):
+        time.sleep(JUPITER_DELAY)
+        try:
+            reference_sol = _jupiter_quote_to_sol(mint, JUPITER_REFERENCE_AMOUNT_RAW)
+            break
+        except urllib.error.HTTPError as exc:
+            body = exc.read().decode(errors="replace")
+            if any(
+                marker in body
+                for marker in (
+                    "NO_ROUTES_FOUND",
+                    "TOKEN_NOT_TRADABLE",
+                    "COULD_NOT_FIND_ANY_ROUTE",
+                )
+            ):
+                return None
+            if exc.code == 429 and attempt < retries - 1:
+                time.sleep(2**attempt)
+                continue
+            return None
+        except Exception:
+            if attempt < retries - 1:
+                time.sleep(2**attempt)
+                continue
+            return None
+    else:
+        return None
+
+    price = reference_sol / Decimal(JUPITER_REFERENCE_AMOUNT_RAW)
+    value = price * Decimal(amount_raw)
+    if value >= IMMATERIAL_NAV_THRESHOLD_SOL:
+        return None
+    return value
 
 
 def _load_jupiter_skip_cache() -> set[str]:

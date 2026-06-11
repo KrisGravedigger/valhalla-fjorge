@@ -163,9 +163,12 @@ def build_snapshot_row(
         if prev_value is not None and prev_contribution is not None:
             period_pnl = (value_sol - prev_value) - (net_contribution - prev_contribution)
 
-    notes = ""
+    note_parts = []
     if result.degraded:
-        notes = "degraded: " + ",".join(result.degraded_mints)
+        note_parts.append("degraded: " + ",".join(result.degraded_mints))
+    if result.warnings:
+        note_parts.extend(_format_warning_notes(result.warnings))
+    notes = "; ".join(note_parts)
 
     return {
         "timestamp": timestamp,
@@ -179,6 +182,26 @@ def build_snapshot_row(
         "period_pnl_sol": _fmt(period_pnl),
         "notes": notes,
     }
+
+
+def _format_warning_notes(warnings: list[str]) -> list[str]:
+    no_route_prefix = "no-route treated as 0: "
+    no_route_mints = [
+        warning.removeprefix(no_route_prefix)
+        for warning in warnings
+        if warning.startswith(no_route_prefix)
+    ]
+    other_warnings = [
+        warning for warning in warnings if not warning.startswith(no_route_prefix)
+    ]
+    notes: list[str] = []
+    if no_route_mints:
+        preview = ",".join(mint[:8] for mint in no_route_mints[:3])
+        suffix = f" ({preview})" if preview else ""
+        notes.append(f"no-route treated as 0: {len(no_route_mints)} mints{suffix}")
+    if other_warnings:
+        notes.append("warnings: " + ",".join(other_warnings))
+    return notes
 
 
 def _resolve_rpc_url(arg_value: Optional[str]) -> Optional[str]:
