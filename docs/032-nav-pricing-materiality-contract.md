@@ -1,6 +1,8 @@
-# [032] NAV Pricing: Materiality Contract (de-brittling degraded)
-
+---
 critical: true
+---
+
+# [032] NAV Pricing: Materiality Contract (de-brittling degraded)
 
 ## Intent
 
