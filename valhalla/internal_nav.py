@@ -43,6 +43,10 @@ class _MintQuoteResult:
     warning: Optional[str] = None
 
 
+class TransientPricingError(RuntimeError):
+    """Raised when Jupiter pricing is temporarily unavailable after retries."""
+
+
 # Verified constants - DO NOT derive from Meteora IDL docs.
 # Source: tools/spike_internal_nav.py (2026-05-24, mainnet, 0.014% diff)
 METEORA_PROGRAM = Pubkey.from_string("LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo")
@@ -54,7 +58,12 @@ JUPITER_DELAY = 0.15
 U64_MAX = 2**64 - 1
 JUPITER_REFERENCE_AMOUNT_RAW = 1_000_000_000
 IMMATERIAL_NAV_THRESHOLD_SOL = Decimal("0.01")
-SUSPICIOUS_SPL_RAW_AMOUNT = U64_MAX // 10
+IMMATERIAL_FALLBACK_SUM_THRESHOLD_SOL = Decimal("0.05")
+NO_ROUTE_MARKERS = (
+    "NO_ROUTES_FOUND",
+    "TOKEN_NOT_TRADABLE",
+    "COULD_NOT_FIND_ANY_ROUTE",
+)
 
 # PositionV2 layout constants
 POS_LB_PAIR = 8
@@ -85,25 +94,11 @@ _ZERO = Decimal("0")
 _decimals_cache: dict[str, int] = {}
 # Price cache: SOL per 1 raw token unit, populated per-process to avoid redundant Jupiter calls.
 _jupiter_price_cache: dict[str, Decimal] = {}
-_jupiter_failed_cache: set[str] = set()
 _jupiter_skip_cache: Optional[set[str]] = None
 _reward_mints_cache: dict[str, list[Optional[str]]] = {}
 JUPITER_SKIP_CACHE_PATH = (
     Path(__file__).resolve().parents[1] / "output" / "internal_nav_skipped_mints.json"
 )
-
-
-class _IdleJupiterWarningFilter(logging.Filter):
-    def filter(self, record: logging.LogRecord) -> bool:
-        message = record.getMessage()
-        return not (
-            record.levelno == logging.WARNING
-            and (
-                message.startswith("No Jupiter route for ")
-                or message.startswith("Jupiter HTTP ")
-                or message.startswith("Jupiter error for ")
-            )
-        )
 
 
 ProgressCallback = Callable[[str], None]
@@ -349,19 +344,13 @@ def _convert_idle_amount(
     warning_mints: Optional[list[str]] = None,
 ) -> Decimal:
     del rpc_url
-    root_logger = logging.getLogger()
-    warning_filter = _IdleJupiterWarningFilter()
-    root_logger.addFilter(warning_filter)
-    try:
-        return _value_mint_amount(
-            mint,
-            amount_raw,
-            degraded_mints if degraded_mints is not None else [],
-            warning_mints if warning_mints is not None else [],
-            suppress_immaterial_warning=True,
-        )
-    finally:
-        root_logger.removeFilter(warning_filter)
+    return _value_mint_amount(
+        mint,
+        amount_raw,
+        degraded_mints if degraded_mints is not None else [],
+        warning_mints if warning_mints is not None else [],
+        suppress_immaterial_warning=True,
+    )
 
 
 def _value_mint_amount(
@@ -372,10 +361,10 @@ def _value_mint_amount(
     *,
     suppress_immaterial_warning: bool,
 ) -> Decimal:
-    if amount_raw <= 0:
-        return _ZERO
     if mint == SOL_MINT:
         return amount_raw / Decimal(LAMPORTS)
+    if amount_raw <= 0:
+        return _ZERO
 
     amount_raw_int = int(amount_raw)
     logging.debug("pricing mint %s amount_raw=%s", mint[:8], amount_raw_int)
@@ -390,42 +379,26 @@ def _value_mint_amount(
         _add_warning(warnings, warning)
         return _ZERO
 
-    suspicious_warning = None
-    if amount_raw_int > SUSPICIOUS_SPL_RAW_AMOUNT:
-        suspicious_warning = (
-            f"suspicious large raw amount {mint} amount_raw={amount_raw_int}"
-        )
-        logging.warning(
-            "Very large Jupiter amount for %s amount_raw=%s; verify decoded raw amount",
+    quote = _quote_jupiter_to_sol(mint, amount_raw_int)
+    if quote.reason == "reference-immaterial":
+        _add_immaterial_fallback(warnings, mint, quote.value_sol)
+        if _immaterial_fallback_total(warnings) >= IMMATERIAL_FALLBACK_SUM_THRESHOLD_SOL:
+            _add_degraded(degraded_mints, "immaterial-sum")
+        log = logging.debug if suppress_immaterial_warning else logging.warning
+        log(
+            "Jupiter quote failed for %s amount_raw=%s; reference quote estimates %s SOL",
             mint,
             amount_raw_int,
+            quote.value_sol,
         )
-
-    quote = _quote_jupiter_to_sol(mint, amount_raw_int)
-    suppress_warning = (
-        suppress_immaterial_warning and quote.reason == "reference-immaterial"
-    )
-    if quote.warning and not suppress_warning:
+    elif quote.warning:
         _add_warning(warnings, quote.warning)
-
-    if suspicious_warning:
-        if not suppress_immaterial_warning or quote.value_sol >= IMMATERIAL_NAV_THRESHOLD_SOL:
-            _add_warning(warnings, suspicious_warning)
-        if quote.value_sol >= IMMATERIAL_NAV_THRESHOLD_SOL:
-            logging.warning(
-                "Material Jupiter value for suspicious amount %s amount_raw=%s value_sol=%s",
-                mint,
-                amount_raw_int,
-                quote.value_sol,
-            )
-            _add_degraded(degraded_mints, mint)
-            return quote.value_sol
+        log = logging.debug if suppress_immaterial_warning and not quote.degraded else logging.warning
+        log("%s", quote.warning)
 
     if quote.degraded:
         _add_degraded(degraded_mints, mint)
-        if quote.warning:
-            _add_warning(warnings, quote.warning)
-        else:
+        if not quote.warning:
             _add_warning(
                 warnings,
                 f"degraded Jupiter valuation for {mint} amount_raw={amount_raw_int}",
@@ -443,6 +416,25 @@ def _add_degraded(degraded_mints: list[str], mint: str) -> None:
 def _add_warning(warnings: list[str], warning: str) -> None:
     if warning not in warnings:
         warnings.append(warning)
+
+
+def _add_immaterial_fallback(warnings: list[str], mint: str, value_sol: Decimal) -> None:
+    warnings.append(
+        f"immaterial reference-priced mint {mint} value={value_sol.normalize()} SOL"
+    )
+
+
+def _immaterial_fallback_total(warnings: list[str]) -> Decimal:
+    total = _ZERO
+    for warning in warnings:
+        if not warning.startswith("immaterial reference-priced mint "):
+            continue
+        try:
+            value = warning.rsplit(" value=", 1)[1].removesuffix(" SOL")
+            total += Decimal(value)
+        except Exception:
+            continue
+    return total
 
 
 def _accumulate_bin_reserves(
@@ -486,11 +478,22 @@ def _rpc_call(url: str, method: str, params: list[Any], retries: int = 3) -> dic
                 raise RuntimeError(f"RPC {method} error: {data['error']}")
             return data["result"]
         except urllib.error.HTTPError as exc:
-            if exc.code == 429 and attempt < retries - 1:
+            if _is_transient_http_code(exc.code):
+                if attempt < retries - 1:
+                    time.sleep(2**attempt)
+                    continue
+                raise TransientPricingError(
+                    f"RPC {method} failed: HTTP {exc.code}"
+                ) from exc
+            raise RuntimeError(f"RPC {method} failed: HTTP {exc.code}") from exc
+        except (urllib.error.URLError, TimeoutError, ConnectionError) as exc:
+            if attempt < retries - 1:
                 time.sleep(2**attempt)
                 continue
-            raise RuntimeError(f"RPC {method} failed: HTTP {exc.code}") from exc
-    raise RuntimeError(f"RPC {method} failed after {retries} retries")
+            raise TransientPricingError(
+                f"RPC {method} transient error after {retries} retries: {exc}"
+            ) from exc
+    raise TransientPricingError(f"RPC {method} failed after {retries} retries")
 
 
 def _http_get(url: str) -> dict[str, Any]:
@@ -783,15 +786,11 @@ def _quote_jupiter_to_sol(mint: str, amount_raw: int) -> _MintQuoteResult:
         return _MintQuoteResult(Decimal(amount_raw) / Decimal(LAMPORTS), False)
     if amount_raw <= 0:
         return _MintQuoteResult(_ZERO, False)
-    if amount_raw <= 100:
-        return _MintQuoteResult(_ZERO, False)
     # Reuse price from earlier in this same NAV run (SOL per 1 raw unit).
     if mint in _jupiter_price_cache:
         return _MintQuoteResult(
             _jupiter_price_cache[mint] * Decimal(amount_raw), False, "direct-cache"
         )
-    if mint in _jupiter_failed_cache:
-        return _MintQuoteResult(_ZERO, True, "quote_failed")
     if mint in _load_jupiter_skip_cache():
         return _MintQuoteResult(
             _ZERO, False, "no_route", f"no-route treated as 0: {mint}"
@@ -805,66 +804,34 @@ def _quote_jupiter_to_sol(mint: str, amount_raw: int) -> _MintQuoteResult:
             _jupiter_price_cache[mint] = out_sol / Decimal(amount_raw)
             return _MintQuoteResult(out_sol, False, "direct")
         except urllib.error.HTTPError as exc:
-            body = exc.read().decode(errors="replace")
-            no_route = any(
-                marker in body
-                for marker in (
-                    "NO_ROUTES_FOUND",
-                    "TOKEN_NOT_TRADABLE",
-                    "COULD_NOT_FIND_ANY_ROUTE",
-                )
-            )
-            if no_route:
-                logging.warning("No Jupiter route for %s", mint)
+            try:
+                body = _read_http_error_body(exc)
+            except (urllib.error.URLError, TimeoutError, ConnectionError) as body_exc:
+                if attempt < retries - 1:
+                    time.sleep(2**attempt)
+                    continue
+                raise TransientPricingError(
+                    f"Jupiter HTTP error body read failed for {mint}: {body_exc}"
+                ) from body_exc
+            if _is_jupiter_no_route(body):
                 _cache_jupiter_no_route(mint)
                 return _MintQuoteResult(
                     _ZERO, False, "no_route", f"no-route treated as 0: {mint}"
                 )
-            if exc.code == 429 and attempt < retries - 1:
-                time.sleep(2**attempt)
-                continue
-            if 500 <= exc.code < 600 and attempt < retries - 1:
-                time.sleep(2**attempt)
-                continue
-            if exc.code != 429:
-                fallback = _jupiter_immaterial_reference_to_sol(mint, amount_raw)
-                if fallback is not None:
-                    warning = (
-                        f"immaterial reference-priced mint {mint} "
-                        f"value<{IMMATERIAL_NAV_THRESHOLD_SOL} SOL"
-                    )
-                    logging.warning(
-                        "Jupiter full quote failed for %s amount_raw=%s; reference quote proves immaterial value",
-                        mint,
-                        amount_raw,
-                    )
-                    return _MintQuoteResult(
-                        fallback, False, "reference-immaterial", warning
-                    )
-            logging.warning("Jupiter HTTP %s for %s", exc.code, mint)
-            _jupiter_failed_cache.add(mint)
-            return _MintQuoteResult(_ZERO, True, "quote_failed")
-        except Exception as exc:
+            if _is_transient_http_code(exc.code):
+                if attempt < retries - 1:
+                    time.sleep(2**attempt)
+                    continue
+                raise TransientPricingError(f"Jupiter HTTP {exc.code} for {mint}") from exc
+            return _jupiter_reference_fallback_to_sol(mint, amount_raw)
+        except (urllib.error.URLError, TimeoutError, ConnectionError) as exc:
             if attempt < retries - 1:
                 time.sleep(2**attempt)
                 continue
-            fallback = _jupiter_immaterial_reference_to_sol(mint, amount_raw)
-            if fallback is not None:
-                warning = (
-                    f"immaterial reference-priced mint {mint} "
-                    f"value<{IMMATERIAL_NAV_THRESHOLD_SOL} SOL"
-                )
-                logging.warning(
-                    "Jupiter full quote errored for %s amount_raw=%s; reference quote proves immaterial value",
-                    mint,
-                    amount_raw,
-                )
-                return _MintQuoteResult(fallback, False, "reference-immaterial", warning)
-            logging.warning("Jupiter error for %s: %s", mint, exc)
-            _jupiter_failed_cache.add(mint)
-            return _MintQuoteResult(_ZERO, True, "quote_failed")
-    _jupiter_failed_cache.add(mint)
-    return _MintQuoteResult(_ZERO, True, "quote_failed")
+            raise TransientPricingError(f"Jupiter transient error for {mint}: {exc}") from exc
+        except Exception as exc:
+            return _jupiter_reference_fallback_to_sol(mint, amount_raw)
+    raise TransientPricingError(f"Jupiter quote retries exhausted for {mint}")
 
 
 def _jupiter_quote_to_sol(mint: str, amount_raw: int) -> Decimal:
@@ -877,15 +844,9 @@ def _jupiter_quote_to_sol(mint: str, amount_raw: int) -> Decimal:
     return Decimal(int(data["outAmount"])) / Decimal(LAMPORTS)
 
 
-def _jupiter_immaterial_reference_to_sol(
-    mint: str, amount_raw: int
-) -> Optional[Decimal]:
-    if (
-        amount_raw <= 0
-        or amount_raw == JUPITER_REFERENCE_AMOUNT_RAW
-        or amount_raw > JUPITER_REFERENCE_AMOUNT_RAW
-    ):
-        return None
+def _jupiter_reference_fallback_to_sol(mint: str, amount_raw: int) -> _MintQuoteResult:
+    if amount_raw <= 0:
+        return _MintQuoteResult(_ZERO, False)
     retries = 5
     for attempt in range(retries):
         time.sleep(JUPITER_DELAY)
@@ -893,33 +854,63 @@ def _jupiter_immaterial_reference_to_sol(
             reference_sol = _jupiter_quote_to_sol(mint, JUPITER_REFERENCE_AMOUNT_RAW)
             break
         except urllib.error.HTTPError as exc:
-            body = exc.read().decode(errors="replace")
-            if any(
-                marker in body
-                for marker in (
-                    "NO_ROUTES_FOUND",
-                    "TOKEN_NOT_TRADABLE",
-                    "COULD_NOT_FIND_ANY_ROUTE",
+            try:
+                body = _read_http_error_body(exc)
+            except (urllib.error.URLError, TimeoutError, ConnectionError) as body_exc:
+                if attempt < retries - 1:
+                    time.sleep(2**attempt)
+                    continue
+                raise TransientPricingError(
+                    f"Jupiter reference HTTP error body read failed for {mint}: {body_exc}"
+                ) from body_exc
+            if _is_jupiter_no_route(body):
+                return _MintQuoteResult(
+                    _ZERO, False, "no_route", f"no-route treated as 0: {mint}"
                 )
-            ):
-                return None
-            if exc.code == 429 and attempt < retries - 1:
-                time.sleep(2**attempt)
-                continue
-            return None
-        except Exception:
+            if _is_transient_http_code(exc.code):
+                if attempt < retries - 1:
+                    time.sleep(2**attempt)
+                    continue
+                raise TransientPricingError(
+                    f"Jupiter reference HTTP {exc.code} for {mint}"
+                ) from exc
+            return _material_unpriceable(mint)
+        except (urllib.error.URLError, TimeoutError, ConnectionError) as exc:
             if attempt < retries - 1:
                 time.sleep(2**attempt)
                 continue
-            return None
+            raise TransientPricingError(
+                f"Jupiter reference transient error for {mint}: {exc}"
+            ) from exc
+        except Exception:
+            return _material_unpriceable(mint)
     else:
-        return None
+        raise TransientPricingError(f"Jupiter reference retries exhausted for {mint}")
 
     price = reference_sol / Decimal(JUPITER_REFERENCE_AMOUNT_RAW)
     value = price * Decimal(amount_raw)
     if value >= IMMATERIAL_NAV_THRESHOLD_SOL:
-        return None
-    return value
+        return _material_unpriceable(mint, value)
+    return _MintQuoteResult(value, False, "reference-immaterial")
+
+
+def _material_unpriceable(mint: str, estimate: Optional[Decimal] = None) -> _MintQuoteResult:
+    suffix = f" estimated={estimate} SOL" if estimate is not None else ""
+    return _MintQuoteResult(
+        _ZERO, True, "material-unpriceable", f"material unpriceable mint {mint}{suffix}"
+    )
+
+
+def _is_jupiter_no_route(body: str) -> bool:
+    return any(marker in body for marker in NO_ROUTE_MARKERS)
+
+
+def _is_transient_http_code(code: int) -> bool:
+    return code == 429 or 500 <= code < 600
+
+
+def _read_http_error_body(exc: urllib.error.HTTPError) -> str:
+    return exc.read().decode(errors="replace")
 
 
 def _load_jupiter_skip_cache() -> set[str]:

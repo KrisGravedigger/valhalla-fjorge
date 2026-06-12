@@ -27,7 +27,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from valhalla.capital_flow import read_flows  # noqa: E402
-from valhalla.internal_nav import NavResult, compute_nav  # noqa: E402
+from valhalla.internal_nav import NavResult, TransientPricingError, compute_nav  # noqa: E402
 
 
 FIELDS = [
@@ -91,6 +91,9 @@ def main(argv: Optional[list[str]] = None) -> int:
             result = compute_nav(rpc_url, wallet, progress=progress)
         else:
             result = compute_nav(rpc_url, wallet)
+    except TransientPricingError as exc:
+        print(f"TRANSIENT: {exc} - retry later")
+        return 2
     except RuntimeError as exc:
         if "zero NAV result" in str(exc):
             print("ERROR: zero NAV result - RPC failure suspected")
@@ -166,6 +169,12 @@ def build_snapshot_row(
     note_parts = []
     if result.degraded:
         note_parts.append("degraded: " + ",".join(result.degraded_mints))
+    if previous:
+        prev_value = _decimal(previous.get("value_sol"), "previous.value_sol")
+        if prev_value and prev_value > 0:
+            nav_jump = (value_sol - prev_value) / prev_value
+            if abs(nav_jump) > Decimal("0.5"):
+                note_parts.append(f"nav-jump: {nav_jump * Decimal('100'):+.1f}% vs previous")
     if result.warnings:
         note_parts.extend(_format_warning_notes(result.warnings))
     notes = "; ".join(note_parts)
@@ -186,19 +195,32 @@ def build_snapshot_row(
 
 def _format_warning_notes(warnings: list[str]) -> list[str]:
     no_route_prefix = "no-route treated as 0: "
+    immaterial_prefix = "immaterial reference-priced mint "
     no_route_mints = [
         warning.removeprefix(no_route_prefix)
         for warning in warnings
         if warning.startswith(no_route_prefix)
     ]
+    immaterial_mints = [
+        warning.removeprefix(immaterial_prefix).split(" ", 1)[0]
+        for warning in warnings
+        if warning.startswith(immaterial_prefix)
+    ]
     other_warnings = [
-        warning for warning in warnings if not warning.startswith(no_route_prefix)
+        warning
+        for warning in warnings
+        if not warning.startswith(no_route_prefix)
+        and not warning.startswith(immaterial_prefix)
     ]
     notes: list[str] = []
     if no_route_mints:
         preview = ",".join(mint[:8] for mint in no_route_mints[:3])
         suffix = f" ({preview})" if preview else ""
         notes.append(f"no-route treated as 0: {len(no_route_mints)} mints{suffix}")
+    if immaterial_mints:
+        preview = ",".join(mint[:8] for mint in immaterial_mints[:3])
+        suffix = f" ({preview})" if preview else ""
+        notes.append(f"immaterial fallback: {len(immaterial_mints)} mints{suffix}")
     if other_warnings:
         notes.append("warnings: " + ",".join(other_warnings))
     return notes

@@ -38,6 +38,12 @@ def _http_error(code: int, body: bytes) -> urllib.error.HTTPError:
     )
 
 
+def _fixture(name: str) -> bytes:
+    return (
+        Path(__file__).resolve().parent / "fixtures" / "jupiter_errors" / name
+    ).read_bytes()
+
+
 def _nav_result(
     value: Decimal = Decimal("50"),
     degraded: bool = False,
@@ -137,7 +143,6 @@ def test_jupiter_no_route_persistent_skip_cache(monkeypatch: pytest.MonkeyPatch)
     monkeypatch.setattr(internal_nav.time, "sleep", lambda _: None)
     monkeypatch.setattr(internal_nav, "JUPITER_SKIP_CACHE_PATH", cache_path)
     monkeypatch.setattr(internal_nav, "_jupiter_skip_cache", None)
-    monkeypatch.setattr(internal_nav, "_jupiter_failed_cache", set())
     monkeypatch.setattr(internal_nav, "_jupiter_price_cache", {})
     monkeypatch.setattr(internal_nav, "_http_get", fail)
 
@@ -173,23 +178,21 @@ def test_jupiter_reference_no_route_does_not_persist_skip_cache(
     monkeypatch.setattr(internal_nav.time, "sleep", lambda _: None)
     monkeypatch.setattr(internal_nav, "JUPITER_SKIP_CACHE_PATH", cache_path)
     monkeypatch.setattr(internal_nav, "_jupiter_skip_cache", None)
-    monkeypatch.setattr(internal_nav, "_jupiter_failed_cache", set())
     monkeypatch.setattr(internal_nav, "_jupiter_price_cache", {})
     monkeypatch.setattr(internal_nav, "_http_get", fail_primary_then_no_route_reference)
 
-    assert internal_nav._jupiter_to_sol(mint, 1000) == (Decimal("0"), True)
+    assert internal_nav._jupiter_to_sol(mint, 1000) == (Decimal("0"), False)
     assert len(calls) == 2
     assert not cache_path.exists()
 
-    monkeypatch.setattr(internal_nav, "_jupiter_failed_cache", set())
     monkeypatch.setattr(internal_nav, "_jupiter_skip_cache", None)
 
-    assert internal_nav._jupiter_to_sol(mint, 1000) == (Decimal("0"), True)
+    assert internal_nav._jupiter_to_sol(mint, 1000) == (Decimal("0"), False)
     assert len(calls) == 4
     assert not cache_path.exists()
 
 
-def test_jupiter_degraded_429_exhausted(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_jupiter_429_exhausted_is_transient(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(internal_nav.time, "sleep", lambda _: None)
     calls = 0
 
@@ -200,20 +203,104 @@ def test_jupiter_degraded_429_exhausted(monkeypatch: pytest.MonkeyPatch) -> None
 
     monkeypatch.setattr(internal_nav, "_http_get", fail)
 
-    assert internal_nav._jupiter_to_sol("MINT", 1000) == (Decimal("0"), True)
+    with pytest.raises(internal_nav.TransientPricingError, match="HTTP 429"):
+        internal_nav._jupiter_to_sol("MINT", 1000)
     assert calls == 4
 
 
-def test_jupiter_failed_cache_remains_degraded(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(internal_nav, "_jupiter_failed_cache", {"MINT"})
-    monkeypatch.setattr(internal_nav, "_jupiter_skip_cache", set())
-    monkeypatch.setattr(
-        internal_nav,
-        "_http_get",
-        lambda _url: (_ for _ in ()).throw(AssertionError("HTTP should be skipped")),
+def test_rpc_timeout_is_transient_and_record_tool_exits_2(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    record_tool = _load_record_tool()
+    tmp_path = _tmp_dir()
+    path = tmp_path / "snapshots.csv"
+    calls = 0
+    sleeps: list[int] = []
+
+    def timeout_urlopen(*_args: Any, **_kwargs: Any) -> Any:
+        nonlocal calls
+        calls += 1
+        raise TimeoutError("The read operation timed out")
+
+    monkeypatch.setattr(record_tool, "_load_env_file", lambda: None)
+    monkeypatch.setattr(internal_nav.urllib.request, "urlopen", timeout_urlopen)
+    monkeypatch.setattr(internal_nav.time, "sleep", lambda delay: sleeps.append(delay))
+
+    code = record_tool.main(
+        [
+            "--rpc-url",
+            "https://rpc.test",
+            "--wallet",
+            "WALLET",
+            "--path",
+            str(path),
+            "--net-contribution-sol",
+            "44.6",
+        ]
     )
 
-    assert internal_nav._jupiter_to_sol("MINT", 1000) == (Decimal("0"), True)
+    captured = capsys.readouterr()
+    assert code == 2
+    assert calls == 3
+    assert sleeps == [1, 2]
+    assert not path.exists()
+    assert "TRANSIENT" in captured.out
+    assert "Traceback" not in captured.out
+    assert "Traceback" not in captured.err
+
+
+def test_unknown_future_error_immaterial_snapshot_writes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    record_tool = _load_record_tool()
+    tmp_path = _tmp_dir()
+    path = tmp_path / "snapshots.csv"
+    degraded: list[str] = []
+    warnings: list[str] = []
+    calls: list[str] = []
+    monkeypatch.setattr(internal_nav.time, "sleep", lambda _: None)
+    monkeypatch.setattr(internal_nav, "_jupiter_price_cache", {})
+
+    def http_get(url: str) -> dict[str, Any]:
+        calls.append(url)
+        if "amount=400000000&" in url:
+            raise _http_error(400, _fixture("unknown_error.json"))
+        if "amount=1000000000&" in url:
+            return {"outAmount": "1000000"}
+        raise AssertionError(url)
+
+    monkeypatch.setattr(internal_nav, "_http_get", http_get)
+
+    value = internal_nav._convert_amount(
+        "RPC", "MINT", Decimal("400000000"), degraded, warnings
+    )
+
+    assert value == Decimal("0.0004")
+    assert degraded == []
+    assert warnings == ["immaterial reference-priced mint MINT value=0.0004 SOL"]
+
+    result = _nav_result(value=Decimal("50.0004"))
+    result.warnings = warnings
+    monkeypatch.setattr(record_tool, "_load_env_file", lambda: None)
+    monkeypatch.setattr(record_tool, "compute_nav", lambda _rpc, _wallet: result)
+
+    code = record_tool.main(
+        [
+            "--rpc-url",
+            "RPC",
+            "--wallet",
+            "WALLET",
+            "--path",
+            str(path),
+            "--net-contribution-sol",
+            "44.6",
+        ]
+    )
+
+    assert code == 0
+    with path.open("r", newline="", encoding="utf-8") as handle:
+        rows = list(csv.DictReader(handle))
+    assert rows[0]["notes"] == "immaterial fallback: 1 mints (MINT)"
 
 
 def test_jupiter_u64_guard_skips_http(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -248,7 +335,6 @@ def test_jupiter_reference_prices_tiny_failed_full_quote(
     calls: list[str] = []
     monkeypatch.setattr(internal_nav.time, "sleep", lambda _: None)
     monkeypatch.setattr(internal_nav, "_jupiter_price_cache", {})
-    monkeypatch.setattr(internal_nav, "_jupiter_failed_cache", set())
     degraded: list[str] = []
     warnings: list[str] = []
 
@@ -276,7 +362,7 @@ def test_jupiter_reference_prices_tiny_failed_full_quote(
     assert sol_value == Decimal("2.71E-7")
     assert degraded == []
     assert mint not in internal_nav._jupiter_price_cache
-    assert warnings == ["immaterial reference-priced mint MINT value<0.01 SOL"]
+    assert warnings == ["immaterial reference-priced mint MINT value=2.71E-7 SOL"]
     assert len(calls) == 2
 
 
@@ -287,7 +373,6 @@ def test_jupiter_reference_does_not_cleanly_value_material_failed_full_quote(
     calls: list[str] = []
     monkeypatch.setattr(internal_nav.time, "sleep", lambda _: None)
     monkeypatch.setattr(internal_nav, "_jupiter_price_cache", {})
-    monkeypatch.setattr(internal_nav, "_jupiter_failed_cache", set())
 
     def http_get(url: str) -> dict[str, Any]:
         calls.append(url)
@@ -318,7 +403,6 @@ def test_material_reference_failure_blocks_snapshot_without_override(
     calls: list[str] = []
     monkeypatch.setattr(internal_nav.time, "sleep", lambda _: None)
     monkeypatch.setattr(internal_nav, "_jupiter_price_cache", {})
-    monkeypatch.setattr(internal_nav, "_jupiter_failed_cache", set())
 
     def http_get(url: str) -> dict[str, Any]:
         calls.append(url)
@@ -367,7 +451,6 @@ def test_small_reference_fallback_does_not_cache_clean_price_for_large_amount(
     calls: list[str] = []
     monkeypatch.setattr(internal_nav.time, "sleep", lambda _: None)
     monkeypatch.setattr(internal_nav, "_jupiter_price_cache", {})
-    monkeypatch.setattr(internal_nav, "_jupiter_failed_cache", set())
     degraded: list[str] = []
     warnings: list[str] = []
 
@@ -396,35 +479,41 @@ def test_small_reference_fallback_does_not_cache_clean_price_for_large_amount(
 
     assert small_value == Decimal("2.71E-13")
     assert degraded == []
-    assert warnings == ["immaterial reference-priced mint MINT value<0.01 SOL"]
+    assert warnings == ["immaterial reference-priced mint MINT value=2.71E-13 SOL"]
     assert large_value == Decimal("0")
     assert large_degraded is True
     assert mint not in internal_nav._jupiter_price_cache
     assert any("amount=500000000&" in call for call in calls)
 
 
-def test_suspicious_material_amount_is_degraded_with_warning(
+def test_large_amount_dust_reference_fallback_does_not_degrade(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    amount = internal_nav.SUSPICIOUS_SPL_RAW_AMOUNT + 1
+    amount = 5_000_000_000
     degraded: list[str] = []
     warnings: list[str] = []
+    calls: list[str] = []
     monkeypatch.setattr(internal_nav.time, "sleep", lambda _: None)
     monkeypatch.setattr(internal_nav, "_jupiter_price_cache", {})
-    monkeypatch.setattr(internal_nav, "_jupiter_failed_cache", set())
-    monkeypatch.setattr(
-        internal_nav,
-        "_http_get",
-        lambda _url: {"outAmount": "1000000000"},
-    )
+
+    def http_get(url: str) -> dict[str, Any]:
+        calls.append(url)
+        if "amount=5000000000&" in url:
+            raise _http_error(400, b'{"error":"new non-route error"}')
+        if "amount=1000000000&" in url:
+            return {"outAmount": "400000"}
+        raise AssertionError(url)
+
+    monkeypatch.setattr(internal_nav, "_http_get", http_get)
 
     value = internal_nav._convert_amount(
         "RPC", "MINT", Decimal(amount), degraded, warnings
     )
 
-    assert value == Decimal("1")
-    assert degraded == ["MINT"]
-    assert warnings == [f"suspicious large raw amount MINT amount_raw={amount}"]
+    assert value == Decimal("0.002")
+    assert degraded == []
+    assert warnings == ["immaterial reference-priced mint MINT value=0.002 SOL"]
+    assert len(calls) == 2
 
 
 def test_jupiter_sol_passthrough(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -451,7 +540,6 @@ def test_convert_amount_keeps_immaterial_reference_warning_non_degraded(
             Decimal("0.000001"),
             False,
             "reference-immaterial",
-            f"immaterial reference-priced mint {mint} value<0.01 SOL",
         ),
     )
 
@@ -461,7 +549,32 @@ def test_convert_amount_keeps_immaterial_reference_warning_non_degraded(
 
     assert value == Decimal("0.000001")
     assert degraded == []
-    assert warnings == ["immaterial reference-priced mint MINT value<0.01 SOL"]
+    assert warnings == ["immaterial reference-priced mint MINT value=0.000001 SOL"]
+
+
+def test_aggregate_immaterial_fallback_cap_degrades(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    degraded: list[str] = []
+    warnings: list[str] = []
+    monkeypatch.setattr(
+        internal_nav,
+        "_quote_jupiter_to_sol",
+        lambda _mint, _amount: internal_nav._MintQuoteResult(
+            Decimal("0.006"), False, "reference-immaterial"
+        ),
+    )
+
+    for idx in range(12):
+        internal_nav._convert_amount(
+            "RPC", f"MINT{idx:02d}", Decimal("1000"), degraded, warnings
+        )
+
+    assert sum(
+        Decimal(warning.rsplit(" value=", 1)[1].removesuffix(" SOL"))
+        for warning in warnings
+    ) == Decimal("0.072")
+    assert "immaterial-sum" in degraded
 
 
 def test_compute_nav_zero_guard(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -750,12 +863,14 @@ def test_idle_spl_no_route_is_visible_and_snapshot_writes(
     assert rows[0]["notes"] == "no-route treated as 0: 1 mints (IDLEMINT)"
 
 
-def test_idle_spl_http_error_degrades_and_blocks_snapshot(
-    monkeypatch: pytest.MonkeyPatch,
+def test_idle_spl_429_transient_aborts_and_record_tool_exits_2(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
     record_tool = _load_record_tool()
     tmp_path = _tmp_dir()
     path = tmp_path / "snapshots.csv"
+    cache_path = tmp_path / "skipped_mints.json"
+    calls = 0
 
     def rpc_call(_rpc: str, method: str, _params: list[Any]) -> dict[str, Any]:
         if method == "getBalance":
@@ -780,31 +895,32 @@ def test_idle_spl_http_error_degrades_and_blocks_snapshot(
         raise AssertionError(method)
 
     def http_get(url: str) -> dict[str, Any]:
-        if "amount=500000000&" in url:
-            raise _http_error(500, b'{"error":"server error"}')
-        if "amount=1000000000&" in url:
-            return {"outAmount": "100000000"}
-        raise AssertionError(url)
+        nonlocal calls
+        calls += 1
+        raise _http_error(429, b"rate limited")
 
     monkeypatch.setattr(internal_nav, "_get_position_addresses", lambda _r, _w: [])
     monkeypatch.setattr(internal_nav, "_fetch_accounts", lambda _r, _p: [])
     monkeypatch.setattr(internal_nav.time, "sleep", lambda _: None)
     monkeypatch.setattr(internal_nav, "_jupiter_price_cache", {})
-    monkeypatch.setattr(internal_nav, "_jupiter_failed_cache", set())
+    monkeypatch.setattr(internal_nav, "JUPITER_SKIP_CACHE_PATH", cache_path)
+    monkeypatch.setattr(internal_nav, "_jupiter_skip_cache", None)
     monkeypatch.setattr(internal_nav, "_http_get", http_get)
     monkeypatch.setattr(internal_nav, "_rpc_call", rpc_call)
 
-    result = internal_nav.compute_nav("RPC", "WALLET")
+    with pytest.raises(internal_nav.TransientPricingError):
+        internal_nav.compute_nav("RPC", "WALLET")
 
-    assert result.idle_spl_sol == Decimal("0")
-    assert result.degraded is True
-    assert result.degraded_mints == ["IDLEMINT"]
-    assert result.warnings == [
-        "degraded Jupiter valuation for IDLEMINT amount_raw=500000000"
-    ]
-
+    assert calls == 4
+    assert not cache_path.exists()
     monkeypatch.setattr(record_tool, "_load_env_file", lambda: None)
-    monkeypatch.setattr(record_tool, "compute_nav", lambda _rpc, _wallet: result)
+    monkeypatch.setattr(
+        record_tool,
+        "compute_nav",
+        lambda _rpc, _wallet: (_ for _ in ()).throw(
+            internal_nav.TransientPricingError("Jupiter HTTP 429 for IDLEMINT")
+        ),
+    )
 
     code = record_tool.main(
         [
@@ -819,8 +935,9 @@ def test_idle_spl_http_error_degrades_and_blocks_snapshot(
         ]
     )
 
-    assert code == 1
+    assert code == 2
     assert not path.exists()
+    assert "TRANSIENT" in capsys.readouterr().out
 
 
 def test_idle_spl_reference_immaterial_passes_clean_without_override(
@@ -868,7 +985,6 @@ def test_idle_spl_reference_immaterial_passes_clean_without_override(
     monkeypatch.setattr(internal_nav, "_fetch_accounts", lambda _r, _p: [])
     monkeypatch.setattr(internal_nav.time, "sleep", lambda _: None)
     monkeypatch.setattr(internal_nav, "_jupiter_price_cache", {})
-    monkeypatch.setattr(internal_nav, "_jupiter_failed_cache", set())
     monkeypatch.setattr(internal_nav, "_http_get", http_get)
     monkeypatch.setattr(internal_nav, "_rpc_call", rpc_call)
 
@@ -877,7 +993,9 @@ def test_idle_spl_reference_immaterial_passes_clean_without_override(
     assert result.idle_spl_sol == Decimal("1.000E-12")
     assert result.degraded is False
     assert result.degraded_mints == []
-    assert result.warnings == []
+    assert result.warnings == [
+        "immaterial reference-priced mint IDLEMINT value=1E-12 SOL"
+    ]
     assert len(calls) == 2
 
     monkeypatch.setattr(record_tool, "_load_env_file", lambda: None)
@@ -948,13 +1066,13 @@ def test_idle_spl_u64_overflow_degrades_with_warning(
     ]
 
 
-def test_idle_spl_suspicious_material_amount_degrades_and_blocks_snapshot(
+def test_idle_spl_large_direct_quote_writes_without_degraded(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     record_tool = _load_record_tool()
     tmp_path = _tmp_dir()
     path = tmp_path / "snapshots.csv"
-    amount = internal_nav.SUSPICIOUS_SPL_RAW_AMOUNT + 1
+    amount = 5_000_000_000
 
     def rpc_call(_rpc: str, method: str, _params: list[Any]) -> dict[str, Any]:
         if method == "getBalance":
@@ -982,18 +1100,15 @@ def test_idle_spl_suspicious_material_amount_degrades_and_blocks_snapshot(
     monkeypatch.setattr(internal_nav, "_fetch_accounts", lambda _r, _p: [])
     monkeypatch.setattr(internal_nav.time, "sleep", lambda _: None)
     monkeypatch.setattr(internal_nav, "_jupiter_price_cache", {})
-    monkeypatch.setattr(internal_nav, "_jupiter_failed_cache", set())
     monkeypatch.setattr(internal_nav, "_http_get", lambda _url: {"outAmount": "1000000000"})
     monkeypatch.setattr(internal_nav, "_rpc_call", rpc_call)
 
     result = internal_nav.compute_nav("RPC", "WALLET")
 
     assert result.idle_spl_sol == Decimal("1")
-    assert result.degraded is True
-    assert result.degraded_mints == ["IDLEMINT"]
-    assert result.warnings == [
-        f"suspicious large raw amount IDLEMINT amount_raw={amount}"
-    ]
+    assert result.degraded is False
+    assert result.degraded_mints == []
+    assert result.warnings == []
 
     monkeypatch.setattr(record_tool, "_load_env_file", lambda: None)
     monkeypatch.setattr(record_tool, "compute_nav", lambda _rpc, _wallet: result)
@@ -1011,8 +1126,8 @@ def test_idle_spl_suspicious_material_amount_degrades_and_blocks_snapshot(
         ]
     )
 
-    assert code == 1
-    assert not path.exists()
+    assert code == 0
+    assert path.exists()
 
 
 def test_record_tool_degraded_notes() -> None:
@@ -1032,7 +1147,7 @@ def test_record_tool_warning_notes() -> None:
     record_tool = _load_record_tool()
     tmp_path = _tmp_dir()
     result = _nav_result()
-    result.warnings = ["immaterial reference-priced mint MINT1 value<0.01 SOL"]
+    result.warnings = ["immaterial reference-priced mint MINT1 value=0.0004 SOL"]
 
     row = record_tool.build_snapshot_row(
         result=result,
@@ -1041,9 +1156,38 @@ def test_record_tool_warning_notes() -> None:
         net_contribution_arg="44.6",
     )
 
-    assert row["notes"] == (
-        "warnings: immaterial reference-priced mint MINT1 value<0.01 SOL"
+    assert row["notes"] == "immaterial fallback: 1 mints (MINT1)"
+
+
+def test_record_tool_nav_jump_note_is_warning_only() -> None:
+    record_tool = _load_record_tool()
+    tmp_path = _tmp_dir()
+    path = tmp_path / "snapshots.csv"
+    with path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=record_tool.FIELDS)
+        writer.writeheader()
+        writer.writerow(
+            {
+                "timestamp": "2026-05-23T12:00:00Z",
+                "source": "internal",
+                "value_sol": "10.000000",
+                "value_usd": "",
+                "sol_usd": "",
+                "net_contribution_sol": "10",
+                "total_pnl_sol": "0.000000",
+                "total_pnl_pct": "0.0000",
+                "period_pnl_sol": "",
+                "notes": "",
+            }
+        )
+
+    row = record_tool.build_snapshot_row(
+        result=_nav_result(value=Decimal("16")),
+        path=path,
+        timestamp_arg="2026-05-24T12:00:00Z",
     )
+
+    assert row["notes"] == "nav-jump: +60.0% vs previous"
 
 
 def test_record_tool_zero_nav_exits(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -1141,7 +1285,7 @@ def test_record_tool_writes_with_warnings_without_degraded_flag(
     tmp_path = _tmp_dir()
     path = tmp_path / "snapshots.csv"
     result = _nav_result()
-    result.warnings = ["immaterial reference-priced mint MINT1 value<0.01 SOL"]
+    result.warnings = ["immaterial reference-priced mint MINT1 value=0.0004 SOL"]
     monkeypatch.setattr(record_tool, "_load_env_file", lambda: None)
     monkeypatch.setattr(record_tool, "compute_nav", lambda _rpc, _wallet: result)
 
@@ -1163,9 +1307,7 @@ def test_record_tool_writes_with_warnings_without_degraded_flag(
     assert code == 0
     with path.open("r", newline="", encoding="utf-8") as handle:
         rows = list(csv.DictReader(handle))
-    assert rows[0]["notes"] == (
-        "warnings: immaterial reference-priced mint MINT1 value<0.01 SOL"
-    )
+    assert rows[0]["notes"] == "immaterial fallback: 1 mints (MINT1)"
 
 
 def test_snapshot_net_contribution_from_flows(monkeypatch: pytest.MonkeyPatch) -> None:
