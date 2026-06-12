@@ -54,7 +54,9 @@ POSITION_V2_DISC = bytes([117, 176, 212, 199, 245, 180, 133, 182])
 SOL_MINT = "So11111111111111111111111111111111111111112"
 TOKEN_PROGRAM = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
 LAMPORTS = 1_000_000_000
-JUPITER_DELAY = 0.15
+# Jupiter free tier allows ~1 req/s; bursts above that trigger sustained 429
+# storms that abort the run as transient (observed live 2026-06-12 at 0.15s).
+JUPITER_DELAY = 1.0
 U64_MAX = 2**64 - 1
 JUPITER_REFERENCE_AMOUNT_RAW = 1_000_000_000
 IMMATERIAL_NAV_THRESHOLD_SOL = Decimal("0.01")
