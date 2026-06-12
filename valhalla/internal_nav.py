@@ -92,7 +92,7 @@ LBPAIR_MINT_Y = 120
 SOL_MINT_BYTES = base58.b58decode(SOL_MINT)
 _ZERO = Decimal("0")
 _decimals_cache: dict[str, int] = {}
-# Price cache: SOL per 1 raw token unit, populated per-process to avoid redundant Jupiter calls.
+# Price cache: SOL per 1 raw token unit, populated per NAV run to avoid redundant Jupiter calls.
 _jupiter_price_cache: dict[str, Decimal] = {}
 _jupiter_skip_cache: Optional[set[str]] = None
 _reward_mints_cache: dict[str, list[Optional[str]]] = {}
@@ -108,6 +108,7 @@ def compute_nav(
     rpc_url: str, wallet: str, progress: Optional[ProgressCallback] = None
 ) -> NavResult:
     """Compute portfolio NAV from on-chain Solana state."""
+    _jupiter_price_cache.clear()
     degraded_mints: list[str] = []
     started_at = time.perf_counter()
 
@@ -130,6 +131,8 @@ def compute_nav(
             continue
         try:
             pos = _decode_position(raw)
+        except TransientPricingError:
+            raise
         except Exception as exc:
             logging.warning("Position account %s decode failed: %s", addr, exc)
             _add_degraded(degraded_mints, addr)
@@ -225,6 +228,8 @@ def _compute_position_nav(
             continue
         try:
             bin_arrays[idx] = _decode_bin_array(raw, idx, pos["lb_pair_bytes"])
+        except TransientPricingError:
+            raise
         except Exception as exc:
             logging.warning("BinArray idx=%s decode failed: %s", idx, exc)
             _add_degraded(degraded_mints, binarray_id)
@@ -432,6 +437,8 @@ def _immaterial_fallback_total(warnings: list[str]) -> Decimal:
         try:
             value = warning.rsplit(" value=", 1)[1].removesuffix(" SOL")
             total += Decimal(value)
+        except TransientPricingError:
+            raise
         except Exception:
             continue
     return total
@@ -663,6 +670,8 @@ def _get_pool_mints(rpc_url: str, lb_pair: str) -> dict[str, Optional[str]]:
         name = data.get("name", "?/?")
         if mint_x and mint_y:
             return {"mint_x": str(mint_x), "mint_y": str(mint_y), "name": str(name)}
+    except TransientPricingError:
+        raise
     except Exception as exc:
         logging.debug("Meteora pair API lookup failed for %s: %s", lb_pair, exc)
 
@@ -678,6 +687,8 @@ def _lbpair_mints_onchain(
         if not result["value"]:
             return None, None
         data = base64.b64decode(result["value"]["data"][0])
+    except TransientPricingError:
+        raise
     except Exception as exc:
         logging.warning("On-chain LbPair fetch failed for %s: %s", lb_pair, exc)
         return None, None
@@ -751,6 +762,8 @@ def _get_reward_mints(rpc_url: str, lb_pair: str) -> list[Optional[str]]:
                 reward_mints[0] = reward_mints[0] or _reward_mint_from_info(infos[0])
             if len(infos) > 1:
                 reward_mints[1] = reward_mints[1] or _reward_mint_from_info(infos[1])
+    except TransientPricingError:
+        raise
     except Exception as exc:
         logging.debug("Reward mints API lookup failed for %s: %s", lb_pair, exc)
 
@@ -804,6 +817,11 @@ def _quote_jupiter_to_sol(mint: str, amount_raw: int) -> _MintQuoteResult:
             _jupiter_price_cache[mint] = out_sol / Decimal(amount_raw)
             return _MintQuoteResult(out_sol, False, "direct")
         except urllib.error.HTTPError as exc:
+            if _is_transient_http_code(exc.code):
+                if attempt < retries - 1:
+                    time.sleep(2**attempt)
+                    continue
+                raise TransientPricingError(f"Jupiter HTTP {exc.code} for {mint}") from exc
             try:
                 body = _read_http_error_body(exc)
             except (urllib.error.URLError, TimeoutError, ConnectionError) as body_exc:
@@ -818,17 +836,14 @@ def _quote_jupiter_to_sol(mint: str, amount_raw: int) -> _MintQuoteResult:
                 return _MintQuoteResult(
                     _ZERO, False, "no_route", f"no-route treated as 0: {mint}"
                 )
-            if _is_transient_http_code(exc.code):
-                if attempt < retries - 1:
-                    time.sleep(2**attempt)
-                    continue
-                raise TransientPricingError(f"Jupiter HTTP {exc.code} for {mint}") from exc
             return _jupiter_reference_fallback_to_sol(mint, amount_raw)
         except (urllib.error.URLError, TimeoutError, ConnectionError) as exc:
             if attempt < retries - 1:
                 time.sleep(2**attempt)
                 continue
             raise TransientPricingError(f"Jupiter transient error for {mint}: {exc}") from exc
+        except TransientPricingError:
+            raise
         except Exception as exc:
             return _jupiter_reference_fallback_to_sol(mint, amount_raw)
     raise TransientPricingError(f"Jupiter quote retries exhausted for {mint}")
@@ -854,6 +869,13 @@ def _jupiter_reference_fallback_to_sol(mint: str, amount_raw: int) -> _MintQuote
             reference_sol = _jupiter_quote_to_sol(mint, JUPITER_REFERENCE_AMOUNT_RAW)
             break
         except urllib.error.HTTPError as exc:
+            if _is_transient_http_code(exc.code):
+                if attempt < retries - 1:
+                    time.sleep(2**attempt)
+                    continue
+                raise TransientPricingError(
+                    f"Jupiter reference HTTP {exc.code} for {mint}"
+                ) from exc
             try:
                 body = _read_http_error_body(exc)
             except (urllib.error.URLError, TimeoutError, ConnectionError) as body_exc:
@@ -867,13 +889,6 @@ def _jupiter_reference_fallback_to_sol(mint: str, amount_raw: int) -> _MintQuote
                 return _MintQuoteResult(
                     _ZERO, False, "no_route", f"no-route treated as 0: {mint}"
                 )
-            if _is_transient_http_code(exc.code):
-                if attempt < retries - 1:
-                    time.sleep(2**attempt)
-                    continue
-                raise TransientPricingError(
-                    f"Jupiter reference HTTP {exc.code} for {mint}"
-                ) from exc
             return _material_unpriceable(mint)
         except (urllib.error.URLError, TimeoutError, ConnectionError) as exc:
             if attempt < retries - 1:
@@ -882,6 +897,8 @@ def _jupiter_reference_fallback_to_sol(mint: str, amount_raw: int) -> _MintQuote
             raise TransientPricingError(
                 f"Jupiter reference transient error for {mint}: {exc}"
             ) from exc
+        except TransientPricingError:
+            raise
         except Exception:
             return _material_unpriceable(mint)
     else:
@@ -923,6 +940,8 @@ def _load_jupiter_skip_cache() -> set[str]:
     except FileNotFoundError:
         _jupiter_skip_cache = set()
         return _jupiter_skip_cache
+    except TransientPricingError:
+        raise
     except Exception as exc:
         logging.warning("Failed to read Jupiter skip cache: %s", exc)
         _jupiter_skip_cache = set()
@@ -956,6 +975,8 @@ def _cache_jupiter_no_route(mint: str) -> None:
         JUPITER_SKIP_CACHE_PATH.write_text(
             json.dumps(payload, indent=2) + "\n", encoding="utf-8"
         )
+    except TransientPricingError:
+        raise
     except Exception as exc:
         logging.warning("Failed to write Jupiter skip cache: %s", exc)
 
