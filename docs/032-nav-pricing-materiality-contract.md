@@ -113,6 +113,12 @@ heuristic or a new error-string branch, stop and re-read this Intent.
   Retry with the existing backoff; if still failing → case 10. Per-run circuit breaker:
   after the **first** `TransientPricingError`, abort the whole run (don't grind through
   remaining mints against a dead API).
+- **The transient contract covers Solana RPC too, not only Jupiter.** `_rpc_call` must
+  retry `TimeoutError`/`URLError`/`ConnectionError` (including read timeouts raised from
+  `response.read()`) with the same backoff as HTTP 429, and raise `TransientPricingError`
+  after exhaustion. A raw stdlib traceback escaping `compute_nav` for a network hiccup is
+  a contract violation. (Found live 2026-06-12: Helius read timeout on
+  `getMultipleAccounts` crashed the tool with exit 1 instead of exit 2.)
 
 ### Exit codes (`tools/record_internal_nav.py`)
 
@@ -192,7 +198,12 @@ Previous internal snapshot 10 SOL, new NAV 16 SOL → row written, exit 0, note 
 Missing bin array / undecodable position / unknown reward mint with pending raw → degraded
 (existing behavior preserved; existing tests for these keep passing).
 
-### AC-8: Heuristics gone
+### AC-8: RPC timeout is transient, not a crash
+Fixture: `_rpc_call`'s HTTP layer raises `TimeoutError` on every attempt (e.g. patched
+`urllib.request.urlopen` or a response whose `read()` times out). → retries with backoff,
+then `TransientPricingError`, exit 2, no traceback on stdout/stderr, CSV untouched.
+
+### AC-9: Heuristics gone
 `SUSPICIOUS_SPL_RAW_AMOUNT` and `_IdleJupiterWarningFilter` no longer exist in the module;
 `git diff --stat` shows net negative LOC for `valhalla/internal_nav.py`.
 
