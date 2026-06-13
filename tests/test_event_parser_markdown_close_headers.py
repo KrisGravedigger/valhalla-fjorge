@@ -1,6 +1,50 @@
 from valhalla.event_parser import EventParser
 
 
+def test_failsafe_parser_accepts_discord_bold_header_position_id():
+    parser = EventParser(base_date="2026-04-26")
+    message = "**Failsafe Activated (DLMM)** (GWusHLsC)"
+
+    parser._classify_and_parse_message("[10:41]", message, [])
+
+    assert len(parser.failsafe_events) == 1
+    assert parser.failsafe_events[0].position_id == "GWusHLsC"
+
+
+def test_failsafe_parser_still_accepts_plain_header_position_id():
+    parser = EventParser(base_date="2026-04-26")
+    message = "Failsafe Activated (DLMM) (GWusHLsC)"
+
+    parser._classify_and_parse_message("[10:41]", message, [])
+
+    assert len(parser.failsafe_events) == 1
+    assert parser.failsafe_events[0].position_id == "GWusHLsC"
+
+
+def test_close_successful_parser_accepts_discord_bold_header_position_id():
+    parser = EventParser(base_date="2026-04-26")
+    message = "**Position Closed Successfully (DLMM)** (HzaHgtua)"
+
+    parser._classify_and_parse_message("[10:41]", message, [])
+
+    assert len(parser.close_events) == 1
+    event = parser.close_events[0]
+    assert event.position_id == "HzaHgtua"
+    assert event.close_type == "normal"
+
+
+def test_close_successful_parser_still_accepts_plain_header_position_id():
+    parser = EventParser(base_date="2026-04-26")
+    message = "Position Closed Successfully (DLMM) (HzaHgtua)"
+
+    parser._classify_and_parse_message("[10:41]", message, [])
+
+    assert len(parser.close_events) == 1
+    event = parser.close_events[0]
+    assert event.position_id == "HzaHgtua"
+    assert event.close_type == "normal"
+
+
 def test_stop_loss_parser_accepts_discord_bold_header():
     parser = EventParser(base_date="2026-04-26")
     message = "\n".join(
