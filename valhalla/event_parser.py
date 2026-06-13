@@ -34,8 +34,8 @@ class EventParser:
     # Position ID patterns
     OPEN_POSITION_ID_PATTERN = r'Opened New DLMM Position!\s*\((\w+)\)'
     CLOSE_POSITION_ID_PATTERN = r'Closed DLMM Position!\s*\((\w+)\)'
-    CLOSE_SUCCESSFUL_POSITION_ID_PATTERN = r'Position Closed Successfully \(DLMM\)\s*\((\w+)\)'
-    FAILSAFE_POSITION_ID_PATTERN = r'Failsafe Activated \(DLMM\)\s*\((\w+)\)'
+    CLOSE_SUCCESSFUL_POSITION_ID_PATTERN = r'Position Closed Successfully \(DLMM\)\*?\*?\s*\((\w+)\)'
+    FAILSAFE_POSITION_ID_PATTERN = r'Failsafe Activated \(DLMM\)\*?\*?\s*\((\w+)\)'
     ADD_LIQUIDITY_POSITION_ID_PATTERN = r'Added DLMM Liquidity\s*\((\w+)\)'
     LIQUIDITY_AMOUNT_PATTERN = r'Amount:\s*([\d.]+)\s*SOL'
 
@@ -53,7 +53,7 @@ class EventParser:
     PAIR_PATTERN = r'Pair:\s*(\S+)'
 
     # Already-closed event patterns
-    ALREADY_CLOSED_PATTERN = r'Your position\s+(\S+)\s+was already closed\s+\((\w+)\)'
+    ALREADY_CLOSED_PATTERN = r'Your position\s+(\S+)\s+was already closed\*?\*?\s*\((\w+)\)'
     ALREADY_CLOSED_TARGET_PATTERN = r'Target:\s*(\S+)'
 
     # Skip event markers
