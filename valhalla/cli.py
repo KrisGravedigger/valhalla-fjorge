@@ -482,10 +482,12 @@ def main():
                 # Get all .txt and .html files in input/
                 input_files = [str(f) for f in input_dir.iterdir() if f.is_file() and f.suffix in ['.txt', '.html']]
                 if not input_files:
-                    parser.error("No .txt or .html files found in input/ folder")
+                    print("Error: No .txt or .html files found in input/ folder", file=sys.stderr)
+                    sys.exit(2)
                 print(f"Processing all files in input/ folder: {len(input_files)} file(s)")
             else:
-                parser.error("No input files specified and input/ folder not found")
+                print("Error: No input files specified and input/ folder not found", file=sys.stderr)
+                sys.exit(2)
         else:
             input_files = args.input_files
 
