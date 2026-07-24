@@ -112,8 +112,12 @@ def main() -> None:
             )
             sys.exit(1)
 
-        after = last_pull.strftime("%Y-%m-%dT%H:%M")
-        before = now.strftime("%Y-%m-%dT%H:%M")
+        # DCE interprets naive date strings as local machine time, not UTC —
+        # convert explicitly or every pull silently cuts off local-UTC-offset
+        # worth of the newest messages (masked because dce_to_input.py later
+        # converts the fetched UTC timestamps back to local for display).
+        after = last_pull.astimezone().strftime("%Y-%m-%dT%H:%M")
+        before = now.astimezone().strftime("%Y-%m-%dT%H:%M")
         print(f"\n[pipeline] Pull range: {after} → {before}")
 
         rc = _run(

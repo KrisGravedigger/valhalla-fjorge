@@ -17,12 +17,22 @@ Usage:
 """
 
 import argparse
+import io
 import os
 import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
 
+# Force UTF-8 output on Windows (must be BEFORE any print()). DCE's own stdout
+# banner is not valid UTF-8 (CP437 box-drawing bytes), so capture_output with
+# errors='replace' turns it into U+FFFD chars that legacy console codepages
+# (e.g. cp1250) can't encode, crashing this script before the JSON->txt
+# conversion step ever runs.
+if sys.stdout.encoding and sys.stdout.encoding.lower() not in ('utf-8', 'utf8'):
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+if sys.stderr.encoding and sys.stderr.encoding.lower() not in ('utf-8', 'utf8'):
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
 # ---------------------------------------------------------------------------
 # .env parser (stdlib only — no python-dotenv dependency)
