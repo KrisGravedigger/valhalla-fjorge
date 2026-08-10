@@ -3,6 +3,7 @@ Event parser for Discord bot messages.
 """
 
 import re
+from collections import Counter
 from typing import List, Tuple, Optional
 from datetime import datetime, timedelta
 
@@ -31,12 +32,15 @@ class EventParser:
     TARGET_POS_PATTERN = r'Target Pos:.*?\|\s*\S+:\s*([\d.]+)'
     TOTAL_DEPOSIT_USER_PATTERN = r'Total Deposit:.*?\|\s*User\s+([\d.]+)\s*SOL'
 
-    # Position ID patterns
-    OPEN_POSITION_ID_PATTERN = r'Opened New DLMM Position!\s*\((\w+)\)'
-    CLOSE_POSITION_ID_PATTERN = r'Closed DLMM Position!\s*\((\w+)\)'
-    CLOSE_SUCCESSFUL_POSITION_ID_PATTERN = r'Position Closed Successfully \(DLMM\)\*?\*?\s*\((\w+)\)'
-    FAILSAFE_POSITION_ID_PATTERN = r'Failsafe Activated \(DLMM\)\*?\*?\s*\((\w+)\)'
-    ADD_LIQUIDITY_POSITION_ID_PATTERN = r'Added DLMM Liquidity\s*\((\w+)\)'
+    # Position ID patterns. Discord abbreviates current IDs as ``xxxx...yyyy``;
+    # historical archives contain the equivalent concatenated ``xxxxyyyy`` form.
+    POSITION_ID_FRAGMENT = r'(\w+(?:\.\.\.\w+)?)'
+    OPEN_POSITION_ID_PATTERN = rf'Opened New DLMM Position!\s*\({POSITION_ID_FRAGMENT}\)'
+    CLOSE_POSITION_ID_PATTERN = rf'Closed DLMM Position!\s*\({POSITION_ID_FRAGMENT}\)'
+    CLOSE_SUCCESSFUL_POSITION_ID_PATTERN = rf'Position Closed Successfully \(DLMM\)\*?\*?\s*\({POSITION_ID_FRAGMENT}\)'
+    FAILSAFE_POSITION_ID_PATTERN = rf'Failsafe Activated \(DLMM\)\*?\*?\s*\({POSITION_ID_FRAGMENT}\)'
+    FAILSAFE_YOUR_POSITION_ID_PATTERN = rf'\*{{0,2}}Your Position:\*{{0,2}}\s*{POSITION_ID_FRAGMENT}'
+    ADD_LIQUIDITY_POSITION_ID_PATTERN = rf'Added DLMM Liquidity\s*\({POSITION_ID_FRAGMENT}\)'
     LIQUIDITY_AMOUNT_PATTERN = r'Amount:\s*([\d.]+)\s*SOL'
 
     # Close event patterns
@@ -46,14 +50,14 @@ class EventParser:
 
     # Rug event patterns
     RUG_TARGET_PATTERN = r'Copied From:\s*(\S+)\)'
-    RUG_POSITION_ID_PATTERN = r'Rug Check Stop Loss Executed\s*\(DLMM\)\*?\*?\s*\((\w+)\)'
+    RUG_POSITION_ID_PATTERN = rf'Rug Check Stop Loss Executed\s*\(DLMM\)\*?\*?\s*\({POSITION_ID_FRAGMENT}\)'
     PRICE_DROP_PATTERN = r'Price Drop:\s*([\d.]+)%'
     RUG_THRESHOLD_PATTERN = r'Rug Check Threshold:\s*([\d.]+)%'
     POSITION_ADDRESS_PATTERN = r'Position:\s*(\S+)'
     PAIR_PATTERN = r'Pair:\s*(\S+)'
 
     # Already-closed event patterns
-    ALREADY_CLOSED_PATTERN = r'Your position\s+(\S+)\s+was already closed\*?\*?\s*\((\w+)\)'
+    ALREADY_CLOSED_PATTERN = rf'Your position\s+(\S+)\s+was already closed\*?\*?\s*\({POSITION_ID_FRAGMENT}\)'
     ALREADY_CLOSED_TARGET_PATTERN = r'Target:\s*(\S+)'
 
     # Skip event markers
@@ -77,8 +81,8 @@ class EventParser:
     INSUF_REQUIRED_PATTERN = r'Required amount for this trade:\s*([\d.]+)\s*SOL'
 
     # Take profit / stop loss event patterns
-    TAKE_PROFIT_POSITION_ID_PATTERN = r'Take Profit Executed \(DLMM\)\*?\*?\s*\((\w+)\)'
-    STOP_LOSS_POSITION_ID_PATTERN = r'Stop Loss Executed \(DLMM\)\*?\*?\s*\((\w+)\)'
+    TAKE_PROFIT_POSITION_ID_PATTERN = rf'Take Profit Executed \(DLMM\)\*?\*?\s*\({POSITION_ID_FRAGMENT}\)'
+    STOP_LOSS_POSITION_ID_PATTERN = rf'Stop Loss Executed \(DLMM\)\*?\*?\s*\({POSITION_ID_FRAGMENT}\)'
     TAKE_PROFIT_TARGET_PATTERN = r'Copied From:\s*(\S+)\)'
     ENTRY_VALUE_PATTERN = r'Entry Value:\s*([\d.]+)\s*SOL'
     EXIT_VALUE_PATTERN = r'Exit Value:\s*([\d.]+)\s*SOL'
@@ -99,8 +103,14 @@ class EventParser:
         self.add_liquidity_events: List[AddLiquidityEvent] = []
         self.insufficient_balance_events: List[InsufficientBalanceEvent] = []
         self.already_closed_events: List[AlreadyClosedEvent] = []
+        self.unparsed_counts: Counter[str] = Counter()
         self.base_date = base_date
         self.current_date = base_date
+
+    @staticmethod
+    def _normalize_position_id(position_id: str) -> str:
+        """Normalize a Discord abbreviated position ID to the CSV short-ID form."""
+        return position_id.replace("...", "")
 
     def parse_messages(self, messages: List[ParsedMessage]) -> None:
         """Parse all messages from PlainTextReader with midnight rollover detection"""
@@ -149,72 +159,96 @@ class EventParser:
             if event:
                 event.date = self.current_date or ""
                 self.open_events.append(event)
+            else:
+                self.unparsed_counts["Opened New DLMM Position"] += 1
 
         elif "Take Profit Executed (DLMM)" in message:
             event = self._parse_take_profit_event(timestamp, message, tx_signatures)
             if event:
                 event.date = self.current_date or ""
                 self.close_events.append(event)
+            else:
+                self.unparsed_counts["Take Profit Executed (DLMM)"] += 1
 
         elif "Closed DLMM Position!" in message:
             event = self._parse_close_event(timestamp, message, tx_signatures)
             if event:
                 event.date = self.current_date or ""
                 self.close_events.append(event)
+            else:
+                self.unparsed_counts["Closed DLMM Position"] += 1
 
         elif "Position Closed Successfully (DLMM)" in message:
             event = self._parse_close_successful_event(timestamp, message, tx_signatures)
             if event:
                 event.date = self.current_date or ""
                 self.close_events.append(event)
+            else:
+                self.unparsed_counts["Position Closed Successfully (DLMM)"] += 1
 
         elif "Failsafe Activated (DLMM)" in message:
             event = self._parse_failsafe_event(timestamp, message, tx_signatures)
             if event:
                 event.date = self.current_date or ""
                 self.failsafe_events.append(event)
+            else:
+                self.unparsed_counts["Failsafe Activated (DLMM)"] += 1
 
         elif "Added DLMM Liquidity" in message:
             event = self._parse_add_liquidity_event(timestamp, message)
             if event:
                 event.date = self.current_date or ""
                 self.add_liquidity_events.append(event)
+            else:
+                self.unparsed_counts["Added DLMM Liquidity"] += 1
 
         elif "was already closed" in message:
             event = self._parse_already_closed_event(timestamp, message, tx_signatures)
             if event:
                 event.date = self.current_date or ""
                 self.already_closed_events.append(event)
+            else:
+                self.unparsed_counts["Already closed position"] += 1
 
         elif "Rug Check Stop Loss Executed" in message:
             event = self._parse_rug_event(timestamp, message)
             if event:
                 event.date = self.current_date or ""
                 self.rug_events.append(event)
+            else:
+                self.unparsed_counts["Rug Check Stop Loss Executed"] += 1
 
         elif "Stop Loss Executed (DLMM)" in message:
             event = self._parse_stop_loss_event(timestamp, message, tx_signatures)
             if event:
                 event.date = self.current_date or ""
                 self.close_events.append(event)
+            else:
+                self.unparsed_counts["Stop Loss Executed (DLMM)"] += 1
 
         elif "Skipping position due to" in message:
             event = self._parse_skip_event(timestamp, message)
             if event:
                 event.date = self.current_date or ""
                 self.skip_events.append(event)
+            else:
+                self.unparsed_counts["Skipping position"] += 1
 
         elif "Insufficient Effective Balance" in message:
             event = self._parse_insufficient_balance_event(timestamp, message)
             if event:
                 event.date = self.current_date or ""
                 self.insufficient_balance_events.append(event)
+            else:
+                self.unparsed_counts["Insufficient Effective Balance"] += 1
 
         elif "Swapped" in message:
             event = self._parse_swap_event(timestamp, message)
             if event:
                 event.date = self.current_date or ""
                 self.swap_events.append(event)
+            else:
+                self.unparsed_counts["Swapped"] += 1
 
     def _parse_open_event(self, timestamp: str, message: str, tx_signatures: List[str],
                           target_wallet_address: Optional[str] = None,
@@ -245,7 +279,7 @@ class EventParser:
             jup_score = int(jup_match.group(1))
             target_sol = float(target_sol_match.group(1))
             your_sol = float(total_deposit_match.group(1)) if total_deposit_match else float(your_sol_match.group(1))
-            position_id = position_id_match.group(1)
+            position_id = self._normalize_position_id(position_id_match.group(1))
 
             return OpenEvent(
                 timestamp=timestamp,
@@ -287,7 +321,7 @@ class EventParser:
             ending_usd = float(ending_match.group(2).replace(',', ''))
             total_sol = float(total_match.group(1)) if total_match else 0.0
             active_positions = int(total_match.group(2)) if total_match else 0
-            position_id = position_id_match.group(1)
+            position_id = self._normalize_position_id(position_id_match.group(1))
 
             return CloseEvent(
                 timestamp=timestamp,
@@ -311,7 +345,7 @@ class EventParser:
             position_id_match = re.search(self.CLOSE_SUCCESSFUL_POSITION_ID_PATTERN, message)
             if not position_id_match:
                 return None
-            position_id = position_id_match.group(1)
+            position_id = self._normalize_position_id(position_id_match.group(1))
             # No target, starting_sol, ending_sol in this format — leave at 0.0 (pending PnL)
             target_match = re.search(self.TARGET_PATTERN, message)
             target = target_match.group(1) if target_match else ""
@@ -349,7 +383,7 @@ class EventParser:
                 starting_usd=0.0,
                 ending_sol=float(exit_match.group(1)),
                 ending_usd=0.0,
-                position_id=position_id_match.group(1),
+                position_id=self._normalize_position_id(position_id_match.group(1)),
                 tx_signatures=tx_signatures,
                 close_type=close_type
             )
@@ -371,11 +405,13 @@ class EventParser:
         """Parse a failsafe activation event"""
         try:
             position_id_match = re.search(self.FAILSAFE_POSITION_ID_PATTERN, message)
+            if not position_id_match:
+                position_id_match = re.search(self.FAILSAFE_YOUR_POSITION_ID_PATTERN, message)
 
             if not position_id_match:
                 return None
 
-            position_id = position_id_match.group(1)
+            position_id = self._normalize_position_id(position_id_match.group(1))
 
             return FailsafeEvent(
                 timestamp=timestamp,
@@ -396,7 +432,7 @@ class EventParser:
             if not all([position_id_match, target_match, amount_match]):
                 return None
 
-            position_id = position_id_match.group(1)
+            position_id = self._normalize_position_id(position_id_match.group(1))
             target = target_match.group(1)
             amount_sol = float(amount_match.group(1))
 
@@ -428,7 +464,10 @@ class EventParser:
             position_address = position_match.group(1)
             price_drop = float(drop_match.group(1))
             threshold = float(threshold_match.group(1))
-            position_id = position_id_match.group(1) if position_id_match else None
+            position_id = (
+                self._normalize_position_id(position_id_match.group(1))
+                if position_id_match else None
+            )
 
             # Sanity check: verify position_id matches short_id of position_address
             if position_id and position_address:
@@ -456,7 +495,7 @@ class EventParser:
             if not match:
                 return None
             position_address = match.group(1)
-            position_id = match.group(2)
+            position_id = self._normalize_position_id(match.group(2))
             target_match = re.search(self.ALREADY_CLOSED_TARGET_PATTERN, message)
             target = target_match.group(1) if target_match else ""
             return AlreadyClosedEvent(
