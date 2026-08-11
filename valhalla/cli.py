@@ -237,6 +237,7 @@ def _read_and_parse_input_files(input_files, args):
         event_parser.add_liquidity_events.extend(file_parser.add_liquidity_events)
         event_parser.insufficient_balance_events.extend(file_parser.insufficient_balance_events)
         event_parser.already_closed_events.extend(file_parser.already_closed_events)
+        event_parser.unparsed_counts.update(file_parser.unparsed_counts)
         if dedup_count:
             print(f"  Skipped {dedup_count} duplicate events (already seen in earlier file)")
 
@@ -507,6 +508,13 @@ def main():
         print(f"  Skip events: {len(event_parser.skip_events)}")
         print(f"  Swap events: {len(event_parser.swap_events)}")
         print(f"  Insufficient balance events: {len(event_parser.insufficient_balance_events)}")
+        if event_parser.unparsed_counts:
+            print("\n" + "!" * 72)
+            print("WARNING: Some recognized Valhalla event messages failed to parse.")
+            print("The bot's message format may have changed; affected events were skipped:")
+            for event_type, count in event_parser.unparsed_counts.most_common():
+                print(f"  WARNING: {count} {event_type} message(s) matched but failed to parse")
+            print("!" * 72)
 
         # Load already-complete and already-meteora position IDs from existing CSV
         already_complete_ids = set()   # meteora + both dates + enrichable close_reason -> skip everything

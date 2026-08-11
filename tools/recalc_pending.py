@@ -14,6 +14,7 @@ import csv
 import os
 import sys
 import time
+from datetime import datetime, timedelta
 
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -24,6 +25,23 @@ CSV_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__
 # Fields to clear for token-only / non-calculable positions
 _PNL_FIELDS = ['sol_received', 'pnl_sol', 'pnl_pct',
                 'meteora_deposited', 'meteora_withdrawn', 'meteora_fees', 'meteora_pnl']
+
+# Meteora's historical-events API has never resolved these once they go stale this long
+# (verified 2026-08-06: real on-chain DLMM positions the indexer never picks up, not an
+# address/lookup bug). Retrying past this window just burns rate-limited API calls with a
+# 0% success rate. Rows stay pnl_source="pending" in the CSV -- this only skips the retry.
+STALE_PENDING_CUTOFF_DAYS = 7
+
+
+def _is_stale_pending(row: dict) -> bool:
+    close_str = row.get('datetime_close', '')
+    if not close_str:
+        return False
+    try:
+        closed_at = datetime.fromisoformat(close_str)
+    except ValueError:
+        return False
+    return datetime.now() - closed_at > timedelta(days=STALE_PENDING_CUTOFF_DAYS)
 
 
 def main():
@@ -37,6 +55,7 @@ def main():
     # 1. pnl_source == "pending" with full_address
     # 2. pnl_source == "meteora" with meteora_deposited == "0.0000" (Bug #1)
     to_recalc = []
+    skipped_stale = 0
     for i, r in enumerate(rows):
         full_addr = r.get('full_address', '')
         if not full_addr:
@@ -46,12 +65,20 @@ def main():
         dep = r.get('meteora_deposited', '')
 
         if src == 'pending':
+            if _is_stale_pending(r):
+                skipped_stale += 1
+                continue
             to_recalc.append((i, full_addr, 'pending'))
         elif src == 'meteora' and dep in ('0.0000', '0', ''):
             # Check if lpagent shows non-zero deposit (Bug #1 candidates)
             to_recalc.append((i, full_addr, 'bug1'))
 
     print(f"Found {len(to_recalc)} positions to recalculate")
+    if skipped_stale:
+        print(
+            f"Skipped {skipped_stale} pending position(s) older than "
+            f"{STALE_PENDING_CUTOFF_DAYS}d (still 'pending' in CSV, just not retried)"
+        )
     for idx, addr, reason in to_recalc:
         r = rows[idx]
         print(f"  {r['position_id']:>10s} {r.get('token','?'):>12s} src={r.get('pnl_source','?'):>8s} "
