@@ -19,7 +19,7 @@ def test_all_embed_variants_are_rendered_as_messages(tmp_path):
 
     messages = PlainTextReader(str(output_path)).read()
 
-    assert len(messages) == 44
+    assert len(messages) == 45
     assert "Opened \u00b7 DLMM \u00b7 BidAsk 1-Sided" in output_text
     assert "STONK-SOL [https://dexscreener.com/solana/" in output_text
     assert "Valhalla \u00b7 HGh5...nXn9" in output_text

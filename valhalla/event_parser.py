@@ -32,6 +32,7 @@ class EventParser:
     YOUR_POS_PATTERN = rf'Your Pos{LABEL_SEP}.*?\|\s*\S+:\s*([\d.]+)'
     TARGET_POS_PATTERN = rf'Target Pos{LABEL_SEP}.*?\|\s*\S+:\s*([\d.]+)'
     TOTAL_DEPOSIT_USER_PATTERN = r'Total Deposit:.*?\|\s*User\s+([\d.]+)\s*SOL'
+    TOTAL_DEPOSIT_TARGET_PATTERN = r'Total Deposit:\s*Target\s+([\d.]+)\s*SOL'
 
     # Position ID patterns. Discord abbreviates current IDs as ``xxxx...yyyy``;
     # historical archives contain the equivalent concatenated ``xxxxyyyy`` form.
@@ -332,6 +333,8 @@ class EventParser:
             your_sol_match = re.search(r'^###\s*([\d.]+)\s+SOL\s*$', message, re.MULTILINE)
             target_sol_match = re.search(r"of target's\s+([\d.]+)", message)
             target_match = re.search(self.TARGET_PATTERN, message)
+            total_deposit_user_match = re.search(self.TOTAL_DEPOSIT_USER_PATTERN, message)
+            total_deposit_target_match = re.search(self.TOTAL_DEPOSIT_TARGET_PATTERN, message)
             mc_match = re.search(self.MARKET_CAP_PATTERN, message)
             age_match = re.search(self.TOKEN_AGE_PATTERN, message)
             jup_match = re.search(rf'Jup{self.LABEL_SEP}(\d+)', message)
@@ -340,8 +343,9 @@ class EventParser:
             )
 
             if not all([
-                author_match, title_match, your_sol_match, target_sol_match,
-                target_match, mc_match, age_match, jup_match, position_id_match,
+                author_match, title_match, target_match, position_id_match,
+                total_deposit_user_match or your_sol_match,
+                total_deposit_target_match or target_sol_match,
             ]):
                 return None
 
@@ -352,11 +356,11 @@ class EventParser:
                 token_name=token_name.strip(),
                 token_pair=f'{token_name.strip()}-{quote_token}',
                 target=target_match.group(1),
-                market_cap=float(mc_match.group(1).replace(',', '')),
-                token_age=age_match.group(1).strip(),
-                jup_score=int(jup_match.group(1)),
-                target_sol=float(target_sol_match.group(1)),
-                your_sol=float(your_sol_match.group(1)),
+                market_cap=float(mc_match.group(1).replace(',', '')) if mc_match else 0.0,
+                token_age=age_match.group(1).strip() if age_match else '',
+                jup_score=int(jup_match.group(1)) if jup_match else 0,
+                target_sol=float(total_deposit_target_match.group(1)) if total_deposit_target_match else float(target_sol_match.group(1)),
+                your_sol=float(total_deposit_user_match.group(1)) if total_deposit_user_match else float(your_sol_match.group(1)),
                 position_id=self._normalize_position_id(position_id_match.group(1)),
                 tx_signatures=tx_signatures,
                 target_wallet_address=target_wallet_address,

@@ -57,7 +57,8 @@
   "gen3|embed|-|stop-loss": 2,
   "gen3|embed|-|failsafe": 1,
   "gen3|embed|Skipped - low Jupiter organic score restriction|skip-jup": 12,
-  "gen3|embed|Closed DLMM Position! (ID)|close|no-pnl": 2
+  "gen3|embed|Closed DLMM Position! (ID)|close|no-pnl": 2,
+  "gen3|embed|author=Opened · DLMM · Spot 1-Sided|open|stable-pair": 4
  },
  "messages": [
   {
@@ -1959,6 +1960,49 @@
    "inlineEmojis": []
   },
   {
+   "id": "1541791649917702207",
+   "type": "Default",
+   "timestamp": "2026-08-25T14:49:34.444+02:00",
+   "timestampEdited": null,
+   "callEndedTimestamp": null,
+   "isPinned": false,
+   "content": "",
+   "author": {
+    "id": "1251546267633455230",
+    "name": "Valhalla Bot",
+    "discriminator": "7099",
+    "nickname": "Valhalla Bot",
+    "color": null,
+    "isBot": true,
+    "roles": [],
+    "avatarUrl": "https://cdn.discordapp.com/avatars/1251546267633455230/49fb2e14025441cdadf926956e1a2815.png?size=512"
+   },
+   "attachments": [],
+   "embeds": [
+    {
+     "title": "SOL-USDC",
+     "url": "https://dexscreener.com/solana/So11111111111111111111111111111111111111112",
+     "timestamp": "2026-08-25T14:49:33.833+02:00",
+     "description": "### 1.00 SOL\n2% of target's 60.00\n**Target** [20260618_gh7gW8Ft](<https://valhalla-bot.app/dashboard/wallet/gh7gW8FtC8ygPnM8GMPtaufTXenNvck8Fi4cR2Up82w>) · [Orb](<https://orbmarkets.io/address/gh7gW8FtC8ygPnM8GMPtaufTXenNvck8Fi4cR2Up82w>) · [Solscan](<https://solscan.io/account/gh7gW8FtC8ygPnM8GMPtaufTXenNvck8Fi4cR2Up82w>)\n**Token** [DexScreener](<https://dexscreener.com/solana/So11111111111111111111111111111111111111112>) · [Orb](<https://orbmarkets.io/token/So11111111111111111111111111111111111111112>) · [Solscan](<https://solscan.io/token/So11111111111111111111111111111111111111112>)\n**Yours** 3 transactions · first [Orb](<https://orbmarkets.io/tx/3UnUTQHnoLRmFHfUwAELQdWSGZ9ph7f8mbR8xGZGwsogFNcsQnASVuLFHdZCMUCHtSsCS6teyjdUGxYz8Gazz6qS>) · [Solscan](<https://solscan.io/tx/3UnUTQHnoLRmFHfUwAELQdWSGZ9ph7f8mbR8xGZGwsogFNcsQnASVuLFHdZCMUCHtSsCS6teyjdUGxYz8Gazz6qS>) · last [Orb](<https://orbmarkets.io/tx/5RK8EWB9ESHCNmfyu5aaENiXhVV1dobrb9VkZZvGS11Gqq5kNKbWtqmz3P9EFFe68KmtCByZf8YeQngm9T5u9WBs>) · [Solscan](<https://solscan.io/tx/5RK8EWB9ESHCNmfyu5aaENiXhVV1dobrb9VkZZvGS11Gqq5kNKbWtqmz3P9EFFe68KmtCByZf8YeQngm9T5u9WBs>)\n**Target tx** 3 transactions · first [Orb](<https://orbmarkets.io/tx/4TWNbT37CHW91c8Fa9T8VmDuVXHXzeuz44mSBF7xRFBUwmVD8Je2MMpp5jamV9W5ashdtvyA3GuD9jWbafrFPQq2>) · [Solscan](<https://solscan.io/tx/4TWNbT37CHW91c8Fa9T8VmDuVXHXzeuz44mSBF7xRFBUwmVD8Je2MMpp5jamV9W5ashdtvyA3GuD9jWbafrFPQq2>) · last [Orb](<https://orbmarkets.io/tx/GqyR7N6Qth1ECAQB4gp3j7xki3GViso2H5zKB8EFZnYYn8dmhc4AiaXFSoJRe1MY9DYknhPAKUmcFdktdw6EwNU>) · [Solscan](<https://solscan.io/tx/GqyR7N6Qth1ECAQB4gp3j7xki3GViso2H5zKB8EFZnYYn8dmhc4AiaXFSoJRe1MY9DYknhPAKUmcFdktdw6EwNU>)\n||**Calculation Details**\nTarget: SOL 60.000000 tokens ($5910.00) | USDC 0.000000 tokens ($0.00) | Total: $5910.00\nPrices: SOL $98.50 | USDC $0.00\nTotal Deposit: Target 60.0000 SOL | User 1.0000 SOL\nSplit: SOL 100.0% | USDC 0.0%||",
+     "color": "#4A7FB5",
+     "author": {
+      "name": "Opened · DLMM · Spot 1-Sided",
+      "url": null
+     },
+     "footer": {
+      "text": "Valhalla · GcWN...hNc8"
+     },
+     "images": [],
+     "fields": [],
+     "inlineEmojis": []
+    }
+   ],
+   "stickers": [],
+   "reactions": [],
+   "mentions": [],
+   "inlineEmojis": []
+  },
+  {
    "id": "1541869329409253436",
    "type": "Default",
    "timestamp": "2026-08-25T19:58:14.678+02:00",
@@ -2042,5 +2086,5 @@
    "inlineEmojis": []
   }
  ],
- "messageCount": 44
+ "messageCount": 45
 }

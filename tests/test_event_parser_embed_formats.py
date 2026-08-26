@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 
 from dce_to_input import convert_dce_json
 from valhalla.event_parser import EventParser
@@ -23,7 +24,7 @@ def _parse_fixture(tmp_path):
 def test_all_fixture_variants_parse_and_every_supported_bucket_is_populated(tmp_path):
     messages, parser = _parse_fixture(tmp_path)
 
-    assert len(messages) == 44
+    assert len(messages) == 45
     assert not parser.unparsed_counts
     assert all((
         parser.open_events, parser.close_events, parser.swap_events, parser.rug_events,
@@ -39,6 +40,12 @@ def test_open_close_swap_already_closed_and_skip_values_match_all_dialects(tmp_p
     assert (opens["3mXLJHz6"].token_pair, opens["3mXLJHz6"].target_sol) == ("MANIFEST-SOL", 100.0)
     assert (opens["4jbUhYhE"].token_pair, opens["4jbUhYhE"].your_sol) == ("EYE-SOL", 0.6583)
     assert (opens["HGh5nXn9"].token_pair, opens["HGh5nXn9"].target_sol) == ("STONK-SOL", 45.04)
+    stable_pair = opens["GcWNhNc8"]
+    assert (
+        stable_pair.token_pair, stable_pair.position_type, stable_pair.your_sol,
+        stable_pair.target_sol, stable_pair.target, stable_pair.market_cap,
+        stable_pair.token_age, stable_pair.jup_score,
+    ) == ("SOL-USDC", "Spot", 1.0, 60.0, "20260618_gh7gW8Ft", 0.0, "", 0)
 
     closes = {event.position_id: event for event in parser.close_events}
     assert (closes["8HBv2wgG"].starting_sol, closes["8HBv2wgG"].ending_usd) == (0.42, 141.68)
@@ -137,6 +144,21 @@ def test_gen3_footer_position_id_and_missing_footer_id_are_safe():
         clean._classify_and_parse_message("[2026-08-23T15:31]", template.replace("Valhalla \u00b7 CV1C...BoBG", footer), [])
         assert not clean.open_events
         assert clean.unparsed_counts
+
+def test_gen1_open_without_market_cap_remains_unparsed(tmp_path):
+    messages, _ = _parse_fixture(tmp_path)
+    gen1_open = next(
+        item.clean_text for item in messages
+        if "Opened New DLMM Position! (3mXL...JHz6)" in item.clean_text
+    )
+    damaged_open = re.sub(r'(?<!\w)MC:', 'Market Cap:', gen1_open, count=1)
+
+    parser = EventParser()
+    parser._classify_and_parse_message("[2026-08-23T06:00]", damaged_open, [])
+
+    assert not parser.open_events
+    assert parser.unparsed_counts["Opened New DLMM Position"] == 1
+
 
 
 def test_unknown_embed_author_is_counted_loudly():

@@ -336,3 +336,60 @@ transport layer, against the `valhalla/` package split.
 **Support gen3 only**, treating the 9-hour gen2 window as acceptable loss. Rejected by the
 operator: that window contains 78 opens and 65 closes with real PnL, and the opens would sit in
 the CSV forever without a matching close.
+
+---
+
+## Addendum A — stable-pair opens (SOL-USDC), added 2026-08-26
+
+Found during full-scale validation, not by the curated fixture: 4 open events on 2026-08-25
+from target `20260618_gh7gW8Ft` for the pair **SOL-USDC**. The bot omits `**MC**`, `**Age**`
+and `**Jup**` for a stable/blue-chip pair and appends a spoiler block:
+
+```
+Opened · DLMM · Spot 1-Sided
+SOL-USDC
+### 1.00 SOL
+2% of target's 60.00
+**Target** 20260618_gh7gW8Ft  · Orb  · Solscan
+**Token** DexScreener  · Orb  · Solscan
+**Yours** 3 transactions · …
+**Target tx** 3 transactions · …
+||**Calculation Details**
+Target: SOL 60.000000 tokens ($5910.00) | USDC 0.000000 tokens ($0.00) | Total: $5910.00
+Prices: SOL $98.50 | USDC $0.00
+Total Deposit: Target 60.0000 SOL | User 1.0000 SOL
+Split: SOL 100.0% | USDC 0.0%||
+Valhalla · GcWN...hNc8
+```
+
+`_parse_open_event` requires market cap, token age and Jup score to all be present, so it
+returns `None` and the event is dropped. `USDC` and `Calculation Details` appear nowhere in the
+gen1 archives — this is a **new position type, not a regression**.
+
+**Operator decision (2026-08-26): parse them with empty metrics.**
+
+- `market_cap → 0.0`, `token_age → ""`, `jup_score → 0` when the lines are absent.
+  This is already the codebase's "no data" convention: `valhalla/loss_analyzer.py:165-172`
+  maps `jup_score == 0` and `mc_at_open == 0.0` to `None` and excludes them from threshold
+  analysis, so MC/Jup/age statistics are not distorted.
+- Everything else is extracted normally: `position_type` from the author line, `token_pair`
+  from the title, `your_sol` from `Total Deposit: … User 1.0000 SOL` (falling back to the
+  `### 1.00 SOL` line), `target_sol` from `Total Deposit: Target 60.0000 SOL` (falling back to
+  `2% of target's 60.00`), `position_id` from the footer.
+- Rationale for not dropping them: close events carry no metrics and parse fine, so dropping
+  only the opens would produce orphaned closes (`already_closed_unknown_open` noise) for real
+  1 SOL positions.
+
+Relaxing the required-field set applies to gen3 opens only. A gen1/gen2 open that is missing
+MC/Age/Jup is still a parse failure and must keep incrementing `unparsed_counts` — those
+dialects always carried the metrics, so their absence signals a real problem.
+
+### AC-13: stable-pair open parses
+The SOL-USDC fixture sample yields an `OpenEvent` with `token_pair == "SOL-USDC"`,
+`position_type == "Spot"`, `your_sol == 1.0`, `target_sol == 60.0`,
+`position_id == "GcWNhNc8"`, `target == "20260618_gh7gW8Ft"`, and
+`market_cap == 0.0`, `token_age == ""`, `jup_score == 0`.
+
+### AC-14: metrics still required for gen1/gen2
+A gen1 open sample with its `MC:` line removed must still fail to parse and increment
+`unparsed_counts`.

@@ -855,6 +855,33 @@ We detected that the target position you were copying has closed, but your posit
 ```
 
 ---
+## 2026-08-25T14:49:34.444+02:00
+
+**shape:** embed
+
+- `embeds[0].author.name` = 'Opened · DLMM · Spot 1-Sided'
+- `embeds[0].title`       = 'SOL-USDC'
+- `embeds[0].url`         = 'https://dexscreener.com/solana/So11111111111111111111111111111111111111112'
+- `embeds[0].footer.text` = 'Valhalla · GcWN...hNc8'
+- `embeds[0].color`       = '#4A7FB5'
+
+`embeds[0].description`:
+
+```
+### 1.00 SOL
+2% of target's 60.00
+**Target** [20260618_gh7gW8Ft](<https://valhalla-bot.app/dashboard/wallet/gh7gW8FtC8ygPnM8GMPtaufTXenNvck8Fi4cR2Up82w>) · [Orb](<https://orbmarkets.io/address/gh7gW8FtC8ygPnM8GMPtaufTXenNvck8Fi4cR2Up82w>) · [Solscan](<https://solscan.io/account/gh7gW8FtC8ygPnM8GMPtaufTXenNvck8Fi4cR2Up82w>)
+**Token** [DexScreener](<https://dexscreener.com/solana/So11111111111111111111111111111111111111112>) · [Orb](<https://orbmarkets.io/token/So11111111111111111111111111111111111111112>) · [Solscan](<https://solscan.io/token/So11111111111111111111111111111111111111112>)
+**Yours** 3 transactions · first [Orb](<https://orbmarkets.io/tx/3UnUTQHnoLRmFHfUwAELQdWSGZ9ph7f8mbR8xGZGwsogFNcsQnASVuLFHdZCMUCHtSsCS6teyjdUGxYz8Gazz6qS>) · [Solscan](<https://solscan.io/tx/3UnUTQHnoLRmFHfUwAELQdWSGZ9ph7f8mbR8xGZGwsogFNcsQnASVuLFHdZCMUCHtSsCS6teyjdUGxYz8Gazz6qS>) · last [Orb](<https://orbmarkets.io/tx/5RK8EWB9ESHCNmfyu5aaENiXhVV1dobrb9VkZZvGS11Gqq5kNKbWtqmz3P9EFFe68KmtCByZf8YeQngm9T5u9WBs>) · [Solscan](<https://solscan.io/tx/5RK8EWB9ESHCNmfyu5aaENiXhVV1dobrb9VkZZvGS11Gqq5kNKbWtqmz3P9EFFe68KmtCByZf8YeQngm9T5u9WBs>)
+**Target tx** 3 transactions · first [Orb](<https://orbmarkets.io/tx/4TWNbT37CHW91c8Fa9T8VmDuVXHXzeuz44mSBF7xRFBUwmVD8Je2MMpp5jamV9W5ashdtvyA3GuD9jWbafrFPQq2>) · [Solscan](<https://solscan.io/tx/4TWNbT37CHW91c8Fa9T8VmDuVXHXzeuz44mSBF7xRFBUwmVD8Je2MMpp5jamV9W5ashdtvyA3GuD9jWbafrFPQq2>) · last [Orb](<https://orbmarkets.io/tx/GqyR7N6Qth1ECAQB4gp3j7xki3GViso2H5zKB8EFZnYYn8dmhc4AiaXFSoJRe1MY9DYknhPAKUmcFdktdw6EwNU>) · [Solscan](<https://solscan.io/tx/GqyR7N6Qth1ECAQB4gp3j7xki3GViso2H5zKB8EFZnYYn8dmhc4AiaXFSoJRe1MY9DYknhPAKUmcFdktdw6EwNU>)
+||**Calculation Details**
+Target: SOL 60.000000 tokens ($5910.00) | USDC 0.000000 tokens ($0.00) | Total: $5910.00
+Prices: SOL $98.50 | USDC $0.00
+Total Deposit: Target 60.0000 SOL | User 1.0000 SOL
+Split: SOL 100.0% | USDC 0.0%||
+```
+
+---
 ## 2026-08-25T19:58:14.678+02:00
 
 **shape:** embed
