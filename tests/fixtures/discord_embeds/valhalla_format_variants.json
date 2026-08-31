@@ -1,0 +1,2090 @@
+{
+ "guild": {
+  "id": "0",
+  "name": "Direct Messages",
+  "iconUrl": "https://cdn.discordapp.com/embed/avatars/0.png"
+ },
+ "channel": {
+  "id": "1420300712427913227",
+  "type": "DirectTextChat",
+  "categoryId": null,
+  "category": null,
+  "name": "Valhalla Bot",
+  "topic": null
+ },
+ "_note": "Curated fixture: one representative Valhalla Bot message per format variant, 2026-08-23..2026-08-25. gen1 = plaintext (until 08-23T06:19), gen2 = embed with near-legacy body (08-23T06:24..15:25), gen3 = embed with redesigned labels (from 08-23T15:31).",
+ "_variants": {
+  "gen1|text|-|close|pnl-": 7,
+  "gen1|text|-|open|bidask": 33,
+  "gen1|text|-|swap": 28,
+  "gen1|text|-|close|pnl+": 22,
+  "gen1|text|-|open|spot": 1,
+  "gen1|text|-|partial-removal": 10,
+  "gen1|text|-|skip-add-liq": 8,
+  "gen1|text|-|insufficient-balance": 11,
+  "gen1|text|-|rug": 5,
+  "gen1|text|-|already-closed": 2,
+  "gen1|text|-|nothing-to-remove": 1,
+  "gen2|embed|Skipped · nothing to remove|nothing-to-remove": 5,
+  "gen2|embed|-|swap": 45,
+  "gen2|embed|-|skip-entry-mode": 3,
+  "gen2|embed|Closed DLMM Position! (ID)|close|pnl?": 65,
+  "gen2|embed|Opened New DLMM Position! (ID)|open|bidask": 77,
+  "gen2|embed|Skipped · add liquidity|skip-add-liq": 16,
+  "gen2|embed|-|insufficient-balance": 42,
+  "gen2|embed|-|skip-mcap": 3,
+  "gen2|embed|Removed liquidity · DLMM|partial-removal": 14,
+  "gen2|embed|-|take-profit": 2,
+  "gen2|embed|-|rug": 6,
+  "gen2|embed|-|already-closed": 7,
+  "gen2|embed|Opened New DLMM Position! (ID)|open|spot": 1,
+  "gen3|embed|Opened · DLMM · BidAsk 1-Sided|open|bidask": 376,
+  "gen3|embed|Closed DLMM Position! (ID)|close|pnl+": 321,
+  "gen3|embed|Swapped|swap": 317,
+  "gen3|embed|Skipped · add liquidity|skip-add-liq": 79,
+  "gen3|embed|-|insufficient-balance": 148,
+  "gen3|embed|Closed DLMM Position! (ID)|close|pnl-": 49,
+  "gen3|embed|Skipped - low market cap restriction|skip-mcap": 6,
+  "gen3|embed|-|already-closed": 13,
+  "gen3|embed|Removed liquidity · DLMM|partial-removal": 65,
+  "gen3|embed|-|skip-entry-mode": 11,
+  "gen3|embed|-|rug": 4,
+  "gen3|embed|Opened · DLMM · Spot 1-Sided|open|spot": 12,
+  "gen3|embed|Skipped · nothing to remove|nothing-to-remove": 9,
+  "gen3|embed|-|take-profit": 3,
+  "gen3|embed|-|remove-failed": 1,
+  "gen3|embed|Skipped - token age restriction|skip-age": 6,
+  "gen3|embed|-|stop-loss": 2,
+  "gen3|embed|-|failsafe": 1,
+  "gen3|embed|Skipped - low Jupiter organic score restriction|skip-jup": 12,
+  "gen3|embed|Closed DLMM Position! (ID)|close|no-pnl": 2,
+  "gen3|embed|author=Opened · DLMM · Spot 1-Sided|open|stable-pair": 4
+ },
+ "messages": [
+  {
+   "id": "1540849574942478399",
+   "type": "Default",
+   "timestamp": "2026-08-23T00:26:06.267+02:00",
+   "timestampEdited": null,
+   "callEndedTimestamp": null,
+   "isPinned": false,
+   "content": "```🔐 Closed DLMM Position! (8HBv...2wgG)```🔴 PNL received: -0.0000 SOL (-0.00%)\n🎯 Target: [20260618_gh7gW8Ft](<https://valhalla-bot.app/dashboard/wallet/gh7gW8FtC8ygPnM8GMPtaufTXenNvck8Fi4cR2Up82w>)\n🏁 Starting SOL balance: 0.42 SOL ($39.41 USD) on your wallet\n🔗 🔍 View Tx - [Your Solscan 1](<https://solscan.io/tx/oDCXVL7bpi4VBXVRpPYNED3VncZfx4VqmMoxt5U6Dn8ZQBFjLYJRuDGZpJatyLDrBGcoJgpd4dPBoixXbrz3ASN>) | [Your Solscan 2](<https://solscan.io/tx/qEw7ZHJQpo8AT7xkDfiRFg9GhWxJWQ3Xj4FqJinxm3TGmexgPVJbPr5DcounfexjadSWNKw3rktqZk9rQPiWfoe>) | [Target Tx 1](<https://solscan.io/tx/6gDeywxpouaitxNGkpRnK8oh3Bp5hsTT1J91HVQT67761xcyP48Xvfq35fJ9UuGbzunMQuSbvrRm7SA1vPZhmCK>) | [Target Tx 2](<https://solscan.io/tx/5myff4hqKKf2wmqgaK2B6cuAdmFGnBxYuyCCJtVLmaiuiDGAG7pdV8m2k4Z1dyCyTZS2gWMGk5aEDwaosspqSD7s>)\n📊 🔍 View Position History - [Your Metlex](<https://metlex.io/pnl2/oDCXVL7bpi4VBXVRpPYNED3VncZfx4VqmMoxt5U6Dn8ZQBFjLYJRuDGZpJatyLDrBGcoJgpd4dPBoixXbrz3ASN>) | [Target Metlex](<https://metlex.io/pnl2/6gDeywxpouaitxNGkpRnK8oh3Bp5hsTT1J91HVQT67761xcyP48Xvfq35fJ9UuGbzunMQuSbvrRm7SA1vPZhmCK>)\n🔚 Ending SOL balance: 1.51 SOL ($141.68 USD) on your wallet\n💎 Total SOL balance: 68.36 SOL ($6413.99 USD) (63 Active Positions)",
+   "author": {
+    "id": "1251546267633455230",
+    "name": "Valhalla Bot",
+    "discriminator": "7099",
+    "nickname": "Valhalla Bot",
+    "color": null,
+    "isBot": true,
+    "roles": [],
+    "avatarUrl": "https://cdn.discordapp.com/avatars/1251546267633455230/49fb2e14025441cdadf926956e1a2815.png?size=512"
+   },
+   "attachments": [],
+   "embeds": [],
+   "stickers": [],
+   "reactions": [],
+   "mentions": [],
+   "inlineEmojis": [
+    {
+     "id": "",
+     "name": "🔴",
+     "code": "red_circle",
+     "isAnimated": false,
+     "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1f534.svg"
+    },
+    {
+     "id": "",
+     "name": "🎯",
+     "code": "dart",
+     "isAnimated": false,
+     "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1f3af.svg"
+    },
+    {
+     "id": "",
+     "name": "🏁",
+     "code": "checkered_flag",
+     "isAnimated": false,
+     "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1f3c1.svg"
+    },
+    {
+     "id": "",
+     "name": "🔗",
+     "code": "link",
+     "isAnimated": false,
+     "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1f517.svg"
+    },
+    {
+     "id": "",
+     "name": "🔍",
+     "code": "mag",
+     "isAnimated": false,
+     "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1f50d.svg"
+    },
+    {
+     "id": "",
+     "name": "📊",
+     "code": "bar_chart",
+     "isAnimated": false,
+     "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1f4ca.svg"
+    },
+    {
+     "id": "",
+     "name": "🔚",
+     "code": "end",
+     "isAnimated": false,
+     "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1f51a.svg"
+    },
+    {
+     "id": "",
+     "name": "💎",
+     "code": "gem",
+     "isAnimated": false,
+     "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1f48e.svg"
+    }
+   ]
+  },
+  {
+   "id": "1540849705309831239",
+   "type": "Default",
+   "timestamp": "2026-08-23T00:26:37.349+02:00",
+   "timestampEdited": null,
+   "callEndedTimestamp": null,
+   "isPinned": false,
+   "content": "```🔓 Opened New DLMM Position! (3mXL...JHz6)```🆕 BidAsk 1-Sided Position | [MANIFEST-SOL](<https://dexscreener.com/solana/BCdwQBAn8dYB5YjTsoB6TdHAWokxv28k2oZUodERpump>)\n🎯 Target: [20260618_gh7gW8Ft](<https://valhalla-bot.app/dashboard/wallet/gh7gW8FtC8ygPnM8GMPtaufTXenNvck8Fi4cR2Up82w>)\n💰 MC: $12,482,550.274 | Age: 3mo ago\n🪐 Jup Score: 73\n💎 Target Pos: Manifesting: 0.0000 | SOL: 100.0000\n💎 Your Pos: Manifesting: 0.0000 | SOL: 1.0000\n🔗 🔍 View Tx - [Your Solscan](<https://solscan.io/tx/4rKKufAYyyJzBrh8Enjx5HMG2WUFj4dnBtLorxJVsqMstWdhwZ2K3N32De3ALeE1fbgU49gwE3WkBzzzogK5ayD3>) | [Target Tx](<https://solscan.io/tx/s9bg9ecWRMiTQcGcoWTnpcojPeT92VRvgHWeXUJ1fZ5LjZhVsfJ8SwkFqFfh4VzBsE3QVcKVd8g4fVSg4o9QqYb>)",
+   "author": {
+    "id": "1251546267633455230",
+    "name": "Valhalla Bot",
+    "discriminator": "7099",
+    "nickname": "Valhalla Bot",
+    "color": null,
+    "isBot": true,
+    "roles": [],
+    "avatarUrl": "https://cdn.discordapp.com/avatars/1251546267633455230/49fb2e14025441cdadf926956e1a2815.png?size=512"
+   },
+   "attachments": [],
+   "embeds": [],
+   "stickers": [],
+   "reactions": [],
+   "mentions": [],
+   "inlineEmojis": [
+    {
+     "id": "",
+     "name": "🆕",
+     "code": "new",
+     "isAnimated": false,
+     "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1f195.svg"
+    },
+    {
+     "id": "",
+     "name": "🎯",
+     "code": "dart",
+     "isAnimated": false,
+     "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1f3af.svg"
+    },
+    {
+     "id": "",
+     "name": "💰",
+     "code": "moneybag",
+     "isAnimated": false,
+     "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1f4b0.svg"
+    },
+    {
+     "id": "",
+     "name": "🪐",
+     "code": "ringed_planet",
+     "isAnimated": false,
+     "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1fa90.svg"
+    },
+    {
+     "id": "",
+     "name": "💎",
+     "code": "gem",
+     "isAnimated": false,
+     "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1f48e.svg"
+    },
+    {
+     "id": "",
+     "name": "🔗",
+     "code": "link",
+     "isAnimated": false,
+     "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1f517.svg"
+    },
+    {
+     "id": "",
+     "name": "🔍",
+     "code": "mag",
+     "isAnimated": false,
+     "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1f50d.svg"
+    }
+   ]
+  },
+  {
+   "id": "1540849784636571798",
+   "type": "Default",
+   "timestamp": "2026-08-23T00:26:56.262+02:00",
+   "timestampEdited": null,
+   "callEndedTimestamp": null,
+   "isPinned": false,
+   "content": "Swapped 1273 Jimothy The Raccoon (Ge87EtsjwRQbHaqQmKRno69RFTwh9bfSsm99XNxTpump). <https://solscan.io/tx/3MBNXby1GCCxfEA1c23zNYmgHiUmarV7y6KvKnsJAj5yTVFyjSJ6Xc6JEa7cg3Ae2QoFL2bLtLYDc7k2sWR9Hz4T>",
+   "author": {
+    "id": "1251546267633455230",
+    "name": "Valhalla Bot",
+    "discriminator": "7099",
+    "nickname": "Valhalla Bot",
+    "color": null,
+    "isBot": true,
+    "roles": [],
+    "avatarUrl": "https://cdn.discordapp.com/avatars/1251546267633455230/49fb2e14025441cdadf926956e1a2815.png?size=512"
+   },
+   "attachments": [],
+   "embeds": [],
+   "stickers": [],
+   "reactions": [],
+   "mentions": [],
+   "inlineEmojis": []
+  },
+  {
+   "id": "1540851130462896181",
+   "type": "Default",
+   "timestamp": "2026-08-23T00:32:17.132+02:00",
+   "timestampEdited": null,
+   "callEndedTimestamp": null,
+   "isPinned": false,
+   "content": "```🔐 Closed DLMM Position! (3mXL...JHz6)```🟢 PNL received: +0.0000 SOL (0.00%)\n🎯 Target: [20260618_gh7gW8Ft](<https://valhalla-bot.app/dashboard/wallet/gh7gW8FtC8ygPnM8GMPtaufTXenNvck8Fi4cR2Up82w>)\n🏁 Starting SOL balance: 0.88 SOL ($82.68 USD) on your wallet\n🔗 🔍 View Tx - [Your Solscan](<https://solscan.io/tx/NqXtDuGSKAmkap3qRn7TYerbEVZwAuzoWW65vtu5HC79FWkyqi98ENEEFhjTkpzMibq3HY3upqt7zBBTstpg2x2>) | [Target Tx](<https://solscan.io/tx/5Ao8KeMxbdiRKVe6dzJBRuS96GKdH6q15oZovYwzRkg4HPDY1hwt6qobmCmyWK3mukqeKVRzgzrw1PXCJzXzhej5>)\n📊 🔍 View Position History - [Your Metlex](<https://metlex.io/pnl2/NqXtDuGSKAmkap3qRn7TYerbEVZwAuzoWW65vtu5HC79FWkyqi98ENEEFhjTkpzMibq3HY3upqt7zBBTstpg2x2>) | [Target Metlex](<https://metlex.io/pnl2/5Ao8KeMxbdiRKVe6dzJBRuS96GKdH6q15oZovYwzRkg4HPDY1hwt6qobmCmyWK3mukqeKVRzgzrw1PXCJzXzhej5>)\n🔚 Ending SOL balance: 1.93 SOL ($181.32 USD) on your wallet\n💎 Total SOL balance: 68.36 SOL ($6422.48 USD) (63 Active Positions)",
+   "author": {
+    "id": "1251546267633455230",
+    "name": "Valhalla Bot",
+    "discriminator": "7099",
+    "nickname": "Valhalla Bot",
+    "color": null,
+    "isBot": true,
+    "roles": [],
+    "avatarUrl": "https://cdn.discordapp.com/avatars/1251546267633455230/49fb2e14025441cdadf926956e1a2815.png?size=512"
+   },
+   "attachments": [],
+   "embeds": [],
+   "stickers": [],
+   "reactions": [],
+   "mentions": [],
+   "inlineEmojis": [
+    {
+     "id": "",
+     "name": "🟢",
+     "code": "green_circle",
+     "isAnimated": false,
+     "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1f7e2.svg"
+    },
+    {
+     "id": "",
+     "name": "🎯",
+     "code": "dart",
+     "isAnimated": false,
+     "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1f3af.svg"
+    },
+    {
+     "id": "",
+     "name": "🏁",
+     "code": "checkered_flag",
+     "isAnimated": false,
+     "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1f3c1.svg"
+    },
+    {
+     "id": "",
+     "name": "🔗",
+     "code": "link",
+     "isAnimated": false,
+     "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1f517.svg"
+    },
+    {
+     "id": "",
+     "name": "🔍",
+     "code": "mag",
+     "isAnimated": false,
+     "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1f50d.svg"
+    },
+    {
+     "id": "",
+     "name": "📊",
+     "code": "bar_chart",
+     "isAnimated": false,
+     "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1f4ca.svg"
+    },
+    {
+     "id": "",
+     "name": "🔚",
+     "code": "end",
+     "isAnimated": false,
+     "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1f51a.svg"
+    },
+    {
+     "id": "",
+     "name": "💎",
+     "code": "gem",
+     "isAnimated": false,
+     "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1f48e.svg"
+    }
+   ]
+  },
+  {
+   "id": "1540857184525488221",
+   "type": "Default",
+   "timestamp": "2026-08-23T00:56:20.533+02:00",
+   "timestampEdited": null,
+   "callEndedTimestamp": null,
+   "isPinned": false,
+   "content": "```🔓 Opened New DLMM Position! (5Jfx...EzZ6)```🆕 Spot 1-Sided Position | [PANTS-SOL](<https://dexscreener.com/solana/FtateF34Xzawa91bpbVNdX72hZYo9cymRDYqBreHHbJi>)\n🎯 Target: [20260713_7XV2nCRq](<https://valhalla-bot.app/dashboard/wallet/7XV2nCRquHkiu6kWsFm3BeREmFQevfcyzGyKfVXQ9tkq>)\n💰 MC: $2,987,446.834 | Age: 3d ago\n🪐 Jup Score: 84\n💎 Target Pos: dogwifpants: 0.0000 | SOL: 5.0000\n💎 Your Pos: dogwifpants: 0.0000 | SOL: 0.2500\n🔗 🔍 View Tx - [Your Solscan](<https://solscan.io/tx/3CpdCuAJBFhw9iKVj5VwzFVjykfKBjyDX9gox4Rcjmkz2DoTko7FWnh5XdiPbGWUhPKUrLLWZwJik15HVwKqrh9w>) | [Target Tx](<https://solscan.io/tx/28U7AizN1f4GrswCheBvJtATPGPVMjS17LVfdFTsyPv28YX8g3GracJnqodFKNu4diFhLLpVeMQorcAeVEfHoarX>)",
+   "author": {
+    "id": "1251546267633455230",
+    "name": "Valhalla Bot",
+    "discriminator": "7099",
+    "nickname": "Valhalla Bot",
+    "color": null,
+    "isBot": true,
+    "roles": [],
+    "avatarUrl": "https://cdn.discordapp.com/avatars/1251546267633455230/49fb2e14025441cdadf926956e1a2815.png?size=512"
+   },
+   "attachments": [],
+   "embeds": [],
+   "stickers": [],
+   "reactions": [],
+   "mentions": [],
+   "inlineEmojis": [
+    {
+     "id": "",
+     "name": "🆕",
+     "code": "new",
+     "isAnimated": false,
+     "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1f195.svg"
+    },
+    {
+     "id": "",
+     "name": "🎯",
+     "code": "dart",
+     "isAnimated": false,
+     "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1f3af.svg"
+    },
+    {
+     "id": "",
+     "name": "💰",
+     "code": "moneybag",
+     "isAnimated": false,
+     "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1f4b0.svg"
+    },
+    {
+     "id": "",
+     "name": "🪐",
+     "code": "ringed_planet",
+     "isAnimated": false,
+     "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1fa90.svg"
+    },
+    {
+     "id": "",
+     "name": "💎",
+     "code": "gem",
+     "isAnimated": false,
+     "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1f48e.svg"
+    },
+    {
+     "id": "",
+     "name": "🔗",
+     "code": "link",
+     "isAnimated": false,
+     "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1f517.svg"
+    },
+    {
+     "id": "",
+     "name": "🔍",
+     "code": "mag",
+     "isAnimated": false,
+     "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1f50d.svg"
+    }
+   ]
+  },
+  {
+   "id": "1540857328327196753",
+   "type": "Default",
+   "timestamp": "2026-08-23T00:56:54.818+02:00",
+   "timestampEdited": null,
+   "callEndedTimestamp": null,
+   "isPinned": false,
+   "content": "```🫗 Partially Removed DLMM Liquidity (269w...Jy6X)```🎯 Target: 20260618_gh7gW8Ft\n📊 Amount: 25% of bin range\n🔗 🔍 View Tx - [Your Solscan](<https://solscan.io/tx/2vJ7o7V1iTxKzg3GMMf9AgaZiV13T2Tx4sLT9VwNYthW8r6tP4Uqs2RDd4DkhfbQjHniZbtw1DrhxX1kdb4mNfrk>) | [Target Tx](<https://solscan.io/tx/1AMJk5FZVaEFJKGpsZCJVDjKskoEQS47BA72jasUABEyjSpfXwn3pc4Xgyg3zXpTBpx51t9xjk9rFDJqFxwG5NX>)",
+   "author": {
+    "id": "1251546267633455230",
+    "name": "Valhalla Bot",
+    "discriminator": "7099",
+    "nickname": "Valhalla Bot",
+    "color": null,
+    "isBot": true,
+    "roles": [],
+    "avatarUrl": "https://cdn.discordapp.com/avatars/1251546267633455230/49fb2e14025441cdadf926956e1a2815.png?size=512"
+   },
+   "attachments": [],
+   "embeds": [],
+   "stickers": [],
+   "reactions": [],
+   "mentions": [],
+   "inlineEmojis": [
+    {
+     "id": "",
+     "name": "🎯",
+     "code": "dart",
+     "isAnimated": false,
+     "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1f3af.svg"
+    },
+    {
+     "id": "",
+     "name": "📊",
+     "code": "bar_chart",
+     "isAnimated": false,
+     "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1f4ca.svg"
+    },
+    {
+     "id": "",
+     "name": "🔗",
+     "code": "link",
+     "isAnimated": false,
+     "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1f517.svg"
+    },
+    {
+     "id": "",
+     "name": "🔍",
+     "code": "mag",
+     "isAnimated": false,
+     "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1f50d.svg"
+    }
+   ]
+  },
+  {
+   "id": "1540857522829795328",
+   "type": "Default",
+   "timestamp": "2026-08-23T00:57:41.191+02:00",
+   "timestampEdited": null,
+   "callEndedTimestamp": null,
+   "isPinned": false,
+   "content": "ℹ️ **Skipping Add Liquidity**\n🎯 Target: 20260713_7XV2nCRq\nNot copying their 'Add liquidity': Infinite Add Liquidity is off for this wallet, so your position stays at the size your entry set it to.\n\n💡 To copy their adds: type /settings_dlmm → More Copy Trade Settings → Infinite Add Liquidity - Turn ON\n🔍 [Target Tx 1](<https://solscan.io/tx/25kk7X2BV8DTJhbcPxzDwwJTh9ib3y9JktDoPWNLzpPowue12RZMAEgAj3wZg1R7s2t4gzgt8T2FHxMF52dXX1HW>) | [Target Tx 3](<https://solscan.io/tx/3upXEkeD59FyJFKPSaS8fKatSgQqevH6y18rHLMgarZhauhU7Fdg5AMa8vVh7fn3hkvgfEAA8h1FSm4JRMva8kjs>)",
+   "author": {
+    "id": "1251546267633455230",
+    "name": "Valhalla Bot",
+    "discriminator": "7099",
+    "nickname": "Valhalla Bot",
+    "color": null,
+    "isBot": true,
+    "roles": [],
+    "avatarUrl": "https://cdn.discordapp.com/avatars/1251546267633455230/49fb2e14025441cdadf926956e1a2815.png?size=512"
+   },
+   "attachments": [],
+   "embeds": [],
+   "stickers": [],
+   "reactions": [],
+   "mentions": [],
+   "inlineEmojis": [
+    {
+     "id": "",
+     "name": "ℹ️",
+     "code": "information_source",
+     "isAnimated": false,
+     "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/2139.svg"
+    },
+    {
+     "id": "",
+     "name": "🎯",
+     "code": "dart",
+     "isAnimated": false,
+     "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1f3af.svg"
+    },
+    {
+     "id": "",
+     "name": "💡",
+     "code": "bulb",
+     "isAnimated": false,
+     "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1f4a1.svg"
+    },
+    {
+     "id": "",
+     "name": "🔍",
+     "code": "mag",
+     "isAnimated": false,
+     "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1f50d.svg"
+    }
+   ]
+  },
+  {
+   "id": "1540857991140614304",
+   "type": "Default",
+   "timestamp": "2026-08-23T00:59:32.845+02:00",
+   "timestampEdited": null,
+   "callEndedTimestamp": null,
+   "isPinned": false,
+   "content": "❌ **Insufficient Effective Balance for Copy Trading** ❌\n       **Trade copied from:** `20260618_gh7gW8Ft`\n        Your SOL balance: `0.98 SOL`\n        **Total effective balance: `0.98 SOL`**\n        Required amount for this trade: `1.11 SOL` (Trade Amount: 1.0000 SOL + Fees)\n\n        Your max copy trade amount setting: `1.00 SOL`\n\n        You **cannot open new positions** until you add more SOL to your wallet.\n        If this required amount seems too high based on your settings, please check the target wallet's transaction size.\n        You may also lower your max trade amount in the settings.\n        Tx : [Target Tx](<https://solscan.io/tx/3qxbNBhUZmRf6QBZAUAPs4uAkCAEUosakxnsiXzzeNysvNdmELRMAgDNy35tuFqSehzJ8gPZ2yayyacJFbrZy5ev>)",
+   "author": {
+    "id": "1251546267633455230",
+    "name": "Valhalla Bot",
+    "discriminator": "7099",
+    "nickname": "Valhalla Bot",
+    "color": null,
+    "isBot": true,
+    "roles": [],
+    "avatarUrl": "https://cdn.discordapp.com/avatars/1251546267633455230/49fb2e14025441cdadf926956e1a2815.png?size=512"
+   },
+   "attachments": [],
+   "embeds": [],
+   "stickers": [],
+   "reactions": [],
+   "mentions": [],
+   "inlineEmojis": [
+    {
+     "id": "",
+     "name": "❌",
+     "code": "x",
+     "isAnimated": false,
+     "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/274c.svg"
+    }
+   ]
+  },
+  {
+   "id": "1540916688004845728",
+   "type": "Default",
+   "timestamp": "2026-08-23T04:52:47.268+02:00",
+   "timestampEdited": null,
+   "callEndedTimestamp": null,
+   "isPinned": false,
+   "content": "🚨 **Rug Check Stop Loss Executed (DLMM)** (Xct1...rzDL) (Copied From: 20260713_FVGQRHDD5)\n\nPair: Ai66LHZG9MCzg1WKdawwqduVAXpNDUuV8M3uyq5ppump/So11111111111111111111111111111111111111112\nPosition: Xct1c5UwHtEjgh4N1gBQCb6RjLQagTG7pa3J3WnrzDL\nPrice Drop: 20.69%\nRug Check Threshold: 20%\n\n🔍 [Your Solscan 1](<https://solscan.io/tx/5YMRxq67siLduVkCS6bmTrLVnDGLgYhTHfa8cHEmeVXe8mF8Y8Sdu4mjVbiWZiD5RygRCW6Ju9q5Xa627vptCVob>) | [Your Solscan 2](<https://solscan.io/tx/5tDbE3MfTKWdDMJai2DSrUgEiBehDpZ2FwQtT3Hd7FMvB9oN8GatnkHFFcKLjCmsq452Us1dmGUSsPwFK8VBro17>)\n📊 [Your Metlex](<https://metlex.io/pnl2/5YMRxq67siLduVkCS6bmTrLVnDGLgYhTHfa8cHEmeVXe8mF8Y8Sdu4mjVbiWZiD5RygRCW6Ju9q5Xa627vptCVob>)",
+   "author": {
+    "id": "1251546267633455230",
+    "name": "Valhalla Bot",
+    "discriminator": "7099",
+    "nickname": "Valhalla Bot",
+    "color": null,
+    "isBot": true,
+    "roles": [],
+    "avatarUrl": "https://cdn.discordapp.com/avatars/1251546267633455230/49fb2e14025441cdadf926956e1a2815.png?size=512"
+   },
+   "attachments": [],
+   "embeds": [],
+   "stickers": [],
+   "reactions": [],
+   "mentions": [],
+   "inlineEmojis": [
+    {
+     "id": "",
+     "name": "🚨",
+     "code": "rotating_light",
+     "isAnimated": false,
+     "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1f6a8.svg"
+    },
+    {
+     "id": "",
+     "name": "🔍",
+     "code": "mag",
+     "isAnimated": false,
+     "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1f50d.svg"
+    },
+    {
+     "id": "",
+     "name": "📊",
+     "code": "bar_chart",
+     "isAnimated": false,
+     "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1f4ca.svg"
+    }
+   ]
+  },
+  {
+   "id": "1540919730930589720",
+   "type": "Default",
+   "timestamp": "2026-08-23T05:04:52.758+02:00",
+   "timestampEdited": null,
+   "callEndedTimestamp": null,
+   "isPinned": false,
+   "content": "ℹ️ Your position 9ExtRc3giknVy1auZTQ7VibdXFz3eGvEhJRHCkWmJUud was already closed (9Ext...JUud)\n  🎯 Target: 20260821_8bHpPjob\n  📍 [Target Tx 1](<https://solscan.io/tx/61ctABvsbfuYFGDCyrUs7rbsYpF1Uq7PG9stNuivZs3qsK5hPcedTFbRLTaB99D9jRFCmvHjjwxBvAVNXxDC82g7>) | [Target Tx 4](<https://solscan.io/tx/BhdxLj8JJpw1AxzUvC7ucKUcBGArTyvAtQCjNzKTZes8gShB8MZdhtcfZfUTgMAM5GVS3icCmvRbuXLpAokSSBg>)",
+   "author": {
+    "id": "1251546267633455230",
+    "name": "Valhalla Bot",
+    "discriminator": "7099",
+    "nickname": "Valhalla Bot",
+    "color": null,
+    "isBot": true,
+    "roles": [],
+    "avatarUrl": "https://cdn.discordapp.com/avatars/1251546267633455230/49fb2e14025441cdadf926956e1a2815.png?size=512"
+   },
+   "attachments": [],
+   "embeds": [],
+   "stickers": [],
+   "reactions": [],
+   "mentions": [],
+   "inlineEmojis": [
+    {
+     "id": "",
+     "name": "ℹ️",
+     "code": "information_source",
+     "isAnimated": false,
+     "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/2139.svg"
+    },
+    {
+     "id": "",
+     "name": "🎯",
+     "code": "dart",
+     "isAnimated": false,
+     "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1f3af.svg"
+    },
+    {
+     "id": "",
+     "name": "📍",
+     "code": "round_pushpin",
+     "isAnimated": false,
+     "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1f4cd.svg"
+    }
+   ]
+  },
+  {
+   "id": "1540938457659220030",
+   "type": "Default",
+   "timestamp": "2026-08-23T06:19:17.558+02:00",
+   "timestampEdited": null,
+   "callEndedTimestamp": null,
+   "isPinned": false,
+   "content": "ℹ️ No liquidity was removed from position FE6BkdUe9DqEhyPTRoxfUQwhi3A7c7wSeFqjrHHXMwc6, likely already modified or closed\n🎯 Target: 20260618_gh7gW8Ft\n📍 [Orb](<https://orbmarkets.io/tx/yfyCKpj3bMTiL7nThHvkc1ZT1iYqFGqbvrkfn2v4Mmt3pQi6PMfsD68WugxFK3HYsVxuGQ1zBBbjnThc2sGqAwW>) · [Solscan](<https://solscan.io/tx/yfyCKpj3bMTiL7nThHvkc1ZT1iYqFGqbvrkfn2v4Mmt3pQi6PMfsD68WugxFK3HYsVxuGQ1zBBbjnThc2sGqAwW>)",
+   "author": {
+    "id": "1251546267633455230",
+    "name": "Valhalla Bot",
+    "discriminator": "7099",
+    "nickname": "Valhalla Bot",
+    "color": null,
+    "isBot": true,
+    "roles": [],
+    "avatarUrl": "https://cdn.discordapp.com/avatars/1251546267633455230/49fb2e14025441cdadf926956e1a2815.png?size=512"
+   },
+   "attachments": [],
+   "embeds": [],
+   "stickers": [],
+   "reactions": [],
+   "mentions": [],
+   "inlineEmojis": [
+    {
+     "id": "",
+     "name": "ℹ️",
+     "code": "information_source",
+     "isAnimated": false,
+     "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/2139.svg"
+    },
+    {
+     "id": "",
+     "name": "🎯",
+     "code": "dart",
+     "isAnimated": false,
+     "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1f3af.svg"
+    },
+    {
+     "id": "",
+     "name": "📍",
+     "code": "round_pushpin",
+     "isAnimated": false,
+     "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1f4cd.svg"
+    }
+   ]
+  },
+  {
+   "id": "1540939777564606565",
+   "type": "Default",
+   "timestamp": "2026-08-23T06:24:32.248+02:00",
+   "timestampEdited": null,
+   "callEndedTimestamp": null,
+   "isPinned": false,
+   "content": "",
+   "author": {
+    "id": "1251546267633455230",
+    "name": "Valhalla Bot",
+    "discriminator": "7099",
+    "nickname": "Valhalla Bot",
+    "color": null,
+    "isBot": true,
+    "roles": [],
+    "avatarUrl": "https://cdn.discordapp.com/avatars/1251546267633455230/49fb2e14025441cdadf926956e1a2815.png?size=512"
+   },
+   "attachments": [],
+   "embeds": [
+    {
+     "title": "",
+     "url": null,
+     "timestamp": "2026-08-23T06:24:31.826+02:00",
+     "description": "The target closed or modified this position before the mirror ran, so there was nothing left to remove.\n**Target** 20260618_gh7gW8Ft\n**Target tx** 2 transactions · first [Orb](<https://orbmarkets.io/tx/Wnno23P7Hu6bTwJLU1GcZcRW1Ecq5awtt5bBkzVU1YGrK9KiJKCp77y5dYzYnJYfsCTKgLXP6rqk148HwpuyNF4>) · [Solscan](<https://solscan.io/tx/Wnno23P7Hu6bTwJLU1GcZcRW1Ecq5awtt5bBkzVU1YGrK9KiJKCp77y5dYzYnJYfsCTKgLXP6rqk148HwpuyNF4>) · last [Orb](<https://orbmarkets.io/tx/GPjWke8Tj44wwWfwZ2wBn6bBJF8Nyu77mVMqGWwfyR5AyRJh15DwFxfsRGK3EeAVezpXwuzUqk69GS9dpLs38qX>) · [Solscan](<https://solscan.io/tx/GPjWke8Tj44wwWfwZ2wBn6bBJF8Nyu77mVMqGWwfyR5AyRJh15DwFxfsRGK3EeAVezpXwuzUqk69GS9dpLs38qX>)",
+     "color": "#5D5849",
+     "author": {
+      "name": "Skipped · nothing to remove",
+      "url": null
+     },
+     "footer": {
+      "text": "Valhalla · FE6B...Mwc6 · No action needed"
+     },
+     "images": [],
+     "fields": [],
+     "inlineEmojis": []
+    }
+   ],
+   "stickers": [],
+   "reactions": [],
+   "mentions": [],
+   "inlineEmojis": []
+  },
+  {
+   "id": "1540942111963091065",
+   "type": "Default",
+   "timestamp": "2026-08-23T06:33:48.812+02:00",
+   "timestampEdited": null,
+   "callEndedTimestamp": null,
+   "isPinned": false,
+   "content": "",
+   "author": {
+    "id": "1251546267633455230",
+    "name": "Valhalla Bot",
+    "discriminator": "7099",
+    "nickname": "Valhalla Bot",
+    "color": null,
+    "isBot": true,
+    "roles": [],
+    "avatarUrl": "https://cdn.discordapp.com/avatars/1251546267633455230/49fb2e14025441cdadf926956e1a2815.png?size=512"
+   },
+   "attachments": [],
+   "embeds": [
+    {
+     "title": "",
+     "url": null,
+     "timestamp": "2026-08-23T06:33:48.596+02:00",
+     "description": "Swapped 3809 BULLS'S EYE (RmtMAYVTTFv2iK9muMrXEoAnSSsZPPgRPbqZCKwNDYk). <https://solscan.io/tx/2Dyrp3CFzp4E3dom2MUo4YifDENHJi4MiGpGKCSXSfAPqnm2MQQ4aErVYhfKtUvhA2YsJGzUdbQhG9VLqcqUj5VT>",
+     "color": "#5D5849",
+     "images": [],
+     "fields": [],
+     "inlineEmojis": []
+    }
+   ],
+   "stickers": [],
+   "reactions": [],
+   "mentions": [],
+   "inlineEmojis": []
+  },
+  {
+   "id": "1540942342708527136",
+   "type": "Default",
+   "timestamp": "2026-08-23T06:34:43.826+02:00",
+   "timestampEdited": null,
+   "callEndedTimestamp": null,
+   "isPinned": false,
+   "content": "",
+   "author": {
+    "id": "1251546267633455230",
+    "name": "Valhalla Bot",
+    "discriminator": "7099",
+    "nickname": "Valhalla Bot",
+    "color": null,
+    "isBot": true,
+    "roles": [],
+    "avatarUrl": "https://cdn.discordapp.com/avatars/1251546267633455230/49fb2e14025441cdadf926956e1a2815.png?size=512"
+   },
+   "attachments": [],
+   "embeds": [
+    {
+     "title": "",
+     "url": null,
+     "timestamp": "2026-08-23T06:34:43.617+02:00",
+     "description": "Skipping position due to your Entry Mode\n**Target** 20260821_9JHGdZj4\n**Token** BULLS'S EYE (RmtM...NDYk)\nThe target did not add SOL alone (single-sided), so this entry is not copied.\n**Your Entry Mode** **SOL only**. Copies only when the target adds SOL alone. No extra swaps. This is the default.\n**To adjust this** type /settings_dlmm → More Copy Trade Settings → Entry Mode\n**Target Tx** 4 transactions · first [Orb](<https://orbmarkets.io/tx/3nk39JgG2bZAjoQA4qe3D7xeeCRxKj9aTjC9hoX2NMPcveEkVWde4VqCtZT383asH2o8FewXkyu6kXbU3Nu2Lkn9>) · [Solscan](<https://solscan.io/tx/3nk39JgG2bZAjoQA4qe3D7xeeCRxKj9aTjC9hoX2NMPcveEkVWde4VqCtZT383asH2o8FewXkyu6kXbU3Nu2Lkn9>) · last [Orb](<https://orbmarkets.io/tx/2Cccr7FyTXiJSVdD9DX5QYL585NKeDccUt8Gex7NUqJHiuQBh24bztJjYU1pzw7XDAspqDR7yutWLfJqBwpEw9u7>) · [Solscan](<https://solscan.io/tx/2Cccr7FyTXiJSVdD9DX5QYL585NKeDccUt8Gex7NUqJHiuQBh24bztJjYU1pzw7XDAspqDR7yutWLfJqBwpEw9u7>)",
+     "color": "#B3453A",
+     "images": [],
+     "fields": [],
+     "inlineEmojis": []
+    }
+   ],
+   "stickers": [],
+   "reactions": [],
+   "mentions": [],
+   "inlineEmojis": []
+  },
+  {
+   "id": "1540942382491500574",
+   "type": "Default",
+   "timestamp": "2026-08-23T06:34:53.311+02:00",
+   "timestampEdited": null,
+   "callEndedTimestamp": null,
+   "isPinned": false,
+   "content": "",
+   "author": {
+    "id": "1251546267633455230",
+    "name": "Valhalla Bot",
+    "discriminator": "7099",
+    "nickname": "Valhalla Bot",
+    "color": null,
+    "isBot": true,
+    "roles": [],
+    "avatarUrl": "https://cdn.discordapp.com/avatars/1251546267633455230/49fb2e14025441cdadf926956e1a2815.png?size=512"
+   },
+   "attachments": [],
+   "embeds": [
+    {
+     "title": "",
+     "url": null,
+     "timestamp": "2026-08-23T06:34:52.946+02:00",
+     "description": "**PNL received** +0.0040 SOL (0.52%)\n**Target** [20260821_9JHGdZj4](<https://valhalla-bot.app/dashboard/wallet/9JHGdZj4vyKhDbHUPvEezEo6Rc4GPsvEvjrh4Jh6KuXD>)\n**Balance** 2.80 SOL → 4.09 SOL\n**In USD** $261.13 → $381.43\n**Total** 68.33 SOL ($6372.24) across 63 open positions\n**Yours** 10 transactions · first [Orb](<https://orbmarkets.io/tx/2dEQT1TWRodGgN9J7poMFBTjtUSrrQgzca3bm55BLqkdyn6x47dEgeVdhL5EHvsH8dxFuSjKUpGsvfSMBDQm6Guv>) · [Solscan](<https://solscan.io/tx/2dEQT1TWRodGgN9J7poMFBTjtUSrrQgzca3bm55BLqkdyn6x47dEgeVdhL5EHvsH8dxFuSjKUpGsvfSMBDQm6Guv>) · last [Orb](<https://orbmarkets.io/tx/2wXA1y9DUE6wbPB1gTRKrD9odmfQYgpQoezT1nNzig19D6fmW2vYX8VwCFqJwF1B9QPsfxiaGdpHjCkMQtrRDUJZ>) · [Solscan](<https://solscan.io/tx/2wXA1y9DUE6wbPB1gTRKrD9odmfQYgpQoezT1nNzig19D6fmW2vYX8VwCFqJwF1B9QPsfxiaGdpHjCkMQtrRDUJZ>)\n**Target tx** [Orb](<https://orbmarkets.io/tx/4fxLnKEzp1AKyvCDpHpogcBzAYkb9UxhJ5ThAaGBizH9TfopfkZea27o5UCdE1w2jzXd54dGKobzLBvYezLfhDo>) · [Solscan](<https://solscan.io/tx/4fxLnKEzp1AKyvCDpHpogcBzAYkb9UxhJ5ThAaGBizH9TfopfkZea27o5UCdE1w2jzXd54dGKobzLBvYezLfhDo>)\n**History** [Your Metlex](<https://metlex.io/pnl2/2dEQT1TWRodGgN9J7poMFBTjtUSrrQgzca3bm55BLqkdyn6x47dEgeVdhL5EHvsH8dxFuSjKUpGsvfSMBDQm6Guv>) | [Target Metlex](<https://metlex.io/pnl2/4fxLnKEzp1AKyvCDpHpogcBzAYkb9UxhJ5ThAaGBizH9TfopfkZea27o5UCdE1w2jzXd54dGKobzLBvYezLfhDo>)",
+     "color": "#3FA66A",
+     "author": {
+      "name": "Closed DLMM Position! (E1hG...hBX7)",
+      "url": null
+     },
+     "images": [],
+     "fields": [],
+     "inlineEmojis": []
+    }
+   ],
+   "stickers": [],
+   "reactions": [],
+   "mentions": [],
+   "inlineEmojis": []
+  },
+  {
+   "id": "1540942843256901713",
+   "type": "Default",
+   "timestamp": "2026-08-23T06:36:43.166+02:00",
+   "timestampEdited": null,
+   "callEndedTimestamp": null,
+   "isPinned": false,
+   "content": "",
+   "author": {
+    "id": "1251546267633455230",
+    "name": "Valhalla Bot",
+    "discriminator": "7099",
+    "nickname": "Valhalla Bot",
+    "color": null,
+    "isBot": true,
+    "roles": [],
+    "avatarUrl": "https://cdn.discordapp.com/avatars/1251546267633455230/49fb2e14025441cdadf926956e1a2815.png?size=512"
+   },
+   "attachments": [],
+   "embeds": [
+    {
+     "title": "",
+     "url": null,
+     "timestamp": "2026-08-23T06:36:42.869+02:00",
+     "description": "🆕 BidAsk 1-Sided Position | [EYE-SOL](<https://dexscreener.com/solana/RmtMAYVTTFv2iK9muMrXEoAnSSsZPPgRPbqZCKwNDYk>)\n**Target** [20260821_9JHGdZj4](<https://valhalla-bot.app/dashboard/wallet/9JHGdZj4vyKhDbHUPvEezEo6Rc4GPsvEvjrh4Jh6KuXD>)\n**MC** $831,819.62 | Age: 5d ago\n**Jup Score** 73\n**Target Pos** BULLS'S EYE: 0.0000 | SOL: 7.3140\n**Your Pos** BULLS'S EYE: 0.0000 | SOL: 0.6583\nView Tx - [Orb](<https://orbmarkets.io/tx/uRfD1B3FxHqiV2qRLEBkxR2YXe3As72f1YMAidsocUBsW9nb61Go5obv8W9yhqdzckSid2CMYXtLZt8pqDNQJ8a>) · [Solscan](<https://solscan.io/tx/uRfD1B3FxHqiV2qRLEBkxR2YXe3As72f1YMAidsocUBsW9nb61Go5obv8W9yhqdzckSid2CMYXtLZt8pqDNQJ8a>) | [Orb](<https://orbmarkets.io/tx/4DrwPytw3oVLuiehDvMXvhtf92drMb7vmhJ85PJ3WTwQa2wkdi1VFBoCNdTqMMDAsLzk2nn6AjfSA9hvTxD17GCx>) · [Solscan](<https://solscan.io/tx/4DrwPytw3oVLuiehDvMXvhtf92drMb7vmhJ85PJ3WTwQa2wkdi1VFBoCNdTqMMDAsLzk2nn6AjfSA9hvTxD17GCx>)",
+     "color": "#4A7FB5",
+     "author": {
+      "name": "Opened New DLMM Position! (4jbU...hYhE)",
+      "url": null
+     },
+     "images": [],
+     "fields": [],
+     "inlineEmojis": [
+      {
+       "id": "",
+       "name": "🆕",
+       "code": "new",
+       "isAnimated": false,
+       "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1f195.svg"
+      }
+     ]
+    }
+   ],
+   "stickers": [],
+   "reactions": [],
+   "mentions": [],
+   "inlineEmojis": []
+  },
+  {
+   "id": "1540943273034518569",
+   "type": "Default",
+   "timestamp": "2026-08-23T06:38:25.633+02:00",
+   "timestampEdited": null,
+   "callEndedTimestamp": null,
+   "isPinned": false,
+   "content": "",
+   "author": {
+    "id": "1251546267633455230",
+    "name": "Valhalla Bot",
+    "discriminator": "7099",
+    "nickname": "Valhalla Bot",
+    "color": null,
+    "isBot": true,
+    "roles": [],
+    "avatarUrl": "https://cdn.discordapp.com/avatars/1251546267633455230/49fb2e14025441cdadf926956e1a2815.png?size=512"
+   },
+   "attachments": [],
+   "embeds": [
+    {
+     "title": "",
+     "url": null,
+     "timestamp": "2026-08-23T06:38:25.201+02:00",
+     "description": "Not copying their 'Add liquidity': Infinite Add Liquidity is off for this wallet, so your position stays at the size your entry set it to.\n\n💡 To copy their adds: type /settings_dlmm → More Copy Trade Settings → Infinite Add Liquidity - Turn ON\n**Target** 20260821_9JHGdZj4\n**Target tx** 3 transactions · first [Orb](<https://orbmarkets.io/tx/3JiAT7SBzNwhswEsUd49JzXFWyesErvKJdEVV3QBjDHATWTecNsAxqj1UFhRft67HMXeFFZK7DcppW5HPzygtuA8>) · [Solscan](<https://solscan.io/tx/3JiAT7SBzNwhswEsUd49JzXFWyesErvKJdEVV3QBjDHATWTecNsAxqj1UFhRft67HMXeFFZK7DcppW5HPzygtuA8>) · last [Orb](<https://orbmarkets.io/tx/4EGuBPK7WqEasRhzp9rEhdTdWM1MKTd81F8XNbvVWXMVauUufdT7rBvUgRsmSJRMvCCFBs6FxZEPvGm6jiDmtjS5>) · [Solscan](<https://solscan.io/tx/4EGuBPK7WqEasRhzp9rEhdTdWM1MKTd81F8XNbvVWXMVauUufdT7rBvUgRsmSJRMvCCFBs6FxZEPvGm6jiDmtjS5>)",
+     "color": "#5D5849",
+     "author": {
+      "name": "Skipped · add liquidity",
+      "url": null
+     },
+     "footer": {
+      "text": "Valhalla · No action needed"
+     },
+     "images": [],
+     "fields": [],
+     "inlineEmojis": [
+      {
+       "id": "",
+       "name": "💡",
+       "code": "bulb",
+       "isAnimated": false,
+       "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1f4a1.svg"
+      }
+     ]
+    }
+   ],
+   "stickers": [],
+   "reactions": [],
+   "mentions": [],
+   "inlineEmojis": []
+  },
+  {
+   "id": "1540945090103607379",
+   "type": "Default",
+   "timestamp": "2026-08-23T06:45:38.856+02:00",
+   "timestampEdited": null,
+   "callEndedTimestamp": null,
+   "isPinned": false,
+   "content": "",
+   "author": {
+    "id": "1251546267633455230",
+    "name": "Valhalla Bot",
+    "discriminator": "7099",
+    "nickname": "Valhalla Bot",
+    "color": null,
+    "isBot": true,
+    "roles": [],
+    "avatarUrl": "https://cdn.discordapp.com/avatars/1251546267633455230/49fb2e14025441cdadf926956e1a2815.png?size=512"
+   },
+   "attachments": [],
+   "embeds": [
+    {
+     "title": "",
+     "url": null,
+     "timestamp": "2026-08-23T06:45:38.556+02:00",
+     "description": "**Insufficient Effective Balance for Copy Trading** ❌\n**Trade copied from:** `20260821_9JHGdZj4`\n**Your SOL balance** `1.06 SOL`\n**Total effective balance: `1.06 SOL`**\n**Required amount for this trade** `1.19 SOL` (Trade Amount: 1.0000 SOL + Fees)\nYour max copy trade amount setting: `1.00 SOL`\nYou **cannot open new positions** until you add more SOL to your wallet.\nIf this required amount seems too high based on your settings, please check the target wallet's transaction size.\nYou may also lower your max trade amount in the settings.\n**Tx** 4 transactions · first [Orb](<https://orbmarkets.io/tx/3Kq76HUnaYYTkjujVXXsBKzKYTAajs53qfJUyu4msYVN648pjaPkpoy7Ehw4ChznM4tMWqw4AQiBcSV98PJiuzfS>) · [Solscan](<https://solscan.io/tx/3Kq76HUnaYYTkjujVXXsBKzKYTAajs53qfJUyu4msYVN648pjaPkpoy7Ehw4ChznM4tMWqw4AQiBcSV98PJiuzfS>) · last [Orb](<https://orbmarkets.io/tx/3RavBHkGqzwgCf1ztNRypKYZS7H7AHSExGEsm9Ekv3z713Dx9czFYmLZWGA4yPP4TRxnxXEVrzBkYPZRY6NQCoGg>) · [Solscan](<https://solscan.io/tx/3RavBHkGqzwgCf1ztNRypKYZS7H7AHSExGEsm9Ekv3z713Dx9czFYmLZWGA4yPP4TRxnxXEVrzBkYPZRY6NQCoGg>)",
+     "color": "#B3453A",
+     "images": [],
+     "fields": [],
+     "inlineEmojis": [
+      {
+       "id": "",
+       "name": "❌",
+       "code": "x",
+       "isAnimated": false,
+       "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/274c.svg"
+      }
+     ]
+    }
+   ],
+   "stickers": [],
+   "reactions": [],
+   "mentions": [],
+   "inlineEmojis": []
+  },
+  {
+   "id": "1540945334472146945",
+   "type": "Default",
+   "timestamp": "2026-08-23T06:46:37.118+02:00",
+   "timestampEdited": null,
+   "callEndedTimestamp": null,
+   "isPinned": false,
+   "content": "",
+   "author": {
+    "id": "1251546267633455230",
+    "name": "Valhalla Bot",
+    "discriminator": "7099",
+    "nickname": "Valhalla Bot",
+    "color": null,
+    "isBot": true,
+    "roles": [],
+    "avatarUrl": "https://cdn.discordapp.com/avatars/1251546267633455230/49fb2e14025441cdadf926956e1a2815.png?size=512"
+   },
+   "attachments": [],
+   "embeds": [
+    {
+     "title": "",
+     "url": null,
+     "timestamp": "2026-08-23T06:46:36.935+02:00",
+     "description": "Skipping position due to low market cap restriction\n**Target** 20260821_9JHGdZj4\nToken world licking cat (EjD5Y9NVhXmtEqU7wYvAyZvDWZFQeEuHXFatJmTbpump) has a market cap below $300000.\n**Details** Jupiter MC is $193,291.027 and DexScreener MC is $193,188, both below your minimum of $300000.\n**To adjust this** type /settings_dlmm → More Copy Trade Settings → Set Market Cap (Min/Max)\n**Target Tx** 3 transactions · first [Orb](<https://orbmarkets.io/tx/2kaMeN99oX5obwiocrqbKn7PhiCwHB9e9RrzPgD97VXDVLEcZtZvDD2BzWchvA1ZWtH5qDbwLWeQhCqaQqns2fN4>) · [Solscan](<https://solscan.io/tx/2kaMeN99oX5obwiocrqbKn7PhiCwHB9e9RrzPgD97VXDVLEcZtZvDD2BzWchvA1ZWtH5qDbwLWeQhCqaQqns2fN4>) · last [Orb](<https://orbmarkets.io/tx/5kJHNTVCZ94Mn5yVz8eaQyg8J35YrTUeastZE1hb9VKn2TuBuXUvJCx9uCDpFW4bJE1sSaz8oAjDxxyJj47r7Nen>) · [Solscan](<https://solscan.io/tx/5kJHNTVCZ94Mn5yVz8eaQyg8J35YrTUeastZE1hb9VKn2TuBuXUvJCx9uCDpFW4bJE1sSaz8oAjDxxyJj47r7Nen>)",
+     "color": "#B3453A",
+     "images": [],
+     "fields": [],
+     "inlineEmojis": []
+    }
+   ],
+   "stickers": [],
+   "reactions": [],
+   "mentions": [],
+   "inlineEmojis": []
+  },
+  {
+   "id": "1540949477580349442",
+   "type": "Default",
+   "timestamp": "2026-08-23T07:03:04.912+02:00",
+   "timestampEdited": null,
+   "callEndedTimestamp": null,
+   "isPinned": false,
+   "content": "",
+   "author": {
+    "id": "1251546267633455230",
+    "name": "Valhalla Bot",
+    "discriminator": "7099",
+    "nickname": "Valhalla Bot",
+    "color": null,
+    "isBot": true,
+    "roles": [],
+    "avatarUrl": "https://cdn.discordapp.com/avatars/1251546267633455230/49fb2e14025441cdadf926956e1a2815.png?size=512"
+   },
+   "attachments": [],
+   "embeds": [
+    {
+     "title": "",
+     "url": null,
+     "timestamp": "2026-08-23T07:03:04.436+02:00",
+     "description": "### 25% of bin range\nPartial removal\n**Target** 20260618_gh7gW8Ft\n**Yours** [Orb](<https://orbmarkets.io/tx/5Qt2gTuSYdwe4v2MifeJJTTpWm2RvPUaBr98hGZ3BjoDRfHj1bnMKSVsAFHjSxkAYq5AifFj61LB99rZZVj2XL2U>) · [Solscan](<https://solscan.io/tx/5Qt2gTuSYdwe4v2MifeJJTTpWm2RvPUaBr98hGZ3BjoDRfHj1bnMKSVsAFHjSxkAYq5AifFj61LB99rZZVj2XL2U>)\n**Target tx** [Orb](<https://orbmarkets.io/tx/3nJAjeBJjaz6nMkpTv1P756oY2sq9L9BqFTkBskx3A73nb9gvkbisiSuNrJ3TDEGXdpCteNE7EVZXkd5eXBtpv4X>) · [Solscan](<https://solscan.io/tx/3nJAjeBJjaz6nMkpTv1P756oY2sq9L9BqFTkBskx3A73nb9gvkbisiSuNrJ3TDEGXdpCteNE7EVZXkd5eXBtpv4X>)",
+     "color": "#3D8B7D",
+     "author": {
+      "name": "Removed liquidity · DLMM",
+      "url": null
+     },
+     "footer": {
+      "text": "Valhalla · 9EU9...o5yZ"
+     },
+     "images": [],
+     "fields": [],
+     "inlineEmojis": []
+    }
+   ],
+   "stickers": [],
+   "reactions": [],
+   "mentions": [],
+   "inlineEmojis": []
+  },
+  {
+   "id": "1540952081899458636",
+   "type": "Default",
+   "timestamp": "2026-08-23T07:13:25.83+02:00",
+   "timestampEdited": null,
+   "callEndedTimestamp": null,
+   "isPinned": false,
+   "content": "",
+   "author": {
+    "id": "1251546267633455230",
+    "name": "Valhalla Bot",
+    "discriminator": "7099",
+    "nickname": "Valhalla Bot",
+    "color": null,
+    "isBot": true,
+    "roles": [],
+    "avatarUrl": "https://cdn.discordapp.com/avatars/1251546267633455230/49fb2e14025441cdadf926956e1a2815.png?size=512"
+   },
+   "attachments": [],
+   "embeds": [
+    {
+     "title": "",
+     "url": null,
+     "timestamp": "2026-08-23T07:13:25.648+02:00",
+     "description": "**Take Profit Executed (DLMM)** (9GQW...JNkf) (Copied From: 20260713_7XV2nCRq)\n**Pair** HYPE/SOL\n**Entry Value** 0.3789 SOL\n**Exit Value** 0.3922 SOL\n**Claimed Fees** 0.0000 SOL | Unclaimed Fees: 0.0140 SOL\n**Price Source** Median (4 sources) | Token X Price: $77.81326271 | Token Y Price: $92.54201859\n**HYPE Prices:** Jup: $77.81652542 | Dex: $77.81000000 | Gecko: $77.82618587 | Met: $77.61472582 | **Median: $77.81326271**\n**SOL Price:** $92.54201859 | Token Amounts: X: 127223152.000000 | Y: 285246082.000000\n**Profit** 10.10%\n**Take Profit Threshold** 10%\n[Orb](<https://orbmarkets.io/tx/3yU16hKKEuSvs3FeRThbfaa8ian2o3Lqra1NVwKwFv8XP1ZRWFwGFHgiozbKcSVh6uNUBkk2QTA4qVU98gT51Zk8>) · [Solscan](<https://solscan.io/tx/3yU16hKKEuSvs3FeRThbfaa8ian2o3Lqra1NVwKwFv8XP1ZRWFwGFHgiozbKcSVh6uNUBkk2QTA4qVU98gT51Zk8>)\n[Your Metlex](<https://metlex.io/pnl2/3yU16hKKEuSvs3FeRThbfaa8ian2o3Lqra1NVwKwFv8XP1ZRWFwGFHgiozbKcSVh6uNUBkk2QTA4qVU98gT51Zk8>)",
+     "color": "#5D5849",
+     "images": [],
+     "fields": [],
+     "inlineEmojis": []
+    }
+   ],
+   "stickers": [],
+   "reactions": [],
+   "mentions": [],
+   "inlineEmojis": []
+  },
+  {
+   "id": "1540961139893207090",
+   "type": "Default",
+   "timestamp": "2026-08-23T07:49:25.424+02:00",
+   "timestampEdited": null,
+   "callEndedTimestamp": null,
+   "isPinned": false,
+   "content": "",
+   "author": {
+    "id": "1251546267633455230",
+    "name": "Valhalla Bot",
+    "discriminator": "7099",
+    "nickname": "Valhalla Bot",
+    "color": null,
+    "isBot": true,
+    "roles": [],
+    "avatarUrl": "https://cdn.discordapp.com/avatars/1251546267633455230/49fb2e14025441cdadf926956e1a2815.png?size=512"
+   },
+   "attachments": [],
+   "embeds": [
+    {
+     "title": "",
+     "url": null,
+     "timestamp": "2026-08-23T07:49:25.037+02:00",
+     "description": "**Rug Check Stop Loss Executed (DLMM)** (3h8E...N83f) (Copied From: 20260618_gh7gW8Ft)\n**Pair** DShht9B8wCRe5t3oqdPB77PnjJbKxbYaZyuWpZQjbonk/So11111111111111111111111111111111111111112\n**Position** 3h8ENSAtxDEAScUJmxLkWgJ7APDHH9TyjA9kYvkEN83f\n**Price Drop** 21.55%\n**Rug Check Threshold** 20%\n2 transactions · first [Orb](<https://orbmarkets.io/tx/655Lr5dZER1ktBPVvtDjKbwjoD3bM6G9TrrH988JxrvDz86JMEYv6USEsTSELJvQVT8Mank1qGsEnuVnMKHzgQMP>) · [Solscan](<https://solscan.io/tx/655Lr5dZER1ktBPVvtDjKbwjoD3bM6G9TrrH988JxrvDz86JMEYv6USEsTSELJvQVT8Mank1qGsEnuVnMKHzgQMP>) · last [Orb](<https://orbmarkets.io/tx/384cjoYSfQam7uVmbqgNwESPymMgG2QcseZU7CKffbsfMQtKuDxpC1fVWc8ZW5Ug9XcQEtC9ZLL1xXYftPB6oHcK>) · [Solscan](<https://solscan.io/tx/384cjoYSfQam7uVmbqgNwESPymMgG2QcseZU7CKffbsfMQtKuDxpC1fVWc8ZW5Ug9XcQEtC9ZLL1xXYftPB6oHcK>)\n[Your Metlex](<https://metlex.io/pnl2/655Lr5dZER1ktBPVvtDjKbwjoD3bM6G9TrrH988JxrvDz86JMEYv6USEsTSELJvQVT8Mank1qGsEnuVnMKHzgQMP>)",
+     "color": "#5D5849",
+     "images": [],
+     "fields": [],
+     "inlineEmojis": []
+    }
+   ],
+   "stickers": [],
+   "reactions": [],
+   "mentions": [],
+   "inlineEmojis": []
+  },
+  {
+   "id": "1540982525009330267",
+   "type": "Default",
+   "timestamp": "2026-08-23T09:14:24.033+02:00",
+   "timestampEdited": null,
+   "callEndedTimestamp": null,
+   "isPinned": false,
+   "content": "",
+   "author": {
+    "id": "1251546267633455230",
+    "name": "Valhalla Bot",
+    "discriminator": "7099",
+    "nickname": "Valhalla Bot",
+    "color": null,
+    "isBot": true,
+    "roles": [],
+    "avatarUrl": "https://cdn.discordapp.com/avatars/1251546267633455230/49fb2e14025441cdadf926956e1a2815.png?size=512"
+   },
+   "attachments": [],
+   "embeds": [
+    {
+     "title": "",
+     "url": null,
+     "timestamp": "2026-08-23T09:14:23.683+02:00",
+     "description": "Your position 3h8ENSAtxDEAScUJmxLkWgJ7APDHH9TyjA9kYvkEN83f was already closed (3h8E...N83f)\n**Target** 20260618_gh7gW8Ft\n2 transactions · first [Orb](<https://orbmarkets.io/tx/2rhb2RGktkoFueC6aTD22mE4cv6fzRgnWKccjtpzEkj2WbirF39DR8CotXAFZWM9V7kRCNKaABCTYrDzrzgm347E>) · [Solscan](<https://solscan.io/tx/2rhb2RGktkoFueC6aTD22mE4cv6fzRgnWKccjtpzEkj2WbirF39DR8CotXAFZWM9V7kRCNKaABCTYrDzrzgm347E>) · last [Orb](<https://orbmarkets.io/tx/MBdJsRWNgJW2kjLrMGJYTsczNdj4YHno8G1WXJo3BETLTas89BfbFfjQE65qFfaWGFTZKVtCuo7oQdwjULucTPC>) · [Solscan](<https://solscan.io/tx/MBdJsRWNgJW2kjLrMGJYTsczNdj4YHno8G1WXJo3BETLTas89BfbFfjQE65qFfaWGFTZKVtCuo7oQdwjULucTPC>)",
+     "color": "#5D5849",
+     "images": [],
+     "fields": [],
+     "inlineEmojis": []
+    }
+   ],
+   "stickers": [],
+   "reactions": [],
+   "mentions": [],
+   "inlineEmojis": []
+  },
+  {
+   "id": "1541037494877818956",
+   "type": "Default",
+   "timestamp": "2026-08-23T12:52:49.871+02:00",
+   "timestampEdited": null,
+   "callEndedTimestamp": null,
+   "isPinned": false,
+   "content": "",
+   "author": {
+    "id": "1251546267633455230",
+    "name": "Valhalla Bot",
+    "discriminator": "7099",
+    "nickname": "Valhalla Bot",
+    "color": null,
+    "isBot": true,
+    "roles": [],
+    "avatarUrl": "https://cdn.discordapp.com/avatars/1251546267633455230/49fb2e14025441cdadf926956e1a2815.png?size=512"
+   },
+   "attachments": [],
+   "embeds": [
+    {
+     "title": "",
+     "url": null,
+     "timestamp": "2026-08-23T12:52:49.552+02:00",
+     "description": "🆕 Spot 1-Sided Position | [CYBERLEEK-SOL](<https://dexscreener.com/solana/ApZuxdpzMrbEYTGEzeY9afh5pj9d6qPRJCTgQYiipbKg>)\n**Target** [20260526_CmL4fG](<https://valhalla-bot.app/dashboard/wallet/CmL4fGLvbUohDoJRL7ZKXMJWFW8Lx8FWQTCeQRTmqKxY>)\n**MC** $17,063,572.395 | Age: 1w ago\n**Jup Score** 94\n**Target Pos** CyberLeek: 0.0000 | SOL: 15.0000\n**Your Pos** CyberLeek: 0.0000 | SOL: 1.0000\nView Tx - [Orb](<https://orbmarkets.io/tx/2PZwKZvHqGo5orHgpvuL7eGCcfjoVCpyQ3CuSxtwmdf41u5Fj4MtrC3iyE7HxCuSuZvgLVpjSLCTE8ohb1eaS8TE>) · [Solscan](<https://solscan.io/tx/2PZwKZvHqGo5orHgpvuL7eGCcfjoVCpyQ3CuSxtwmdf41u5Fj4MtrC3iyE7HxCuSuZvgLVpjSLCTE8ohb1eaS8TE>) | [Orb](<https://orbmarkets.io/tx/4fZMxWpdhRx4TTpD5gS29vBVrVXAWwh5i8J5Doi9Ujs9MESekg3szFBRRfy2dvZGj2ADS3bUGYDnANfZEL1XApbr>) · [Solscan](<https://solscan.io/tx/4fZMxWpdhRx4TTpD5gS29vBVrVXAWwh5i8J5Doi9Ujs9MESekg3szFBRRfy2dvZGj2ADS3bUGYDnANfZEL1XApbr>)",
+     "color": "#4A7FB5",
+     "author": {
+      "name": "Opened New DLMM Position! (CHZb...JCCU)",
+      "url": null
+     },
+     "images": [],
+     "fields": [],
+     "inlineEmojis": [
+      {
+       "id": "",
+       "name": "🆕",
+       "code": "new",
+       "isAnimated": false,
+       "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1f195.svg"
+      }
+     ]
+    }
+   ],
+   "stickers": [],
+   "reactions": [],
+   "mentions": [],
+   "inlineEmojis": []
+  },
+  {
+   "id": "1541077494055309313",
+   "type": "Default",
+   "timestamp": "2026-08-23T15:31:46.418+02:00",
+   "timestampEdited": null,
+   "callEndedTimestamp": null,
+   "isPinned": false,
+   "content": "",
+   "author": {
+    "id": "1251546267633455230",
+    "name": "Valhalla Bot",
+    "discriminator": "7099",
+    "nickname": "Valhalla Bot",
+    "color": null,
+    "isBot": true,
+    "roles": [],
+    "avatarUrl": "https://cdn.discordapp.com/avatars/1251546267633455230/49fb2e14025441cdadf926956e1a2815.png?size=512"
+   },
+   "attachments": [],
+   "embeds": [
+    {
+     "title": "STONK-SOL",
+     "url": "https://dexscreener.com/solana/6GmAFSYs4gk3FDao5FzzySQpPZaWsa4rUJHacpMpUNgx",
+     "timestamp": "2026-08-23T15:31:45.723+02:00",
+     "description": "### 1.00 SOL\n2% of target's 45.04 · **MC** $8,510,523.712 · **Age** 1mo · **Jup** 82\n**Target** [20260713_5iB13i7i](<https://valhalla-bot.app/dashboard/wallet/5iB13i7iUEANoCmzfnRHfnLR9LF8pdsDbXiTPxT6Ai9t>) · [Orb](<https://orbmarkets.io/address/5iB13i7iUEANoCmzfnRHfnLR9LF8pdsDbXiTPxT6Ai9t>) · [Solscan](<https://solscan.io/account/5iB13i7iUEANoCmzfnRHfnLR9LF8pdsDbXiTPxT6Ai9t>)\n**Token** [DexScreener](<https://dexscreener.com/solana/6GmAFSYs4gk3FDao5FzzySQpPZaWsa4rUJHacpMpUNgx>) · [Orb](<https://orbmarkets.io/token/6GmAFSYs4gk3FDao5FzzySQpPZaWsa4rUJHacpMpUNgx>) · [Solscan](<https://solscan.io/token/6GmAFSYs4gk3FDao5FzzySQpPZaWsa4rUJHacpMpUNgx>)\n**Yours** 4 transactions · first [Orb](<https://orbmarkets.io/tx/4b2oDNZxrvc1mLPoYE1DV1b9rWRZQXi23CZEy5vGxFxY322RCfherRqMNSKmKB6CVgyFqB71RZk8kYcgSGtkrpE9>) · [Solscan](<https://solscan.io/tx/4b2oDNZxrvc1mLPoYE1DV1b9rWRZQXi23CZEy5vGxFxY322RCfherRqMNSKmKB6CVgyFqB71RZk8kYcgSGtkrpE9>) · last [Orb](<https://orbmarkets.io/tx/MvfMJz35d4ETHkEFzUa4zxUzWDryEpcVK22gtmHM93EUuFC4NJXbkyaDzgWRUBQVZaWYccC11FNrXbyLAyzHofZ>) · [Solscan](<https://solscan.io/tx/MvfMJz35d4ETHkEFzUa4zxUzWDryEpcVK22gtmHM93EUuFC4NJXbkyaDzgWRUBQVZaWYccC11FNrXbyLAyzHofZ>)\n**Target tx** 4 transactions · first [Orb](<https://orbmarkets.io/tx/32HBRmERUHRfgseav9bXtzKbFeYBfhSmfAEunXAVRXjaHzxRrvnJi3z6hhLEgXXo1WChgMRyvhg32KeA5gjPaumq>) · [Solscan](<https://solscan.io/tx/32HBRmERUHRfgseav9bXtzKbFeYBfhSmfAEunXAVRXjaHzxRrvnJi3z6hhLEgXXo1WChgMRyvhg32KeA5gjPaumq>) · last [Orb](<https://orbmarkets.io/tx/4UvhCXCLAfqNJf4Go12tpF3mYoASzwWJ95bdWRHkcvCT9TMKK7c5GT4TXPCq1BD5S1GYznTejy3WmWyamN1RkdeU>) · [Solscan](<https://solscan.io/tx/4UvhCXCLAfqNJf4Go12tpF3mYoASzwWJ95bdWRHkcvCT9TMKK7c5GT4TXPCq1BD5S1GYznTejy3WmWyamN1RkdeU>)",
+     "color": "#4A7FB5",
+     "author": {
+      "name": "Opened · DLMM · BidAsk 1-Sided",
+      "url": null
+     },
+     "footer": {
+      "text": "Valhalla · HGh5...nXn9"
+     },
+     "images": [],
+     "fields": [],
+     "inlineEmojis": []
+    }
+   ],
+   "stickers": [],
+   "reactions": [],
+   "mentions": [],
+   "inlineEmojis": []
+  },
+  {
+   "id": "1541077639639474227",
+   "type": "Default",
+   "timestamp": "2026-08-23T15:32:21.128+02:00",
+   "timestampEdited": null,
+   "callEndedTimestamp": null,
+   "isPinned": false,
+   "content": "",
+   "author": {
+    "id": "1251546267633455230",
+    "name": "Valhalla Bot",
+    "discriminator": "7099",
+    "nickname": "Valhalla Bot",
+    "color": null,
+    "isBot": true,
+    "roles": [],
+    "avatarUrl": "https://cdn.discordapp.com/avatars/1251546267633455230/49fb2e14025441cdadf926956e1a2815.png?size=512"
+   },
+   "attachments": [],
+   "embeds": [
+    {
+     "title": "",
+     "url": null,
+     "timestamp": "2026-08-23T15:32:20.713+02:00",
+     "description": "🟢 **PNL received** +0.0019 SOL (0.19%)\n**Position** STONK/SOL\n**Target** [20260713_5iB13i7i](<https://valhalla-bot.app/dashboard/wallet/5iB13i7iUEANoCmzfnRHfnLR9LF8pdsDbXiTPxT6Ai9t>)\n**Balance** 0.21 SOL → 1.28 SOL\n**In USD** $19.96 → $121.64\n**Total** 68.43 SOL ($6503.42) across 69 open positions\n**Yours** 2 transactions · first [Orb](<https://orbmarkets.io/tx/3bXzbenYBSiShmQPZCe4MHZHr7d7EGY3WWvQWfEJVGGBwBWWQqdPnzrR5GCZDtztbGnDyqBaxaFE1X8cVsVQi9mW>) · [Solscan](<https://solscan.io/tx/3bXzbenYBSiShmQPZCe4MHZHr7d7EGY3WWvQWfEJVGGBwBWWQqdPnzrR5GCZDtztbGnDyqBaxaFE1X8cVsVQi9mW>) · last [Orb](<https://orbmarkets.io/tx/585gKZNQgUMbutprBxzCANVUaNSEYv86jRi7gt6w7VLfnBFzxyvtbQGS4ofenwcbqDAtJJmhySFYRDB7ZenvG9g4>) · [Solscan](<https://solscan.io/tx/585gKZNQgUMbutprBxzCANVUaNSEYv86jRi7gt6w7VLfnBFzxyvtbQGS4ofenwcbqDAtJJmhySFYRDB7ZenvG9g4>)\n**Target tx** 2 transactions · first [Orb](<https://orbmarkets.io/tx/5RCET6KQstEF1R1qgy1nN8SMDo2wGSo2K8tSQ97sVy6yDDwj4eUqrjQjDMsk2zUGHxGiLtABvqM3ZuUaEiyNNMDf>) · [Solscan](<https://solscan.io/tx/5RCET6KQstEF1R1qgy1nN8SMDo2wGSo2K8tSQ97sVy6yDDwj4eUqrjQjDMsk2zUGHxGiLtABvqM3ZuUaEiyNNMDf>) · last [Orb](<https://orbmarkets.io/tx/37JcxiiPCinNNCyzjBB5g2F9S9oSKkM9s81xcEeCajEtPTZenG3WS9TjMcNCDRBXpNFkCfz74iNduzZRUUPUnv4q>) · [Solscan](<https://solscan.io/tx/37JcxiiPCinNNCyzjBB5g2F9S9oSKkM9s81xcEeCajEtPTZenG3WS9TjMcNCDRBXpNFkCfz74iNduzZRUUPUnv4q>)\n**History** [Your Metlex](<https://metlex.io/pnl2/3bXzbenYBSiShmQPZCe4MHZHr7d7EGY3WWvQWfEJVGGBwBWWQqdPnzrR5GCZDtztbGnDyqBaxaFE1X8cVsVQi9mW>) | [Target Metlex](<https://metlex.io/pnl2/5RCET6KQstEF1R1qgy1nN8SMDo2wGSo2K8tSQ97sVy6yDDwj4eUqrjQjDMsk2zUGHxGiLtABvqM3ZuUaEiyNNMDf>)",
+     "color": "#3FA66A",
+     "author": {
+      "name": "Closed DLMM Position! (HDQA...Snvm)",
+      "url": null
+     },
+     "images": [],
+     "fields": [],
+     "inlineEmojis": [
+      {
+       "id": "",
+       "name": "🟢",
+       "code": "green_circle",
+       "isAnimated": false,
+       "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1f7e2.svg"
+      }
+     ]
+    }
+   ],
+   "stickers": [],
+   "reactions": [],
+   "mentions": [],
+   "inlineEmojis": []
+  },
+  {
+   "id": "1541083388147015710",
+   "type": "Default",
+   "timestamp": "2026-08-23T15:55:11.679+02:00",
+   "timestampEdited": null,
+   "callEndedTimestamp": null,
+   "isPinned": false,
+   "content": "",
+   "author": {
+    "id": "1251546267633455230",
+    "name": "Valhalla Bot",
+    "discriminator": "7099",
+    "nickname": "Valhalla Bot",
+    "color": null,
+    "isBot": true,
+    "roles": [],
+    "avatarUrl": "https://cdn.discordapp.com/avatars/1251546267633455230/49fb2e14025441cdadf926956e1a2815.png?size=512"
+   },
+   "attachments": [],
+   "embeds": [
+    {
+     "title": "",
+     "url": null,
+     "timestamp": "2026-08-23T15:55:10.873+02:00",
+     "description": "### 15 Cate\n**Token** `Ai66LHZG9MCzg1WKdawwqduVAXpNDUuV8M3uyq5ppump`\n**Transaction** [Orb](<https://orbmarkets.io/tx/2QB6q3ym9NhWtVj7NcXSRoVCrnufMqGbc7JscLq4S9M52R7Yx47HozqpYLff2t68ALxE1aAHa9uZyB2HYJmqHqss>) · [Solscan](<https://solscan.io/tx/2QB6q3ym9NhWtVj7NcXSRoVCrnufMqGbc7JscLq4S9M52R7Yx47HozqpYLff2t68ALxE1aAHa9uZyB2HYJmqHqss>)",
+     "color": "#4A7FB5",
+     "author": {
+      "name": "Swapped",
+      "url": null
+     },
+     "footer": {
+      "text": "Valhalla"
+     },
+     "images": [],
+     "fields": [],
+     "inlineEmojis": []
+    }
+   ],
+   "stickers": [],
+   "reactions": [],
+   "mentions": [],
+   "inlineEmojis": []
+  },
+  {
+   "id": "1541083858945052735",
+   "type": "Default",
+   "timestamp": "2026-08-23T15:57:03.926+02:00",
+   "timestampEdited": null,
+   "callEndedTimestamp": null,
+   "isPinned": false,
+   "content": "",
+   "author": {
+    "id": "1251546267633455230",
+    "name": "Valhalla Bot",
+    "discriminator": "7099",
+    "nickname": "Valhalla Bot",
+    "color": null,
+    "isBot": true,
+    "roles": [],
+    "avatarUrl": "https://cdn.discordapp.com/avatars/1251546267633455230/49fb2e14025441cdadf926956e1a2815.png?size=512"
+   },
+   "attachments": [],
+   "embeds": [
+    {
+     "title": "",
+     "url": null,
+     "timestamp": "2026-08-23T15:57:03.544+02:00",
+     "description": "Not copying their 'Add liquidity': Infinite Add Liquidity is off for this wallet, so your position stays at the size your entry set it to.\n\n💡 To copy their adds: type /settings_dlmm → More Copy Trade Settings → Infinite Add Liquidity - Turn ON\n**Target** 20260619_9Dxzmcdb\n**Target tx** 2 transactions · first [Orb](<https://orbmarkets.io/tx/yZZVk9PXD2mgX9NAwPHKanwGXBUFPctyJrMgxPMsbGvQztoGvbvP4sqjAUbcA8uKKF5pKKQZxWJfPEWqkHVF2rZ>) · [Solscan](<https://solscan.io/tx/yZZVk9PXD2mgX9NAwPHKanwGXBUFPctyJrMgxPMsbGvQztoGvbvP4sqjAUbcA8uKKF5pKKQZxWJfPEWqkHVF2rZ>) · last [Orb](<https://orbmarkets.io/tx/HDGRfL4o7qLUcaYB2PRRVmmShTPu7uHtZb88bZRuqkRpL3SEvaAmHYjTxv9Vt7G4UVVmKCu43KSU9qZUuY7rgjX>) · [Solscan](<https://solscan.io/tx/HDGRfL4o7qLUcaYB2PRRVmmShTPu7uHtZb88bZRuqkRpL3SEvaAmHYjTxv9Vt7G4UVVmKCu43KSU9qZUuY7rgjX>)",
+     "color": "#5D5849",
+     "author": {
+      "name": "Skipped · add liquidity",
+      "url": null
+     },
+     "footer": {
+      "text": "Valhalla · No action needed"
+     },
+     "images": [],
+     "fields": [],
+     "inlineEmojis": [
+      {
+       "id": "",
+       "name": "💡",
+       "code": "bulb",
+       "isAnimated": false,
+       "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1f4a1.svg"
+      }
+     ]
+    }
+   ],
+   "stickers": [],
+   "reactions": [],
+   "mentions": [],
+   "inlineEmojis": []
+  },
+  {
+   "id": "1541085611132325960",
+   "type": "Default",
+   "timestamp": "2026-08-23T16:04:01.68+02:00",
+   "timestampEdited": null,
+   "callEndedTimestamp": null,
+   "isPinned": false,
+   "content": "",
+   "author": {
+    "id": "1251546267633455230",
+    "name": "Valhalla Bot",
+    "discriminator": "7099",
+    "nickname": "Valhalla Bot",
+    "color": null,
+    "isBot": true,
+    "roles": [],
+    "avatarUrl": "https://cdn.discordapp.com/avatars/1251546267633455230/49fb2e14025441cdadf926956e1a2815.png?size=512"
+   },
+   "attachments": [],
+   "embeds": [
+    {
+     "title": "",
+     "url": null,
+     "timestamp": "2026-08-23T16:04:01.247+02:00",
+     "description": "**Insufficient Effective Balance for Copy Trading** ❌\n**Trade copied from:** `20260821_8bHpPjob`\n**Your SOL balance** `0.17 SOL`\n**Total effective balance: `0.17 SOL`**\n**Required amount for this trade** `0.96 SOL` (Trade Amount: 0.8211 SOL + Fees)\nYour max copy trade amount setting: `1.00 SOL`\nYou **cannot open new positions** until you add more SOL to your wallet.\nIf this required amount seems too high based on your settings, please check the target wallet's transaction size.\nYou may also lower your max trade amount in the settings.\n**Tx** 3 transactions · first [Orb](<https://orbmarkets.io/tx/3jF6cWuihTkAY3rTNu1AvgmwZjvRn2mpizJAwKSokyuTLmUXWLDVpgPFyeSeE58MJMdsuHBytuDHwLQtft41wUYX>) · [Solscan](<https://solscan.io/tx/3jF6cWuihTkAY3rTNu1AvgmwZjvRn2mpizJAwKSokyuTLmUXWLDVpgPFyeSeE58MJMdsuHBytuDHwLQtft41wUYX>) · last [Orb](<https://orbmarkets.io/tx/4ajUAqEHs1jgLf8KY3tM9V7PcJc5DnhczVepA9BiJ6DAhpF7YjKtrWZmJMnd5VDzg4NYd3BqBf1a23W7YjYPPH7u>) · [Solscan](<https://solscan.io/tx/4ajUAqEHs1jgLf8KY3tM9V7PcJc5DnhczVepA9BiJ6DAhpF7YjKtrWZmJMnd5VDzg4NYd3BqBf1a23W7YjYPPH7u>)",
+     "color": "#B3453A",
+     "images": [],
+     "fields": [],
+     "inlineEmojis": [
+      {
+       "id": "",
+       "name": "❌",
+       "code": "x",
+       "isAnimated": false,
+       "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/274c.svg"
+      }
+     ]
+    }
+   ],
+   "stickers": [],
+   "reactions": [],
+   "mentions": [],
+   "inlineEmojis": []
+  },
+  {
+   "id": "1541086028977283103",
+   "type": "Default",
+   "timestamp": "2026-08-23T16:05:41.302+02:00",
+   "timestampEdited": null,
+   "callEndedTimestamp": null,
+   "isPinned": false,
+   "content": "",
+   "author": {
+    "id": "1251546267633455230",
+    "name": "Valhalla Bot",
+    "discriminator": "7099",
+    "nickname": "Valhalla Bot",
+    "color": null,
+    "isBot": true,
+    "roles": [],
+    "avatarUrl": "https://cdn.discordapp.com/avatars/1251546267633455230/49fb2e14025441cdadf926956e1a2815.png?size=512"
+   },
+   "attachments": [],
+   "embeds": [
+    {
+     "title": "",
+     "url": null,
+     "timestamp": "2026-08-23T16:05:40.87+02:00",
+     "description": "🔴 **PNL received** -0.0000 SOL (-0.00%)\n**Position** EYE/SOL\n**Target** [20260821_9JHGdZj4](<https://valhalla-bot.app/dashboard/wallet/9JHGdZj4vyKhDbHUPvEezEo6Rc4GPsvEvjrh4Jh6KuXD>)\n**Balance** 0.17 SOL → 1.00 SOL\n**In USD** $16.23 → $95.46\n**Total** 68.46 SOL ($6535.00) across 68 open positions\n**Yours** 3 transactions · first [Orb](<https://orbmarkets.io/tx/QC8CXPCit5v1s8s1YamJe6RanVgnSRgRM6Z9jS6hZxgLJY3E1v96QxtdSw8e6BBbTiQw2Snkpq9D8NFJbyUVoCA>) · [Solscan](<https://solscan.io/tx/QC8CXPCit5v1s8s1YamJe6RanVgnSRgRM6Z9jS6hZxgLJY3E1v96QxtdSw8e6BBbTiQw2Snkpq9D8NFJbyUVoCA>) · last [Orb](<https://orbmarkets.io/tx/2WSaXMA6ZMVBZZT5JPnXfHdT3GDgrguYtS3NgmDbeBskVBMwFFyFcTSVzeFhgcPNb8zGxYM6y9s8kPeP5p8tk7KG>) · [Solscan](<https://solscan.io/tx/2WSaXMA6ZMVBZZT5JPnXfHdT3GDgrguYtS3NgmDbeBskVBMwFFyFcTSVzeFhgcPNb8zGxYM6y9s8kPeP5p8tk7KG>)\n**Target tx** 3 transactions · first [Orb](<https://orbmarkets.io/tx/29j22t8Z1f323Xf4ryW4d7KZu6hpNhZ1rd3v6pHGHKgyrCfbHwAjip4GJD9j9tFbL9FtdJLsqHjPVDH5a28NEb8o>) · [Solscan](<https://solscan.io/tx/29j22t8Z1f323Xf4ryW4d7KZu6hpNhZ1rd3v6pHGHKgyrCfbHwAjip4GJD9j9tFbL9FtdJLsqHjPVDH5a28NEb8o>) · last [Orb](<https://orbmarkets.io/tx/2iPzRbDS9usCXwjqbD4duV7iAAEYHvDPxVNkgsnw2n3uPBXvxzZ21V7UpsENQWFPBb1EYgnZxMEci8Qf9B7bUKt>) · [Solscan](<https://solscan.io/tx/2iPzRbDS9usCXwjqbD4duV7iAAEYHvDPxVNkgsnw2n3uPBXvxzZ21V7UpsENQWFPBb1EYgnZxMEci8Qf9B7bUKt>)\n**History** [Your Metlex](<https://metlex.io/pnl2/QC8CXPCit5v1s8s1YamJe6RanVgnSRgRM6Z9jS6hZxgLJY3E1v96QxtdSw8e6BBbTiQw2Snkpq9D8NFJbyUVoCA>) | [Target Metlex](<https://metlex.io/pnl2/29j22t8Z1f323Xf4ryW4d7KZu6hpNhZ1rd3v6pHGHKgyrCfbHwAjip4GJD9j9tFbL9FtdJLsqHjPVDH5a28NEb8o>)",
+     "color": "#B3453A",
+     "author": {
+      "name": "Closed DLMM Position! (FR4J...DbJT)",
+      "url": null
+     },
+     "images": [],
+     "fields": [],
+     "inlineEmojis": [
+      {
+       "id": "",
+       "name": "🔴",
+       "code": "red_circle",
+       "isAnimated": false,
+       "imageUrl": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1f534.svg"
+      }
+     ]
+    }
+   ],
+   "stickers": [],
+   "reactions": [],
+   "mentions": [],
+   "inlineEmojis": []
+  },
+  {
+   "id": "1541117616951922753",
+   "type": "Default",
+   "timestamp": "2026-08-23T18:11:12.462+02:00",
+   "timestampEdited": null,
+   "callEndedTimestamp": null,
+   "isPinned": false,
+   "content": "",
+   "author": {
+    "id": "1251546267633455230",
+    "name": "Valhalla Bot",
+    "discriminator": "7099",
+    "nickname": "Valhalla Bot",
+    "color": null,
+    "isBot": true,
+    "roles": [],
+    "avatarUrl": "https://cdn.discordapp.com/avatars/1251546267633455230/49fb2e14025441cdadf926956e1a2815.png?size=512"
+   },
+   "attachments": [],
+   "embeds": [
+    {
+     "title": "",
+     "url": null,
+     "timestamp": "2026-08-23T18:11:12.047+02:00",
+     "description": "Token world licking cat (EjD5Y9NVhXmtEqU7wYvAyZvDWZFQeEuHXFatJmTbpump) has a market cap below $300000. Details: Jupiter MC is $223,269.624 and DexScreener MC is $225,736, both below your minimum of $300000.\n**Target** 20260821_9JHGdZj4\n**Change it** /settings_dlmm -> More Copy Trade Settings -> Set Market Cap (Min/Max)\n**Target** 3 transactions · first [Orb](<https://orbmarkets.io/tx/2c2nGRusuyHGJYKvEejoHhu3t2Jibrw8kbujbihg2a7pViJ45PbbWtRMW5NuSbuZizuYTtmfFMBH3ZUkggYCV6tG>) · [Solscan](<https://solscan.io/tx/2c2nGRusuyHGJYKvEejoHhu3t2Jibrw8kbujbihg2a7pViJ45PbbWtRMW5NuSbuZizuYTtmfFMBH3ZUkggYCV6tG>) · last [Orb](<https://orbmarkets.io/tx/5x2eDrfXEaiiUvt4imq5km5A8icuvs9cQF51xQxJsSPsNxaXb5z5avMJXPc38N8AgzAMpxkXWLE95s4h9XSE7rAv>) · [Solscan](<https://solscan.io/tx/5x2eDrfXEaiiUvt4imq5km5A8icuvs9cQF51xQxJsSPsNxaXb5z5avMJXPc38N8AgzAMpxkXWLE95s4h9XSE7rAv>)",
+     "color": "#5D5849",
+     "author": {
+      "name": "Skipped - low market cap restriction",
+      "url": null
+     },
+     "footer": {
+      "text": "Valhalla · No action needed"
+     },
+     "images": [],
+     "fields": [],
+     "inlineEmojis": []
+    }
+   ],
+   "stickers": [],
+   "reactions": [],
+   "mentions": [],
+   "inlineEmojis": []
+  },
+  {
+   "id": "1541120693645742150",
+   "type": "Default",
+   "timestamp": "2026-08-23T18:23:26.003+02:00",
+   "timestampEdited": null,
+   "callEndedTimestamp": null,
+   "isPinned": false,
+   "content": "",
+   "author": {
+    "id": "1251546267633455230",
+    "name": "Valhalla Bot",
+    "discriminator": "7099",
+    "nickname": "Valhalla Bot",
+    "color": null,
+    "isBot": true,
+    "roles": [],
+    "avatarUrl": "https://cdn.discordapp.com/avatars/1251546267633455230/49fb2e14025441cdadf926956e1a2815.png?size=512"
+   },
+   "attachments": [],
+   "embeds": [
+    {
+     "title": "",
+     "url": null,
+     "timestamp": "2026-08-23T18:23:25.736+02:00",
+     "description": "Your position 51QHoS6XQyhgiyCXczXiZkvAzvhtPMHAc4CgRiDj4qRJ was already closed (51QH...4qRJ)\n**Target** 20260713_FVGQRHDD5\n2 transactions · first [Orb](<https://orbmarkets.io/tx/65z43gTN2tC9T2BS7uySpGqy6QnJiMNFSpbwDftCf1G92ikz8DegJhUFFVnfpDGnxrjCmkinWQxu9jLn6itQ6dzu>) · [Solscan](<https://solscan.io/tx/65z43gTN2tC9T2BS7uySpGqy6QnJiMNFSpbwDftCf1G92ikz8DegJhUFFVnfpDGnxrjCmkinWQxu9jLn6itQ6dzu>) · last [Orb](<https://orbmarkets.io/tx/5AUisCNUudx8NBpQ1Rfrc2y6FZiASicpKsCidv2hw1j5KfCKReozRsZhYrjkxbss2g1Xfwb9dY6DBqzXxQVAP1Z9>) · [Solscan](<https://solscan.io/tx/5AUisCNUudx8NBpQ1Rfrc2y6FZiASicpKsCidv2hw1j5KfCKReozRsZhYrjkxbss2g1Xfwb9dY6DBqzXxQVAP1Z9>)",
+     "color": "#5D5849",
+     "images": [],
+     "fields": [],
+     "inlineEmojis": []
+    }
+   ],
+   "stickers": [],
+   "reactions": [],
+   "mentions": [],
+   "inlineEmojis": []
+  },
+  {
+   "id": "1541146885190975588",
+   "type": "Default",
+   "timestamp": "2026-08-23T20:07:30.554+02:00",
+   "timestampEdited": null,
+   "callEndedTimestamp": null,
+   "isPinned": false,
+   "content": "",
+   "author": {
+    "id": "1251546267633455230",
+    "name": "Valhalla Bot",
+    "discriminator": "7099",
+    "nickname": "Valhalla Bot",
+    "color": null,
+    "isBot": true,
+    "roles": [],
+    "avatarUrl": "https://cdn.discordapp.com/avatars/1251546267633455230/49fb2e14025441cdadf926956e1a2815.png?size=512"
+   },
+   "attachments": [],
+   "embeds": [
+    {
+     "title": "",
+     "url": null,
+     "timestamp": "2026-08-23T20:07:30.051+02:00",
+     "description": "### 100% of bin range\nPartial removal\n**Target** 20260618_gh7gW8Ft\n**Yours** [Orb](<https://orbmarkets.io/tx/5gSpMMHbsXx7YLzGiCU5WmCUk3Xhx729Wh7JmTmnD1quJBCmvduJkK6wCpYvQAv5XfEwB4vibBTzPNCCpLD66gp8>) · [Solscan](<https://solscan.io/tx/5gSpMMHbsXx7YLzGiCU5WmCUk3Xhx729Wh7JmTmnD1quJBCmvduJkK6wCpYvQAv5XfEwB4vibBTzPNCCpLD66gp8>)\n**Target tx** [Orb](<https://orbmarkets.io/tx/49pjAHcTXDnMAaYBT95PEHYoqTYubxaYfTBjM8NLH7ux3WqTeNwT5Cu4tTHNJL8C1Z8MutMAX2f2kY252LhZruND>) · [Solscan](<https://solscan.io/tx/49pjAHcTXDnMAaYBT95PEHYoqTYubxaYfTBjM8NLH7ux3WqTeNwT5Cu4tTHNJL8C1Z8MutMAX2f2kY252LhZruND>)",
+     "color": "#3D8B7D",
+     "author": {
+      "name": "Removed liquidity · DLMM",
+      "url": null
+     },
+     "footer": {
+      "text": "Valhalla · GokQ...PUat"
+     },
+     "images": [],
+     "fields": [],
+     "inlineEmojis": []
+    }
+   ],
+   "stickers": [],
+   "reactions": [],
+   "mentions": [],
+   "inlineEmojis": []
+  },
+  {
+   "id": "1541152915388108911",
+   "type": "Default",
+   "timestamp": "2026-08-23T20:31:28.265+02:00",
+   "timestampEdited": null,
+   "callEndedTimestamp": null,
+   "isPinned": false,
+   "content": "",
+   "author": {
+    "id": "1251546267633455230",
+    "name": "Valhalla Bot",
+    "discriminator": "7099",
+    "nickname": "Valhalla Bot",
+    "color": null,
+    "isBot": true,
+    "roles": [],
+    "avatarUrl": "https://cdn.discordapp.com/avatars/1251546267633455230/49fb2e14025441cdadf926956e1a2815.png?size=512"
+   },
+   "attachments": [],
+   "embeds": [
+    {
+     "title": "",
+     "url": null,
+     "timestamp": "2026-08-23T20:31:27.888+02:00",
+     "description": "Skipping position due to your Entry Mode\n**Target** 20260618_gh7gW8Ft\n**Token** HYPE (98sM...Mh5g)\nPool HYPE/USDC has no SOL side, so entries into it are not copied.\n**Your Entry Mode** **SOL only**. Copies only when the target adds SOL alone. No extra swaps. This is the default.\n**To adjust this** type /settings_dlmm → More Copy Trade Settings → Entry Mode\n**Target Tx** 3 transactions · first [Orb](<https://orbmarkets.io/tx/4x2jR3EaAgPuyNjQn9VRhU383cP9Yz4LkAHXeerfEFCwfG6c1wn3WSGfha2KiYYm1NLkdcjVgHcaHyQaj7Bb9pQL>) · [Solscan](<https://solscan.io/tx/4x2jR3EaAgPuyNjQn9VRhU383cP9Yz4LkAHXeerfEFCwfG6c1wn3WSGfha2KiYYm1NLkdcjVgHcaHyQaj7Bb9pQL>) · last [Orb](<https://orbmarkets.io/tx/4PYxMXDSew3N8DgJUtDVFD5TYbcKFAZ1yivxu1o7pvk9GPqudLgMHPtoJLqBMxsZ8zbdzNqxCynMhHqtNYRhkyS7>) · [Solscan](<https://solscan.io/tx/4PYxMXDSew3N8DgJUtDVFD5TYbcKFAZ1yivxu1o7pvk9GPqudLgMHPtoJLqBMxsZ8zbdzNqxCynMhHqtNYRhkyS7>)",
+     "color": "#B3453A",
+     "images": [],
+     "fields": [],
+     "inlineEmojis": []
+    }
+   ],
+   "stickers": [],
+   "reactions": [],
+   "mentions": [],
+   "inlineEmojis": []
+  },
+  {
+   "id": "1541172810205102170",
+   "type": "Default",
+   "timestamp": "2026-08-23T21:50:31.559+02:00",
+   "timestampEdited": null,
+   "callEndedTimestamp": null,
+   "isPinned": false,
+   "content": "",
+   "author": {
+    "id": "1251546267633455230",
+    "name": "Valhalla Bot",
+    "discriminator": "7099",
+    "nickname": "Valhalla Bot",
+    "color": null,
+    "isBot": true,
+    "roles": [],
+    "avatarUrl": "https://cdn.discordapp.com/avatars/1251546267633455230/49fb2e14025441cdadf926956e1a2815.png?size=512"
+   },
+   "attachments": [],
+   "embeds": [
+    {
+     "title": "",
+     "url": null,
+     "timestamp": "2026-08-23T21:50:31.303+02:00",
+     "description": "**Rug Check Stop Loss Executed (DLMM)** (GaDG...LHUu) (Copied From: 20260713_5iB13i7i)\n**Pair** XSTuo1fV7HHMhs4BYiwtrWSLsMCJNrooH2AssWTYZqP/So11111111111111111111111111111111111111112\n**Position** GaDG6SgvUqp6sH57oSk1ii8Q328cPZnyVb8BspkfLHUu\n**Price Drop** 23.60%\n**Rug Check Threshold** 20%\n2 transactions · first [Orb](<https://orbmarkets.io/tx/5fscE4uSAL4LkSq14Rzjxo49rea4bJ8BmjLGKLvWNwKwAJJxHnR2nSf2QhA8ybJ4MbZjP89DeCBw6U26NJUfnjA8>) · [Solscan](<https://solscan.io/tx/5fscE4uSAL4LkSq14Rzjxo49rea4bJ8BmjLGKLvWNwKwAJJxHnR2nSf2QhA8ybJ4MbZjP89DeCBw6U26NJUfnjA8>) · last [Orb](<https://orbmarkets.io/tx/2unKsj7taG83GWKtqeJvYHg9duik6X7MoByUZif2T1gbPNf9wqji4kWWomFvHJtYGWek21zjHfb182bNX5F4uo7Y>) · [Solscan](<https://solscan.io/tx/2unKsj7taG83GWKtqeJvYHg9duik6X7MoByUZif2T1gbPNf9wqji4kWWomFvHJtYGWek21zjHfb182bNX5F4uo7Y>)\n[Your Metlex](<https://metlex.io/pnl2/5fscE4uSAL4LkSq14Rzjxo49rea4bJ8BmjLGKLvWNwKwAJJxHnR2nSf2QhA8ybJ4MbZjP89DeCBw6U26NJUfnjA8>)",
+     "color": "#5D5849",
+     "images": [],
+     "fields": [],
+     "inlineEmojis": []
+    }
+   ],
+   "stickers": [],
+   "reactions": [],
+   "mentions": [],
+   "inlineEmojis": []
+  },
+  {
+   "id": "1541197810576400485",
+   "type": "Default",
+   "timestamp": "2026-08-23T23:29:52.112+02:00",
+   "timestampEdited": null,
+   "callEndedTimestamp": null,
+   "isPinned": false,
+   "content": "",
+   "author": {
+    "id": "1251546267633455230",
+    "name": "Valhalla Bot",
+    "discriminator": "7099",
+    "nickname": "Valhalla Bot",
+    "color": null,
+    "isBot": true,
+    "roles": [],
+    "avatarUrl": "https://cdn.discordapp.com/avatars/1251546267633455230/49fb2e14025441cdadf926956e1a2815.png?size=512"
+   },
+   "attachments": [],
+   "embeds": [
+    {
+     "title": "CYBERLEEK-SOL",
+     "url": "https://dexscreener.com/solana/ApZuxdpzMrbEYTGEzeY9afh5pj9d6qPRJCTgQYiipbKg",
+     "timestamp": "2026-08-23T23:29:51.528+02:00",
+     "description": "### 1.00 SOL\n14% of target's 7.00 · **MC** $16,870,735.85 · **Age** 1w · **Jup** 95\n**Target** [20260619_9Dxzmcdb](<https://valhalla-bot.app/dashboard/wallet/9DxzmcdbvPLeCK6zVP7fqB6kh83m4MREB2BLUzrA5QeE>) · [Orb](<https://orbmarkets.io/address/9DxzmcdbvPLeCK6zVP7fqB6kh83m4MREB2BLUzrA5QeE>) · [Solscan](<https://solscan.io/account/9DxzmcdbvPLeCK6zVP7fqB6kh83m4MREB2BLUzrA5QeE>)\n**Token** [DexScreener](<https://dexscreener.com/solana/ApZuxdpzMrbEYTGEzeY9afh5pj9d6qPRJCTgQYiipbKg>) · [Orb](<https://orbmarkets.io/token/ApZuxdpzMrbEYTGEzeY9afh5pj9d6qPRJCTgQYiipbKg>) · [Solscan](<https://solscan.io/token/ApZuxdpzMrbEYTGEzeY9afh5pj9d6qPRJCTgQYiipbKg>)\n**Yours** 4 transactions · first [Orb](<https://orbmarkets.io/tx/rnThwvNfA45hNNue9C9yo5mRk4s2Z8wQMwpQh7ZTkWhhyKvy1zzSsfAQ3FVJP5KxjsCvpj2kmiTZ8jrfC9MTrmU>) · [Solscan](<https://solscan.io/tx/rnThwvNfA45hNNue9C9yo5mRk4s2Z8wQMwpQh7ZTkWhhyKvy1zzSsfAQ3FVJP5KxjsCvpj2kmiTZ8jrfC9MTrmU>) · last [Orb](<https://orbmarkets.io/tx/2xN8EYM3PmMoM86FBY1766r9FBxhj7b9zmxiKohPuCJy6Hy6RBZugFBpjpNQYeQTLiSuwRgUVX35kuLpJAjndz85>) · [Solscan](<https://solscan.io/tx/2xN8EYM3PmMoM86FBY1766r9FBxhj7b9zmxiKohPuCJy6Hy6RBZugFBpjpNQYeQTLiSuwRgUVX35kuLpJAjndz85>)\n**Target tx** 4 transactions · first [Orb](<https://orbmarkets.io/tx/3PLNXgBYqvrLeAqrSLBcMFGSdLLHXZ58iNPm7ZtsSpJvg29HBgxiDtrYdGMdbcBYF1gZpnFMkrAYh1ker32Vbxex>) · [Solscan](<https://solscan.io/tx/3PLNXgBYqvrLeAqrSLBcMFGSdLLHXZ58iNPm7ZtsSpJvg29HBgxiDtrYdGMdbcBYF1gZpnFMkrAYh1ker32Vbxex>) · last [Orb](<https://orbmarkets.io/tx/4aeXbyWFf3n2KBda13qrpWuaagzV9M5fsRJ7vRN7rfhvPkFAYJKjuL15F7usT2BRPAeUqzdM6M4ejmjsqKjNQZDZ>) · [Solscan](<https://solscan.io/tx/4aeXbyWFf3n2KBda13qrpWuaagzV9M5fsRJ7vRN7rfhvPkFAYJKjuL15F7usT2BRPAeUqzdM6M4ejmjsqKjNQZDZ>)",
+     "color": "#4A7FB5",
+     "author": {
+      "name": "Opened · DLMM · Spot 1-Sided",
+      "url": null
+     },
+     "footer": {
+      "text": "Valhalla · Qctb...J7kr"
+     },
+     "images": [],
+     "fields": [],
+     "inlineEmojis": []
+    }
+   ],
+   "stickers": [],
+   "reactions": [],
+   "mentions": [],
+   "inlineEmojis": []
+  },
+  {
+   "id": "1541243975522983988",
+   "type": "Default",
+   "timestamp": "2026-08-24T02:33:18.693+02:00",
+   "timestampEdited": null,
+   "callEndedTimestamp": null,
+   "isPinned": false,
+   "content": "",
+   "author": {
+    "id": "1251546267633455230",
+    "name": "Valhalla Bot",
+    "discriminator": "7099",
+    "nickname": "Valhalla Bot",
+    "color": null,
+    "isBot": true,
+    "roles": [],
+    "avatarUrl": "https://cdn.discordapp.com/avatars/1251546267633455230/49fb2e14025441cdadf926956e1a2815.png?size=512"
+   },
+   "attachments": [],
+   "embeds": [
+    {
+     "title": "",
+     "url": null,
+     "timestamp": "2026-08-24T02:33:18.241+02:00",
+     "description": "The target closed or modified this position before the mirror ran, so there was nothing left to remove.\n**Target** 20260713_7XV2nCRq\n**Target tx** 2 transactions · first [Orb](<https://orbmarkets.io/tx/3nNFKjf1inoH4oRey5oVLkn4hxfsxc81HYRRWuRotCeeSscbHtgV9jTBNZWsQiPmKN5nGTc5i81GF1yykzeFNSGF>) · [Solscan](<https://solscan.io/tx/3nNFKjf1inoH4oRey5oVLkn4hxfsxc81HYRRWuRotCeeSscbHtgV9jTBNZWsQiPmKN5nGTc5i81GF1yykzeFNSGF>) · last [Orb](<https://orbmarkets.io/tx/3K12t5fiefvmBFQjK2kNSLEVYXYrwd8RA1QSuK2VpgGcc7fd9YFyMG3wTrXeevtkQPaPni3o7U1EuvShMSwLggre>) · [Solscan](<https://solscan.io/tx/3K12t5fiefvmBFQjK2kNSLEVYXYrwd8RA1QSuK2VpgGcc7fd9YFyMG3wTrXeevtkQPaPni3o7U1EuvShMSwLggre>)",
+     "color": "#5D5849",
+     "author": {
+      "name": "Skipped · nothing to remove",
+      "url": null
+     },
+     "footer": {
+      "text": "Valhalla · 3VsE...zb4A · No action needed"
+     },
+     "images": [],
+     "fields": [],
+     "inlineEmojis": []
+    }
+   ],
+   "stickers": [],
+   "reactions": [],
+   "mentions": [],
+   "inlineEmojis": []
+  },
+  {
+   "id": "1541244789150851172",
+   "type": "Default",
+   "timestamp": "2026-08-24T02:36:32.677+02:00",
+   "timestampEdited": null,
+   "callEndedTimestamp": null,
+   "isPinned": false,
+   "content": "",
+   "author": {
+    "id": "1251546267633455230",
+    "name": "Valhalla Bot",
+    "discriminator": "7099",
+    "nickname": "Valhalla Bot",
+    "color": null,
+    "isBot": true,
+    "roles": [],
+    "avatarUrl": "https://cdn.discordapp.com/avatars/1251546267633455230/49fb2e14025441cdadf926956e1a2815.png?size=512"
+   },
+   "attachments": [],
+   "embeds": [
+    {
+     "title": "",
+     "url": null,
+     "timestamp": "2026-08-24T02:36:32.406+02:00",
+     "description": "**Take Profit Executed (DLMM)** (HaMp...bPmo) (Copied From: 20260713_7XV2nCRq)\n**Pair** モモ太/SOL\n**Entry Value** 0.1617 SOL\n**Exit Value** 0.1325 SOL\n**Claimed Fees** 0.0000 SOL | Unclaimed Fees: 0.0080 SOL\n**Price Source** Median (4 sources) | Token X Price: $0.00037254 | Token Y Price: $94.86114131\n**モモ太 Prices:** Jup: $0.00036904 | Dex: $0.00037030 | Gecko: $0.00037478 | Met: $0.00037538 | **Median: $0.00037254**\n**SOL Price:** $94.86114131 | Token Amounts: X: 6551882246.000000 | Y: 106764886.000000\n**Profit** 13.19%\n**Take Profit Threshold** 10%\n2 transactions · first [Orb](<https://orbmarkets.io/tx/4xT3mPy4JqBRQQaGWUDbVYHi7RXXJsZQ29RJLSH44xWcb6UqEKrFgiudXbk2RJveSqfygZTuB9EVa7562BaA2N8Z>) · [Solscan](<https://solscan.io/tx/4xT3mPy4JqBRQQaGWUDbVYHi7RXXJsZQ29RJLSH44xWcb6UqEKrFgiudXbk2RJveSqfygZTuB9EVa7562BaA2N8Z>) · last [Orb](<https://orbmarkets.io/tx/3ZJBpYB9Ft7yGs62qUsvJSDxHpCoe9W9QFXnQawPosdJPR5LzqfRUvJww9t3jfxswVYvYWJdzLievtjB9YtGHxrg>) · [Solscan](<https://solscan.io/tx/3ZJBpYB9Ft7yGs62qUsvJSDxHpCoe9W9QFXnQawPosdJPR5LzqfRUvJww9t3jfxswVYvYWJdzLievtjB9YtGHxrg>)\n[Your Metlex](<https://metlex.io/pnl2/4xT3mPy4JqBRQQaGWUDbVYHi7RXXJsZQ29RJLSH44xWcb6UqEKrFgiudXbk2RJveSqfygZTuB9EVa7562BaA2N8Z>)",
+     "color": "#5D5849",
+     "images": [],
+     "fields": [],
+     "inlineEmojis": []
+    }
+   ],
+   "stickers": [],
+   "reactions": [],
+   "mentions": [],
+   "inlineEmojis": []
+  },
+  {
+   "id": "1541269305684009023",
+   "type": "Default",
+   "timestamp": "2026-08-24T04:13:57.874+02:00",
+   "timestampEdited": null,
+   "callEndedTimestamp": null,
+   "isPinned": false,
+   "content": "",
+   "author": {
+    "id": "1251546267633455230",
+    "name": "Valhalla Bot",
+    "discriminator": "7099",
+    "nickname": "Valhalla Bot",
+    "color": null,
+    "isBot": true,
+    "roles": [],
+    "avatarUrl": "https://cdn.discordapp.com/avatars/1251546267633455230/49fb2e14025441cdadf926956e1a2815.png?size=512"
+   },
+   "attachments": [],
+   "embeds": [
+    {
+     "title": "",
+     "url": null,
+     "timestamp": "2026-08-24T04:13:57.631+02:00",
+     "description": "Failed to remove liquidity from position 2ppvqwfkqUHJNStbnedhrDW56qtumAcT9unBf618E3Q9\n**Target** 20260821_8bHpPjob\n**Target Tx** 4 transactions · first [Orb](<https://orbmarkets.io/tx/no9M9PJ3mUKcqym5g8zwFAkPwEGmdprUHLWj2ojUyM2jJRBchxxMBZijyQt8vVsUKg8caE5ePzV3tziUFugtEFS>) · [Solscan](<https://solscan.io/tx/no9M9PJ3mUKcqym5g8zwFAkPwEGmdprUHLWj2ojUyM2jJRBchxxMBZijyQt8vVsUKg8caE5ePzV3tziUFugtEFS>) · last [Orb](<https://orbmarkets.io/tx/5pMn6R3Gr75TT4UzVYWjxytFsAtJK3T2GNBepRAFhtjX6KJSeZba4rrwvqoUF45G9K3ddSi9FTyKNHcLhHNEC68N>) · [Solscan](<https://solscan.io/tx/5pMn6R3Gr75TT4UzVYWjxytFsAtJK3T2GNBepRAFhtjX6KJSeZba4rrwvqoUF45G9K3ddSi9FTyKNHcLhHNEC68N>)",
+     "color": "#B3453A",
+     "images": [],
+     "fields": [],
+     "inlineEmojis": []
+    }
+   ],
+   "stickers": [],
+   "reactions": [],
+   "mentions": [],
+   "inlineEmojis": []
+  },
+  {
+   "id": "1541474223942402141",
+   "type": "Default",
+   "timestamp": "2026-08-24T17:48:14.194+02:00",
+   "timestampEdited": null,
+   "callEndedTimestamp": null,
+   "isPinned": false,
+   "content": "",
+   "author": {
+    "id": "1251546267633455230",
+    "name": "Valhalla Bot",
+    "discriminator": "7099",
+    "nickname": "Valhalla Bot",
+    "color": null,
+    "isBot": true,
+    "roles": [],
+    "avatarUrl": "https://cdn.discordapp.com/avatars/1251546267633455230/49fb2e14025441cdadf926956e1a2815.png?size=512"
+   },
+   "attachments": [],
+   "embeds": [
+    {
+     "title": "",
+     "url": null,
+     "timestamp": "2026-08-24T17:48:13.892+02:00",
+     "description": "Token GHU8yQL74VCmVXMpPrx9mY8UWzdbD6RPf6BHeyXSpump is less than your required age of 4h.\n**Target** 20260713_7XV2nCRq\n**Token Martin Shkreli** GHU8yQL74VCmVXMpPrx9mY8UWzdbD6RPf6BHeyXSpump (Age: 52min ago)\n**Token SOL** So11111111111111111111111111111111111111112 (Age: Stable Token)\n**Change it** /settings_dlmm -> More Copy Trade Settings -> Set Minimum Token Age\n**Target** 4 transactions · first [Orb](<https://orbmarkets.io/tx/4DkbmYY9EMCRUnmPMxPzc6KR9SY7eABc23UGh2iboYy2W7gQfvK98RbkqD8hVTJL7LqSYCsPTfZHEBMiCDk5ABf3>) · [Solscan](<https://solscan.io/tx/4DkbmYY9EMCRUnmPMxPzc6KR9SY7eABc23UGh2iboYy2W7gQfvK98RbkqD8hVTJL7LqSYCsPTfZHEBMiCDk5ABf3>) · last [Orb](<https://orbmarkets.io/tx/56bs5RErVWtz7ErbHDux8JZ5dgQWsUbu4XZyizsK1qfNezeyPSbqaCLBjBR9cfvRh7AppWxLiEQ3GVbNSSvv3Cum>) · [Solscan](<https://solscan.io/tx/56bs5RErVWtz7ErbHDux8JZ5dgQWsUbu4XZyizsK1qfNezeyPSbqaCLBjBR9cfvRh7AppWxLiEQ3GVbNSSvv3Cum>)",
+     "color": "#5D5849",
+     "author": {
+      "name": "Skipped - token age restriction",
+      "url": null
+     },
+     "footer": {
+      "text": "Valhalla · No action needed"
+     },
+     "images": [],
+     "fields": [],
+     "inlineEmojis": []
+    }
+   ],
+   "stickers": [],
+   "reactions": [],
+   "mentions": [],
+   "inlineEmojis": []
+  },
+  {
+   "id": "1541476398646956052",
+   "type": "Default",
+   "timestamp": "2026-08-24T17:56:52.684+02:00",
+   "timestampEdited": null,
+   "callEndedTimestamp": null,
+   "isPinned": false,
+   "content": "",
+   "author": {
+    "id": "1251546267633455230",
+    "name": "Valhalla Bot",
+    "discriminator": "7099",
+    "nickname": "Valhalla Bot",
+    "color": null,
+    "isBot": true,
+    "roles": [],
+    "avatarUrl": "https://cdn.discordapp.com/avatars/1251546267633455230/49fb2e14025441cdadf926956e1a2815.png?size=512"
+   },
+   "attachments": [],
+   "embeds": [
+    {
+     "title": "",
+     "url": null,
+     "timestamp": "2026-08-24T17:56:52.482+02:00",
+     "description": "**Stop Loss Executed (DLMM)** (HNTn...qEUY) (Copied From: 20260821_8bHpPjob)\n**Pair** BUTTHOLE/SOL\n**Entry Value** 0.0269 SOL\n**Exit Value** 0.0069 SOL\n**Claimed Fees** 0.0000 SOL | Unclaimed Fees: 0.0069 SOL\n**Price Source** Median (4 sources) | Token X Price: $0.00182476 | Token Y Price: $96.36317339\n**BUTTHOLE Prices:** Jup: $0.00176871 | Dex: N/A | Gecko: $0.00182476 | Met: $0.00185015 | **Median: $0.00182476**\n**SOL Price:** $96.36317339 | Token Amounts: X: 207011074121.000000 | Y: 2963296.000000\n**Loss** 74.41%\n**Stop Loss Threshold** 15%\n4 transactions · first [Orb](<https://orbmarkets.io/tx/2Z5DR2LyYFQe9ncaPaH8vmx3VR31PjPaECXMyYTf5Dyeqmm33ThzVFL92rdXhnyJXHVH7nVKtudgEi37Bi6ywLzg>) · [Solscan](<https://solscan.io/tx/2Z5DR2LyYFQe9ncaPaH8vmx3VR31PjPaECXMyYTf5Dyeqmm33ThzVFL92rdXhnyJXHVH7nVKtudgEi37Bi6ywLzg>) · last [Orb](<https://orbmarkets.io/tx/2g328XoHaXHHCd8QwLwkiC6iZktSSw7GXWFi8gAjNff4GrEjFLyLKA6efEqZX2NU3EVFY8JVpSnKNveREUTpGFZC>) · [Solscan](<https://solscan.io/tx/2g328XoHaXHHCd8QwLwkiC6iZktSSw7GXWFi8gAjNff4GrEjFLyLKA6efEqZX2NU3EVFY8JVpSnKNveREUTpGFZC>)\n[Your Metlex](<https://metlex.io/pnl2/2Z5DR2LyYFQe9ncaPaH8vmx3VR31PjPaECXMyYTf5Dyeqmm33ThzVFL92rdXhnyJXHVH7nVKtudgEi37Bi6ywLzg>)",
+     "color": "#5D5849",
+     "images": [],
+     "fields": [],
+     "inlineEmojis": []
+    }
+   ],
+   "stickers": [],
+   "reactions": [],
+   "mentions": [],
+   "inlineEmojis": []
+  },
+  {
+   "id": "1541665999126794301",
+   "type": "Default",
+   "timestamp": "2026-08-25T06:30:16.961+02:00",
+   "timestampEdited": null,
+   "callEndedTimestamp": null,
+   "isPinned": false,
+   "content": "",
+   "author": {
+    "id": "1251546267633455230",
+    "name": "Valhalla Bot",
+    "discriminator": "7099",
+    "nickname": "Valhalla Bot",
+    "color": null,
+    "isBot": true,
+    "roles": [],
+    "avatarUrl": "https://cdn.discordapp.com/avatars/1251546267633455230/49fb2e14025441cdadf926956e1a2815.png?size=512"
+   },
+   "attachments": [],
+   "embeds": [
+    {
+     "title": "",
+     "url": null,
+     "timestamp": "2026-08-25T06:30:16.66+02:00",
+     "description": "**Failsafe Activated (DLMM)**\nWe detected that the target position you were copying has closed, but your position remained open. We've automatically closed your position to protect your funds.\n**Target Wallet:** [FVGQ...utkT](<https://orbmarkets.io/address/FVGQRHDD5QxHdM56YsxZXsK5DDfEjAwKv6U8UwfcutkT>) · [Solscan](<https://solscan.io/account/FVGQRHDD5QxHdM56YsxZXsK5DDfEjAwKv6U8UwfcutkT>)\n**Target Position:** [EUZ9...TtSw](<https://orbmarkets.io/address/EUZ9LG33SybtephtCT76qYTQnowF19NCL5WhahGLTtSw>) · [Solscan](<https://solscan.io/account/EUZ9LG33SybtephtCT76qYTQnowF19NCL5WhahGLTtSw>)\n**Your Position:** [63R8...Ro1X](<https://orbmarkets.io/address/63R8En1Vv1hkbEsN5aKFC2R9ACrUb1FnuhhoGo1qRo1X>) · [Solscan](<https://solscan.io/account/63R8En1Vv1hkbEsN5aKFC2R9ACrUb1FnuhhoGo1qRo1X>)\n**Pool:** STONK/SOL\n**Pool Address:** [3C6q...YBXt](<https://orbmarkets.io/address/3C6qVymTAwWNKCSspmd1qbUH9avaqhsjgW2yntvEYBXt>) · [Solscan](<https://solscan.io/account/3C6qVymTAwWNKCSspmd1qbUH9avaqhsjgW2yntvEYBXt>)\n2 transactions · first [Orb](<https://orbmarkets.io/tx/4FXLEGeYZhWZF66HKM17Sg2G5AnKwjbN29EeB22eP1ThzD9R5CsMQwwRPyMLmRnGUhFkVm6sBZjzptRiCEiBK8UP>) · [Solscan](<https://solscan.io/tx/4FXLEGeYZhWZF66HKM17Sg2G5AnKwjbN29EeB22eP1ThzD9R5CsMQwwRPyMLmRnGUhFkVm6sBZjzptRiCEiBK8UP>) · last [Orb](<https://orbmarkets.io/tx/2bJASEbwEdy3pKXAjGFvixmpBLWhdB8N536ELPbqp53GynM4mYFs3KXNUYmLmTJMhKbx2XsxAa7RRVRnDJ2A8XFc>) · [Solscan](<https://solscan.io/tx/2bJASEbwEdy3pKXAjGFvixmpBLWhdB8N536ELPbqp53GynM4mYFs3KXNUYmLmTJMhKbx2XsxAa7RRVRnDJ2A8XFc>)",
+     "color": "#5D5849",
+     "images": [],
+     "fields": [],
+     "inlineEmojis": []
+    }
+   ],
+   "stickers": [],
+   "reactions": [],
+   "mentions": [],
+   "inlineEmojis": []
+  },
+  {
+   "id": "1541791649917702207",
+   "type": "Default",
+   "timestamp": "2026-08-25T14:49:34.444+02:00",
+   "timestampEdited": null,
+   "callEndedTimestamp": null,
+   "isPinned": false,
+   "content": "",
+   "author": {
+    "id": "1251546267633455230",
+    "name": "Valhalla Bot",
+    "discriminator": "7099",
+    "nickname": "Valhalla Bot",
+    "color": null,
+    "isBot": true,
+    "roles": [],
+    "avatarUrl": "https://cdn.discordapp.com/avatars/1251546267633455230/49fb2e14025441cdadf926956e1a2815.png?size=512"
+   },
+   "attachments": [],
+   "embeds": [
+    {
+     "title": "SOL-USDC",
+     "url": "https://dexscreener.com/solana/So11111111111111111111111111111111111111112",
+     "timestamp": "2026-08-25T14:49:33.833+02:00",
+     "description": "### 1.00 SOL\n2% of target's 60.00\n**Target** [20260618_gh7gW8Ft](<https://valhalla-bot.app/dashboard/wallet/gh7gW8FtC8ygPnM8GMPtaufTXenNvck8Fi4cR2Up82w>) · [Orb](<https://orbmarkets.io/address/gh7gW8FtC8ygPnM8GMPtaufTXenNvck8Fi4cR2Up82w>) · [Solscan](<https://solscan.io/account/gh7gW8FtC8ygPnM8GMPtaufTXenNvck8Fi4cR2Up82w>)\n**Token** [DexScreener](<https://dexscreener.com/solana/So11111111111111111111111111111111111111112>) · [Orb](<https://orbmarkets.io/token/So11111111111111111111111111111111111111112>) · [Solscan](<https://solscan.io/token/So11111111111111111111111111111111111111112>)\n**Yours** 3 transactions · first [Orb](<https://orbmarkets.io/tx/3UnUTQHnoLRmFHfUwAELQdWSGZ9ph7f8mbR8xGZGwsogFNcsQnASVuLFHdZCMUCHtSsCS6teyjdUGxYz8Gazz6qS>) · [Solscan](<https://solscan.io/tx/3UnUTQHnoLRmFHfUwAELQdWSGZ9ph7f8mbR8xGZGwsogFNcsQnASVuLFHdZCMUCHtSsCS6teyjdUGxYz8Gazz6qS>) · last [Orb](<https://orbmarkets.io/tx/5RK8EWB9ESHCNmfyu5aaENiXhVV1dobrb9VkZZvGS11Gqq5kNKbWtqmz3P9EFFe68KmtCByZf8YeQngm9T5u9WBs>) · [Solscan](<https://solscan.io/tx/5RK8EWB9ESHCNmfyu5aaENiXhVV1dobrb9VkZZvGS11Gqq5kNKbWtqmz3P9EFFe68KmtCByZf8YeQngm9T5u9WBs>)\n**Target tx** 3 transactions · first [Orb](<https://orbmarkets.io/tx/4TWNbT37CHW91c8Fa9T8VmDuVXHXzeuz44mSBF7xRFBUwmVD8Je2MMpp5jamV9W5ashdtvyA3GuD9jWbafrFPQq2>) · [Solscan](<https://solscan.io/tx/4TWNbT37CHW91c8Fa9T8VmDuVXHXzeuz44mSBF7xRFBUwmVD8Je2MMpp5jamV9W5ashdtvyA3GuD9jWbafrFPQq2>) · last [Orb](<https://orbmarkets.io/tx/GqyR7N6Qth1ECAQB4gp3j7xki3GViso2H5zKB8EFZnYYn8dmhc4AiaXFSoJRe1MY9DYknhPAKUmcFdktdw6EwNU>) · [Solscan](<https://solscan.io/tx/GqyR7N6Qth1ECAQB4gp3j7xki3GViso2H5zKB8EFZnYYn8dmhc4AiaXFSoJRe1MY9DYknhPAKUmcFdktdw6EwNU>)\n||**Calculation Details**\nTarget: SOL 60.000000 tokens ($5910.00) | USDC 0.000000 tokens ($0.00) | Total: $5910.00\nPrices: SOL $98.50 | USDC $0.00\nTotal Deposit: Target 60.0000 SOL | User 1.0000 SOL\nSplit: SOL 100.0% | USDC 0.0%||",
+     "color": "#4A7FB5",
+     "author": {
+      "name": "Opened · DLMM · Spot 1-Sided",
+      "url": null
+     },
+     "footer": {
+      "text": "Valhalla · GcWN...hNc8"
+     },
+     "images": [],
+     "fields": [],
+     "inlineEmojis": []
+    }
+   ],
+   "stickers": [],
+   "reactions": [],
+   "mentions": [],
+   "inlineEmojis": []
+  },
+  {
+   "id": "1541869329409253436",
+   "type": "Default",
+   "timestamp": "2026-08-25T19:58:14.678+02:00",
+   "timestampEdited": null,
+   "callEndedTimestamp": null,
+   "isPinned": false,
+   "content": "",
+   "author": {
+    "id": "1251546267633455230",
+    "name": "Valhalla Bot",
+    "discriminator": "7099",
+    "nickname": "Valhalla Bot",
+    "color": null,
+    "isBot": true,
+    "roles": [],
+    "avatarUrl": "https://cdn.discordapp.com/avatars/1251546267633455230/49fb2e14025441cdadf926956e1a2815.png?size=512"
+   },
+   "attachments": [],
+   "embeds": [
+    {
+     "title": "",
+     "url": null,
+     "timestamp": "2026-08-25T19:58:13.694+02:00",
+     "description": "Token Martians (7nLukVng5teXze14rum9v57juXLjUp7JJnCveko1pump) has a Jupiter organic score below 50 (Current: 0 is below 50). Age: 3w ago - <https://jup.ag/tokens/7nLukVng5teXze14rum9v57juXLjUp7JJnCveko1pump>\n**Target** 20260526_CmL4fG\n**Change it** /settings_dlmm -> More Copy Trade Settings -> Set Minimum Jupiter Organic Score\n**Target** [Orb](<https://orbmarkets.io/tx/6eG5eR3LwjG5iNuntt8XSVMVsTLpGafDr38ytPgJXSGfHwtjA5aM6WiYx1sLReaWNhzhqyxgASozmkNZUrtTTWo>) · [Solscan](<https://solscan.io/tx/6eG5eR3LwjG5iNuntt8XSVMVsTLpGafDr38ytPgJXSGfHwtjA5aM6WiYx1sLReaWNhzhqyxgASozmkNZUrtTTWo>)",
+     "color": "#5D5849",
+     "author": {
+      "name": "Skipped - low Jupiter organic score restriction",
+      "url": null
+     },
+     "footer": {
+      "text": "Valhalla · No action needed"
+     },
+     "images": [],
+     "fields": [],
+     "inlineEmojis": []
+    }
+   ],
+   "stickers": [],
+   "reactions": [],
+   "mentions": [],
+   "inlineEmojis": []
+  },
+  {
+   "id": "1541875458097021068",
+   "type": "Default",
+   "timestamp": "2026-08-25T20:22:35.871+02:00",
+   "timestampEdited": null,
+   "callEndedTimestamp": null,
+   "isPinned": false,
+   "content": "",
+   "author": {
+    "id": "1251546267633455230",
+    "name": "Valhalla Bot",
+    "discriminator": "7099",
+    "nickname": "Valhalla Bot",
+    "color": null,
+    "isBot": true,
+    "roles": [],
+    "avatarUrl": "https://cdn.discordapp.com/avatars/1251546267633455230/49fb2e14025441cdadf926956e1a2815.png?size=512"
+   },
+   "attachments": [],
+   "embeds": [
+    {
+     "title": "",
+     "url": null,
+     "timestamp": "2026-08-25T20:22:35.206+02:00",
+     "description": "**Target** [20260526_CmL4fG](<https://valhalla-bot.app/dashboard/wallet/CmL4fGLvbUohDoJRL7ZKXMJWFW8Lx8FWQTCeQRTmqKxY>)\n**Balance** 0.82 SOL → 1.88 SOL\n**In USD** $80.88 → $185.42\n**Total** 69.25 SOL ($6830.36) across 71 open positions\n**Yours** [Orb](<https://orbmarkets.io/tx/3D56sN85gy6RtMixgibWVoUSWkVR5D51qxvDmjkWjHyeFRVjvsjappyyUPPu1tpcgsnv4zavVUrJfUk5ozrk3Vvr>) · [Solscan](<https://solscan.io/tx/3D56sN85gy6RtMixgibWVoUSWkVR5D51qxvDmjkWjHyeFRVjvsjappyyUPPu1tpcgsnv4zavVUrJfUk5ozrk3Vvr>)\n**Target tx** [Orb](<https://orbmarkets.io/tx/3f9U8jKuUxj3GE9kkcbz2LEMXZj8KwE7kzq8hCWweGo7okciJbNiDJ1jQA5nDvogeM1hQF3U1RRXFFwR6dfjSeJr>) · [Solscan](<https://solscan.io/tx/3f9U8jKuUxj3GE9kkcbz2LEMXZj8KwE7kzq8hCWweGo7okciJbNiDJ1jQA5nDvogeM1hQF3U1RRXFFwR6dfjSeJr>)\n**History** [Your Metlex](<https://metlex.io/pnl2/3D56sN85gy6RtMixgibWVoUSWkVR5D51qxvDmjkWjHyeFRVjvsjappyyUPPu1tpcgsnv4zavVUrJfUk5ozrk3Vvr>) | [Target Metlex](<https://metlex.io/pnl2/3f9U8jKuUxj3GE9kkcbz2LEMXZj8KwE7kzq8hCWweGo7okciJbNiDJ1jQA5nDvogeM1hQF3U1RRXFFwR6dfjSeJr>)",
+     "color": "#3FA66A",
+     "author": {
+      "name": "Closed DLMM Position! (3Awr...M1i1)",
+      "url": null
+     },
+     "images": [],
+     "fields": [],
+     "inlineEmojis": []
+    }
+   ],
+   "stickers": [],
+   "reactions": [],
+   "mentions": [],
+   "inlineEmojis": []
+  }
+ ],
+ "messageCount": 45
+}

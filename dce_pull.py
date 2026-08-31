@@ -265,6 +265,7 @@ Examples:
         print(f'Error: converter exited with code {convert_result.returncode}.', file=sys.stderr)
         if convert_result.stderr:
             print(convert_result.stderr, file=sys.stderr)
+        print(f'[dce_pull] JSON retained at: {tmp_json}', file=sys.stderr)
         sys.exit(convert_result.returncode)
 
     # --- Cleanup JSON ---

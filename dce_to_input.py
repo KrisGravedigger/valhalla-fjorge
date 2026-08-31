@@ -157,6 +157,29 @@ def _process_content(content: str) -> str:
     return content
 
 
+def _render_embeds(embeds: list[dict]) -> str:
+    """Render Discord embeds as their literal text components."""
+    blocks = []
+    for embed in embeds:
+        lines = []
+        author = (embed.get('author') or {}).get('name') or ''
+        title = embed.get('title') or ''
+        url = embed.get('url') or ''
+        description = embed.get('description') or ''
+        footer = (embed.get('footer') or {}).get('text') or ''
+        if author:
+            lines.append(author)
+        if title:
+            lines.append(f'{title} [{url}]' if url else title)
+        if description:
+            lines.append(_process_content(description))
+        if footer:
+            lines.append(footer)
+        if lines:
+            blocks.append('\n'.join(lines))
+    return '\n\n'.join(blocks)
+
+
 # ---------------------------------------------------------------------------
 # Core conversion
 # ---------------------------------------------------------------------------
@@ -219,7 +242,8 @@ def convert_dce_json(json_path: Path, author_prefix: str = 'APL. ') -> tuple[str
         # the text parser. Omitted intentionally.
 
         # --- Skip messages with no content AND no attachments ---
-        body = content.strip()
+        embed_body = _render_embeds(msg.get('embeds', []) or [])
+        body = '\n\n'.join(part for part in (content.strip(), embed_body.strip()) if part)
         if not body and not attachment_lines:
             continue
 
@@ -299,8 +323,21 @@ YYYYMMDD = date of first message; HHMMSS = current time (for uniqueness).
         sys.exit(1)
 
     if not output_text:
-        print('Warning: no messages with content found in the export. Output not written.')
-        sys.exit(0)
+        with args.json_path.open(encoding='utf-8') as f:
+            data = json.load(f)
+        messages = data.get('messages', [])
+        author_names = sorted({
+            (embed.get('author') or {}).get('name') or '<none>'
+            for message in messages
+            for embed in (message.get('embeds', []) or [])[:1]
+        })
+        print(
+            'Error: export contained '
+            f'{len(messages)} messages but produced no parseable output. '
+            f'Embed authors: {author_names}',
+            file=sys.stderr,
+        )
+        sys.exit(3)
 
     # Determine output path
     script_dir = Path(__file__).parent
@@ -315,7 +352,7 @@ YYYYMMDD = date of first message; HHMMSS = current time (for uniqueness).
 
     out_path.write_text(output_text, encoding='utf-8')
     print(f'Saved to: {out_path}')
-    print(f'Messages written: {output_text.count(chr(10) + chr(10)) + 1 if output_text else 0}')
+    print(f'Messages written: {len(re.findall(r"^\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}\]", output_text, re.MULTILINE))}')
 
 
 if __name__ == '__main__':

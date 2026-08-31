@@ -41,6 +41,20 @@ class PlainTextReader:
     # Any URL in square brackets (for stripping)
     URL_BRACKET_PATTERN = re.compile(r'\[https?://[^\]]+\]')
 
+    # Embed generations 2 and 3 group Solscan links beneath an explicit line
+    # section. The per-link label is merely "Solscan", so attribution must be
+    # decided from the section line before the legacy label fallback runs.
+    LINE_TARGET_TX_PATTERN = re.compile(
+        r'^\s*[\W_]*(?:Target\s+tx\b|Target\s*:)', re.IGNORECASE
+    )
+    LINE_BOT_TX_PATTERN = re.compile(
+        r'^\s*[\W_]*(?:Yours\b|Your\b)', re.IGNORECASE
+    )
+
+    UNLABELED_TX_SECTION_PATTERN = re.compile(
+        r'\b(?:your|yours|target)\b', re.IGNORECASE
+    )
+
     def __init__(self, file_path: str):
         self.file_path = file_path
         self.header_date: Optional[str] = None
@@ -82,15 +96,52 @@ class PlainTextReader:
             lpagent_match = self.LPAGENT_PATTERN.search(raw_msg)
             target_wallet_address = lpagent_match.group(1) if lpagent_match else None
 
-            # Extract labeled tx signatures before stripping URLs
+            # Attribute Solscan transaction URLs line-by-line first. Newer
+            # embeds label each URL "Solscan" under either **Yours** or
+            # **Target tx**; relying on the local label crosses those lists.
             target_tx_signatures = []
             bot_tx_signatures = []
-            for label, sig in self.LABELED_SOLSCAN_PATTERN.findall(raw_msg):
-                label_lower = label.lower().strip()
-                if 'target' in label_lower:
-                    target_tx_signatures.append(sig)
+            unscoped_lines = []
+            is_already_closed = 'was already closed' in raw_msg.lower()
+            for line in raw_msg.splitlines():
+                line_signatures = self.SOLSCAN_TX_PATTERN.findall(line)
+                if self.LINE_TARGET_TX_PATTERN.match(line):
+                    target_tx_signatures.extend(line_signatures)
+                elif self.LINE_BOT_TX_PATTERN.match(line):
+                    bot_tx_signatures.extend(line_signatures)
+                elif (
+                    'opened new dlmm position' in raw_msg.lower()
+                    and '**target**' in raw_msg.lower()
+                    and 'view tx' in line.lower()
+                    and not self.UNLABELED_TX_SECTION_PATTERN.search(line)
+                ):
+                    # Gen2 open embeds omit the legacy Your/Target labels.
+                    # Their pipe-delimited View Tx line is ordered yours first,
+                    # target afterwards.
+                    segments = line.split('|')
+                    bot_tx_signatures.extend(self.SOLSCAN_TX_PATTERN.findall(segments[0]))
+                    for segment in segments[1:]:
+                        target_tx_signatures.extend(self.SOLSCAN_TX_PATTERN.findall(segment))
+                elif (
+                    is_already_closed
+                    and 'transactions' in line.lower()
+                    and not self.UNLABELED_TX_SECTION_PATTERN.search(line)
+                ):
+                    # An already-closed position has no bot transaction; its
+                    # unlabelled transaction summary lists target transactions.
+                    target_tx_signatures.extend(line_signatures)
                 else:
-                    bot_tx_signatures.append(sig)
+                    unscoped_lines.append(line)
+
+            # Legacy messages label links individually. Preserve that logic
+            # only for lines not already handled by a newer section heading.
+            for line in unscoped_lines:
+                for label, sig in self.LABELED_SOLSCAN_PATTERN.findall(line):
+                    label_lower = label.lower().strip()
+                    if 'target' in label_lower:
+                        target_tx_signatures.append(sig)
+                    else:
+                        bot_tx_signatures.append(sig)
 
             # Fallback: only when labeled extraction found neither bot nor target
             # signatures (prevents double-counting URLs that were already captured)

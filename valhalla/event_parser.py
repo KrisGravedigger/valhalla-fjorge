@@ -4,11 +4,11 @@ Event parser for Discord bot messages.
 
 import re
 from collections import Counter
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Union
 from datetime import datetime, timedelta
 
 from .models import (
-    OpenEvent, CloseEvent, RugEvent, SkipEvent, FailsafeEvent,
+    OpenEvent, CloseEvent, RugEvent, SkipEvent, EmptyPositionEvent, FailsafeEvent,
     AddLiquidityEvent, SwapEvent, InsufficientBalanceEvent, AlreadyClosedEvent, short_id
 )
 from .readers import ParsedMessage
@@ -23,14 +23,16 @@ class EventParser:
 
     # Regex patterns (from v1)
     TIMESTAMP_PATTERN = r'\[((?:\d{4}-\d{2}-\d{2}T)?\d{2}:\d{2})\]'
-    TARGET_PATTERN = r'Target:\s*(\S+)'
+    LABEL_SEP = r'\*{0,2}\s*:?\s*'
+    TARGET_PATTERN = rf'Target{LABEL_SEP}(\S+)'
     POSITION_TYPE_PATTERN = r'(Spot|BidAsk|Curve)\s+\d+-Sided Position\s*\|\s*(.+?)-(\S+)'
-    MARKET_CAP_PATTERN = r'MC:\s*\$([\d,]+\.?\d*)'
-    TOKEN_AGE_PATTERN = r'Age:\s*(.+?)(?:\n|$)'
-    JUP_SCORE_PATTERN = r'Jup Score:\s*(\d+)'
-    YOUR_POS_PATTERN = r'Your Pos:.*?\|\s*\S+:\s*([\d.]+)'
-    TARGET_POS_PATTERN = r'Target Pos:.*?\|\s*\S+:\s*([\d.]+)'
+    MARKET_CAP_PATTERN = rf'MC{LABEL_SEP}\$([\d,]+\.?\d*)'
+    TOKEN_AGE_PATTERN = rf'Age{LABEL_SEP}(.+?)(?:\s*\u00b7|\n|$)'
+    JUP_SCORE_PATTERN = rf'Jup Score{LABEL_SEP}(\d+)'
+    YOUR_POS_PATTERN = rf'Your Pos{LABEL_SEP}.*?\|\s*\S+:\s*([\d.]+)'
+    TARGET_POS_PATTERN = rf'Target Pos{LABEL_SEP}.*?\|\s*\S+:\s*([\d.]+)'
     TOTAL_DEPOSIT_USER_PATTERN = r'Total Deposit:.*?\|\s*User\s+([\d.]+)\s*SOL'
+    TOTAL_DEPOSIT_TARGET_PATTERN = r'Total Deposit:\s*Target\s+([\d.]+)\s*SOL'
 
     # Position ID patterns. Discord abbreviates current IDs as ``xxxx...yyyy``;
     # historical archives contain the equivalent concatenated ``xxxxyyyy`` form.
@@ -49,16 +51,16 @@ class EventParser:
     TOTAL_SOL_PATTERN = r'Total SOL balance:\s*([\d.]+)\s*SOL.*?\((\d+)\s*Active'
 
     # Rug event patterns
-    RUG_TARGET_PATTERN = r'Copied From:\s*(\S+)\)'
+    RUG_TARGET_PATTERN = rf'Copied From{LABEL_SEP}(\S+)\)'
     RUG_POSITION_ID_PATTERN = rf'Rug Check Stop Loss Executed\s*\(DLMM\)\*?\*?\s*\({POSITION_ID_FRAGMENT}\)'
-    PRICE_DROP_PATTERN = r'Price Drop:\s*([\d.]+)%'
-    RUG_THRESHOLD_PATTERN = r'Rug Check Threshold:\s*([\d.]+)%'
-    POSITION_ADDRESS_PATTERN = r'Position:\s*(\S+)'
-    PAIR_PATTERN = r'Pair:\s*(\S+)'
+    PRICE_DROP_PATTERN = rf'Price Drop{LABEL_SEP}([\d.]+)%'
+    RUG_THRESHOLD_PATTERN = rf'Rug Check Threshold{LABEL_SEP}([\d.]+)%'
+    POSITION_ADDRESS_PATTERN = rf'Position{LABEL_SEP}(\S+)'
+    PAIR_PATTERN = rf'Pair{LABEL_SEP}(\S+)'
 
     # Already-closed event patterns
     ALREADY_CLOSED_PATTERN = rf'Your position\s+(\S+)\s+was already closed\*?\*?\s*\({POSITION_ID_FRAGMENT}\)'
-    ALREADY_CLOSED_TARGET_PATTERN = r'Target:\s*(\S+)'
+    ALREADY_CLOSED_TARGET_PATTERN = rf'Target{LABEL_SEP}(\S+)'
 
     # Skip event markers
     SKIP_REASON_AGE_MARKER = 'Skipping position due to token age restriction'
@@ -70,22 +72,26 @@ class EventParser:
     SKIP_JUP_SCORE_PATTERN = r'Current:\s*(\d+)\s*is below\s*(\d+)'
     SKIP_MCAP_DETAIL_PATTERN = r'Jupiter MC is \$([\d,.]+).*minimum of \$([\d,]+)'
     SKIP_TOKEN_PATTERN = r'Token\s+([^:]+?):\s*(\S+)'
+    SKIP_TIGHT_BIN_METRIC_PATTERN = r'\((\d+) bins\)'
+    SKIP_TIGHT_BIN_THRESHOLD_PATTERN = r'minimum of (\d+) bins'
+    SKIP_NARROW_RANGE_METRIC_PATTERN = r'only ([\d.]+)%'
+    SKIP_NARROW_RANGE_THRESHOLD_PATTERN = r'Your minimum is ([\d.]+)%'
 
     # Swap pattern
     SWAP_PATTERN = r'Swapped\s+([\d,]+|all)\s+(.+?)\s+\((\S+)\)'
 
     # Insufficient balance patterns
-    INSUF_TARGET_PATTERN = r'Trade copied from:\**\s*(\S+)'
-    INSUF_SOL_BALANCE_PATTERN = r'Your SOL balance:\s*([\d.]+)\s*SOL'
-    INSUF_EFFECTIVE_PATTERN = r'Total effective balance:\s*([\d.]+)\s*SOL'
-    INSUF_REQUIRED_PATTERN = r'Required amount for this trade:\s*([\d.]+)\s*SOL'
+    INSUF_TARGET_PATTERN = rf'Trade copied from{LABEL_SEP}(\S+)'
+    INSUF_SOL_BALANCE_PATTERN = rf'Your SOL balance{LABEL_SEP}([\d.]+)\s*SOL'
+    INSUF_EFFECTIVE_PATTERN = rf'Total effective balance{LABEL_SEP}([\d.]+)\s*SOL'
+    INSUF_REQUIRED_PATTERN = rf'Required amount for this trade{LABEL_SEP}([\d.]+)\s*SOL'
 
     # Take profit / stop loss event patterns
     TAKE_PROFIT_POSITION_ID_PATTERN = rf'Take Profit Executed \(DLMM\)\*?\*?\s*\({POSITION_ID_FRAGMENT}\)'
     STOP_LOSS_POSITION_ID_PATTERN = rf'Stop Loss Executed \(DLMM\)\*?\*?\s*\({POSITION_ID_FRAGMENT}\)'
     TAKE_PROFIT_TARGET_PATTERN = r'Copied From:\s*(\S+)\)'
-    ENTRY_VALUE_PATTERN = r'Entry Value:\s*([\d.]+)\s*SOL'
-    EXIT_VALUE_PATTERN = r'Exit Value:\s*([\d.]+)\s*SOL'
+    ENTRY_VALUE_PATTERN = rf'Entry Value{LABEL_SEP}([\d.]+)\s*SOL'
+    EXIT_VALUE_PATTERN = rf'Exit Value{LABEL_SEP}([\d.]+)\s*SOL'
 
     def __init__(self, base_date: Optional[str] = None):
         """
@@ -98,6 +104,7 @@ class EventParser:
         self.close_events: List[CloseEvent] = []
         self.rug_events: List[RugEvent] = []
         self.skip_events: List[SkipEvent] = []
+        self.empty_position_events: List[EmptyPositionEvent] = []
         self.swap_events: List[SwapEvent] = []
         self.failsafe_events: List[FailsafeEvent] = []
         self.add_liquidity_events: List[AddLiquidityEvent] = []
@@ -153,10 +160,13 @@ class EventParser:
                                     target_tx_signatures: Optional[List[str]] = None) -> None:
         """Classify message type and parse accordingly"""
         # Check for each event type
-        if "Opened New DLMM Position!" in message:
+        if "Opened New DLMM Position!" in message or "Opened \u00b7 DLMM" in message:
             event = self._parse_open_event(timestamp, message, tx_signatures,
                                            target_wallet_address, target_tx_signatures)
-            if event:
+            if isinstance(event, EmptyPositionEvent):
+                event.date = self.current_date or ""
+                self.empty_position_events.append(event)
+            elif event:
                 event.date = self.current_date or ""
                 self.open_events.append(event)
             else:
@@ -226,7 +236,14 @@ class EventParser:
             else:
                 self.unparsed_counts["Stop Loss Executed (DLMM)"] += 1
 
-        elif "Skipping position due to" in message:
+        elif any(marker in message for marker in (
+            "Skipping position due to", "Skipped - low market cap restriction",
+            "Skipped - token age restriction", "Skipped - low Jupiter organic score restriction",
+            "Skipped \u00b7 DLMM position \u00b7 tight bin range",
+            "Skipped \u00b7 DLMM position \u00b7 narrow price range",
+            "Skipping Add Liquidity", "Skipped \u00b7 add liquidity",
+            "No liquidity was removed", "Skipped \u00b7 nothing to remove",
+        )):
             event = self._parse_skip_event(timestamp, message)
             if event:
                 event.date = self.current_date or ""
@@ -247,13 +264,24 @@ class EventParser:
             if event:
                 event.date = self.current_date or ""
                 self.swap_events.append(event)
-            else:
-                self.unparsed_counts["Swapped"] += 1
+        elif any(marker in message for marker in ("Partially Removed DLMM Liquidity", "Removed liquidity \u00b7 DLMM", "Failed to remove liquidity from position")):
+            # Deliberately rendered but not modelled: partial removals remain a non-goal.
+            pass
+
+        else:
+            author_line = message.splitlines()[0][:120] if message else "<empty>"
+            self.unparsed_counts[f"Unknown Valhalla format: {author_line}"] += 1
+
 
     def _parse_open_event(self, timestamp: str, message: str, tx_signatures: List[str],
-                          target_wallet_address: Optional[str] = None,
-                          target_tx_signatures: Optional[List[str]] = None) -> Optional[OpenEvent]:
+                           target_wallet_address: Optional[str] = None,
+                           target_tx_signatures: Optional[List[str]] = None) -> Optional[Union[OpenEvent, EmptyPositionEvent]]:
         """Parse an open position event"""
+        if "Opened \u00b7 DLMM" in message:
+            return self._parse_gen3_open_event(
+                timestamp, message, tx_signatures,
+                target_wallet_address, target_tx_signatures,
+            )
         try:
             target_match = re.search(self.TARGET_PATTERN, message)
             position_type_match = re.search(self.POSITION_TYPE_PATTERN, message)
@@ -301,8 +329,121 @@ class EventParser:
             print(f"Warning: Failed to parse open event: {e}")
             return None
 
+    def _parse_gen3_open_event(self, timestamp: str, message: str,
+                               tx_signatures: List[str],
+                               target_wallet_address: Optional[str] = None,
+                               target_tx_signatures: Optional[List[str]] = None) -> Optional[Union[OpenEvent, EmptyPositionEvent]]:
+        """Parse the redesigned embed open format without rewriting its text."""
+        try:
+            author_match = re.search(
+                r'^Opened\s+\u00b7\s+DLMM\s+\u00b7\s+(Spot|BidAsk)\s+1-Sided\s*$',
+                message, re.MULTILINE,
+            )
+            title_match = re.search(r'^Opened[^\n]*\n([^\n]+)-([^\s\n]+)\s*$', message, re.MULTILINE)
+            your_sol_match = re.search(r'^###\s*([\d.]+)\s+SOL\s*$', message, re.MULTILINE)
+            target_sol_match = re.search(r"of target's\s+([\d.]+)", message)
+            target_match = re.search(self.TARGET_PATTERN, message)
+            total_deposit_user_match = re.search(self.TOTAL_DEPOSIT_USER_PATTERN, message)
+            total_deposit_target_match = re.search(self.TOTAL_DEPOSIT_TARGET_PATTERN, message)
+            mc_match = re.search(self.MARKET_CAP_PATTERN, message)
+            age_match = re.search(self.TOKEN_AGE_PATTERN, message)
+            jup_match = re.search(rf'Jup{self.LABEL_SEP}(\d+)', message)
+            position_id_match = re.search(
+                r'Valhalla\s*\u00b7\s*(\w+\.\.\.\w+)', message
+            )
+
+            empty_header_match = re.search(
+                r'^###\s*0\.00\s+SOL\s*$', message, re.MULTILINE,
+            )
+            empty_position_id_match = re.search(
+                r'^Valhalla\s*\u00b7\s*(\w+\.\.\.\w+)\s*$', message, re.MULTILINE,
+            )
+            if (
+                author_match
+                and not target_sol_match
+                and not total_deposit_target_match
+                and not total_deposit_user_match
+                and empty_header_match
+                and empty_position_id_match
+            ):
+                token_name, quote_token = title_match.groups() if title_match else ("unknown", "unknown")
+                return EmptyPositionEvent(
+                    timestamp=timestamp,
+                    date="",
+                    position_id=self._normalize_position_id(empty_position_id_match.group(1)),
+                    token_pair=f'{token_name.strip()}-{quote_token}',
+                    token_name=token_name.strip(),
+                    target=target_match.group(1) if target_match else "unknown",
+                    position_type=author_match.group(1),
+                    tx_signatures=tx_signatures,
+                )
+
+            if not all([
+                author_match, title_match, target_match, position_id_match,
+                total_deposit_user_match or your_sol_match,
+                total_deposit_target_match or target_sol_match,
+            ]):
+                return None
+
+            token_name, quote_token = title_match.groups()
+            return OpenEvent(
+                timestamp=timestamp,
+                position_type=author_match.group(1),
+                token_name=token_name.strip(),
+                token_pair=f'{token_name.strip()}-{quote_token}',
+                target=target_match.group(1),
+                market_cap=float(mc_match.group(1).replace(',', '')) if mc_match else 0.0,
+                token_age=age_match.group(1).strip() if age_match else '',
+                jup_score=int(jup_match.group(1)) if jup_match else 0,
+                target_sol=float(total_deposit_target_match.group(1)) if total_deposit_target_match else float(target_sol_match.group(1)),
+                your_sol=float(total_deposit_user_match.group(1)) if total_deposit_user_match else float(your_sol_match.group(1)),
+                position_id=self._normalize_position_id(position_id_match.group(1)),
+                tx_signatures=tx_signatures,
+                target_wallet_address=target_wallet_address,
+                target_tx_signatures=target_tx_signatures or [],
+            )
+        except (ValueError, AttributeError) as e:
+            print(f"Warning: Failed to parse gen3 open event: {e}")
+            return None
+
+    def _parse_embed_close_event(self, timestamp: str, message: str,
+                                 tx_signatures: List[str]) -> Optional[CloseEvent]:
+        """Parse gen2/gen3 balance-arrow close embeds, allowing absent PnL rows."""
+        try:
+            target_match = re.search(self.TARGET_PATTERN, message)
+            position_id_match = re.search(self.CLOSE_POSITION_ID_PATTERN, message)
+            balance_match = re.search(
+                rf'Balance{self.LABEL_SEP}([\d.]+)\s*SOL\s*\u2192\s*([\d.]+)\s*SOL', message
+            )
+            usd_match = re.search(
+                rf'In USD{self.LABEL_SEP}\$([\d,.]+)\s*\u2192\s*\$([\d,.]+)', message
+            )
+            total_match = re.search(
+                rf'Total{self.LABEL_SEP}([\d.]+)\s*SOL\s*\(\$[\d,.]+\)\s*across\s*(\d+)\s*open positions',
+                message,
+            )
+            if not target_match or not position_id_match:
+                return None
+            return CloseEvent(
+                timestamp=timestamp,
+                target=target_match.group(1),
+                starting_sol=float(balance_match.group(1)) if balance_match else 0.0,
+                starting_usd=float(usd_match.group(1).replace(',', '')) if usd_match else 0.0,
+                ending_sol=float(balance_match.group(2)) if balance_match else 0.0,
+                ending_usd=float(usd_match.group(2).replace(',', '')) if usd_match else 0.0,
+                position_id=self._normalize_position_id(position_id_match.group(1)),
+                tx_signatures=tx_signatures,
+                total_sol=float(total_match.group(1)) if total_match else 0.0,
+                active_positions=int(total_match.group(2)) if total_match else 0,
+            )
+        except (ValueError, AttributeError) as e:
+            print(f"Warning: Failed to parse embed close event: {e}")
+            return None
+
     def _parse_close_event(self, timestamp: str, message: str, tx_signatures: List[str]) -> Optional[CloseEvent]:
-        """Parse a close position event"""
+        """Parse a close position event."""
+        if "Balance" in message and "\u2192" in message:
+            return self._parse_embed_close_event(timestamp, message, tx_signatures)
         try:
             target_match = re.search(self.TARGET_PATTERN, message)
             starting_match = re.search(self.STARTING_SOL_PATTERN, message)
@@ -520,14 +661,18 @@ class EventParser:
             target = target_match.group(1)
 
             # Determine reason
-            if self.SKIP_REASON_AGE_MARKER in message:
+            if self.SKIP_REASON_AGE_MARKER in message or "Skipped - token age restriction" in message:
                 reason = "token age restriction"
-            elif self.SKIP_REASON_JUP_MARKER in message:
+            elif self.SKIP_REASON_JUP_MARKER in message or "Skipped - low Jupiter organic score restriction" in message:
                 reason = "low Jupiter organic score"
-            elif self.SKIP_REASON_MCAP_MARKER in message:
+            elif self.SKIP_REASON_MCAP_MARKER in message or "Skipped - low market cap restriction" in message:
                 reason = "low market cap"
             elif self.SKIP_REASON_SOL_ONLY_MARKER in message:
                 reason = "SOL-only deposit restriction"
+            elif "Skipped \u00b7 DLMM position \u00b7 tight bin range" in message:
+                reason = "tight bin range"
+            elif "Skipped \u00b7 DLMM position \u00b7 narrow price range" in message:
+                reason = "narrow price range"
             else:
                 reason = "unknown"
 
@@ -569,6 +714,22 @@ class EventParser:
                     metric_value = float(mc_match.group(1).replace(',', ''))
                     threshold_value = float(mc_match.group(2).replace(',', ''))
 
+            elif reason == "tight bin range":
+                metric_match = re.search(self.SKIP_TIGHT_BIN_METRIC_PATTERN, message)
+                threshold_match = re.search(self.SKIP_TIGHT_BIN_THRESHOLD_PATTERN, message)
+                if metric_match:
+                    metric_value = float(metric_match.group(1))
+                if threshold_match:
+                    threshold_value = float(threshold_match.group(1))
+
+            elif reason == "narrow price range":
+                metric_match = re.search(self.SKIP_NARROW_RANGE_METRIC_PATTERN, message)
+                threshold_match = re.search(self.SKIP_NARROW_RANGE_THRESHOLD_PATTERN, message)
+                if metric_match:
+                    metric_value = float(metric_match.group(1))
+                if threshold_match:
+                    threshold_value = float(threshold_match.group(1))
+
             return SkipEvent(
                 timestamp=timestamp,
                 target=target,
@@ -607,6 +768,20 @@ class EventParser:
     def _parse_swap_event(self, timestamp: str, message: str) -> Optional[SwapEvent]:
         """Parse a swap event"""
         try:
+            gen3_amount_match = re.search(
+                r'^###\s*([\d,]+|all)\s+(.+?)\s*$', message, re.MULTILINE
+            )
+            gen3_token_match = re.search(
+                rf'^\*{{0,2}}Token{self.LABEL_SEP}(\S+)', message, re.MULTILINE
+            )
+            if gen3_amount_match and gen3_token_match:
+                return SwapEvent(
+                    timestamp=timestamp,
+                    amount=gen3_amount_match.group(1),
+                    token_name=gen3_amount_match.group(2),
+                    token_address=gen3_token_match.group(1),
+                )
+
             swap_match = re.search(self.SWAP_PATTERN, message)
 
             if not swap_match:
