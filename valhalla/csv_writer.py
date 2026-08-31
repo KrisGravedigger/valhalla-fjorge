@@ -9,7 +9,7 @@ from typing import Dict, List
 from datetime import datetime
 
 from .models import (
-    MatchedPosition, OpenEvent, SkipEvent, InsufficientBalanceEvent,
+    MatchedPosition, OpenEvent, SkipEvent, EmptyPositionEvent, InsufficientBalanceEvent,
     make_iso_datetime, normalize_token_age, parse_iso_datetime
 )
 
@@ -423,6 +423,54 @@ class CsvWriter:
             writer.writerow([
                 'date', 'datetime', 'target_wallet', 'reason',
                 'token_name', 'token_address', 'metric_value', 'threshold_value'
+            ])
+            for row in all_rows:
+                writer.writerow(row)
+
+    def generate_empty_positions_csv(self, events: List[EmptyPositionEvent],
+                                     output_path: str) -> None:
+        """Generate empty_positions.csv, merging with existing data."""
+        from pathlib import Path
+
+        existing_rows = []
+        if Path(output_path).exists():
+            with open(output_path, 'r', newline='', encoding='utf-8') as f:
+                reader = csv.reader(f)
+                next(reader, None)
+                for row in reader:
+                    if row:
+                        existing_rows.append(tuple(row))
+
+        new_rows = {
+            (
+                event.date,
+                make_iso_datetime(event.date, event.timestamp),
+                event.position_id,
+                event.token_pair,
+                event.target,
+                event.position_type,
+            )
+            for event in events
+        }
+
+        seen = set()
+        all_rows = []
+        sorted_new_rows = sorted(
+            new_rows,
+            key=lambda row: (row[1] or '', row[2] or '', row),
+        )
+        for row in list(existing_rows) + sorted_new_rows:
+            key = row[2]  # position_id
+            if key not in seen:
+                seen.add(key)
+                all_rows.append(row)
+
+        all_rows.sort(key=lambda r: r[1] if r[1] else '')
+
+        with open(output_path, 'w', newline='', encoding='utf-8') as f:
+            writer = csv.writer(f)
+            writer.writerow([
+                'date', 'datetime', 'position_id', 'token_pair', 'target', 'position_type'
             ])
             for row in all_rows:
                 writer.writerow(row)

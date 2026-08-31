@@ -1,8 +1,14 @@
 from pathlib import Path
 import re
 
+import pytest
+
 from dce_to_input import convert_dce_json
+from valhalla.cli import _suppress_empty_position_downstream_events
+from valhalla.csv_writer import CsvWriter
 from valhalla.event_parser import EventParser
+from valhalla.matcher import PositionMatcher
+from valhalla.models import CloseEvent, EmptyPositionEvent
 from valhalla.readers import PlainTextReader
 
 
@@ -158,6 +164,168 @@ def test_gen1_open_without_market_cap_remains_unparsed(tmp_path):
 
     assert not parser.open_events
     assert parser.unparsed_counts["Opened New DLMM Position"] == 1
+
+
+def test_gen3_empty_shell_is_classified_without_an_open_event():
+    message = "\n".join([
+        "Opened \u00b7 DLMM \u00b7 BidAsk 1-Sided",
+        "Morty-SOL",
+        "### 0.00 SOL",
+        "**MC** $598,474.101 \u00b7 **Age** 1w \u00b7 **Jup** 71",
+        "**Target** 20260713_5iB13i7i",
+        "Valhalla \u00b7 C6ze...ErkW",
+    ])
+    parser = EventParser()
+    parser._classify_and_parse_message("[2026-08-30T12:00]", message, ["signature"])
+
+    assert not parser.open_events
+    assert not parser.unparsed_counts
+    assert len(parser.empty_position_events) == 1
+    assert parser.empty_position_events[0] == EmptyPositionEvent(
+        timestamp="[2026-08-30T12:00]", date="", position_id="C6zeErkW",
+        token_pair="Morty-SOL", token_name="Morty", target="20260713_5iB13i7i",
+        position_type="BidAsk", tx_signatures=["signature"],
+    )
+
+
+def test_gen3_zero_header_with_target_size_remains_a_normal_open_event():
+    message = "\n".join([
+        "Opened \u00b7 DLMM \u00b7 Spot 1-Sided",
+        "MICRO-SOL",
+        "### 0.00 SOL",
+        "9% of target's 0.01 \u00b7 **MC** $1.00 \u00b7 **Age** 1h \u00b7 **Jup** 1",
+        "**Target** 20260825_micro",
+        "Valhalla \u00b7 Micr...Open",
+    ])
+    parser = EventParser()
+    parser._classify_and_parse_message("[2026-08-25T12:00]", message, [])
+
+    assert len(parser.open_events) == 1
+    assert not parser.empty_position_events
+    assert not parser.unparsed_counts
+
+
+def test_gen3_nonzero_header_without_target_size_remains_unparsed():
+    message = "\n".join([
+        "Opened \u00b7 DLMM \u00b7 Spot 1-Sided",
+        "UNKNOWN-SOL",
+        "### 1.00 SOL",
+        "**Target** 20260830_unknown",
+        "Valhalla \u00b7 Unkn...Own1",
+    ])
+    parser = EventParser()
+    parser._classify_and_parse_message("[2026-08-30T12:00]", message, [])
+
+    assert not parser.open_events
+    assert not parser.empty_position_events
+    assert parser.unparsed_counts["Opened New DLMM Position"] == 1
+
+
+def test_gen3_bin_range_skip_variants_include_metrics_and_thresholds():
+    messages = (
+        (
+            "Skipped \u00b7 DLMM position \u00b7 tight bin range\n"
+            "||The bins you were copying are too close together (1 bins). A minimum of 3 bins is required.||\n"
+            "**Target** 20260526_CmL4fG",
+            "tight bin range", 1.0, 3.0,
+        ),
+        (
+            "Skipped \u00b7 DLMM position \u00b7 narrow price range\n"
+            "||Position price range is only 2.0%. Your minimum is 3%.||\n"
+            "**Target** 20260821_8bHpPjob",
+            "narrow price range", 2.0, 3.0,
+        ),
+    )
+    parser = EventParser()
+    for message, _, _, _ in messages:
+        parser._classify_and_parse_message("[2026-08-30T12:00]", message, [])
+
+    assert not parser.unparsed_counts
+    assert [
+        (event.reason, event.metric_value, event.threshold_value)
+        for event in parser.skip_events
+    ] == [(reason, metric, threshold) for _, reason, metric, threshold in messages]
+
+
+def test_empty_position_close_is_suppressed_before_matching():
+    parser = EventParser()
+    parser.empty_position_events.append(EmptyPositionEvent(
+        timestamp="[2026-08-30T12:00]", date="2026-08-30", position_id="Empty123",
+        token_pair="Morty-SOL", token_name="Morty", target="target", position_type="BidAsk",
+    ))
+    parser.close_events.append(CloseEvent(
+        timestamp="[2026-08-30T12:01]", target="target", starting_sol=1.0,
+        starting_usd=1.0, ending_sol=1.057406, ending_usd=1.0, position_id="Empty123",
+    ))
+
+    assert _suppress_empty_position_downstream_events(parser) == 1
+    matched_positions, unmatched_opens = PositionMatcher(parser).match_positions({}, {})
+    assert not matched_positions
+    assert not unmatched_opens
+
+
+def test_previously_recorded_empty_position_close_is_suppressed_before_matching(tmp_path):
+    empty_positions_csv = tmp_path / "empty_positions.csv"
+    empty_positions_csv.write_text(
+        "date,datetime,position_id,token_pair,target,position_type\n"
+        "2026-08-30,2026-08-30T12:00,PreviousEmpty,Morty-SOL,target,BidAsk\n",
+        encoding="utf-8",
+    )
+    parser = EventParser()
+    parser.close_events.append(CloseEvent(
+        timestamp="[2026-08-30T12:01]", target="target", starting_sol=1.0,
+        starting_usd=1.0, ending_sol=1.057406, ending_usd=1.0,
+        position_id="PreviousEmpty",
+    ))
+
+    assert _suppress_empty_position_downstream_events(parser, empty_positions_csv) == 1
+    matched_positions, unmatched_opens = PositionMatcher(parser).match_positions({}, {})
+    assert not matched_positions
+    assert not unmatched_opens
+
+
+@pytest.mark.parametrize("contents", [
+    None,
+    "",
+    "date,datetime,position_id,token_pair,target,position_type\n",
+    "date,datetime,wrong_header\n2026-08-30,2026-08-30T12:00,Empty123\n",
+    "date,datetime,position_id,token_pair,target,position_type\n2026-08-30\n",
+])
+def test_invalid_empty_positions_csv_behaves_as_empty_set(tmp_path, contents):
+    empty_positions_csv = tmp_path / "empty_positions.csv"
+    if contents is not None:
+        empty_positions_csv.write_text(contents, encoding="utf-8")
+
+    parser = EventParser()
+    parser.close_events.append(CloseEvent(
+        timestamp="[2026-08-30T12:01]", target="target", starting_sol=1.0,
+        starting_usd=1.0, ending_sol=1.057406, ending_usd=1.0,
+        position_id="Empty123",
+    ))
+
+    assert _suppress_empty_position_downstream_events(parser, empty_positions_csv) == 0
+    assert len(parser.close_events) == 1
+
+
+def test_empty_positions_csv_is_deterministic_and_idempotent(tmp_path):
+    output_path = tmp_path / "empty_positions.csv"
+    events = [
+        EmptyPositionEvent(
+            timestamp="[2026-08-30T12:00]", date="2026-08-30", position_id="SameId",
+            token_pair="First-SOL", token_name="First", target="target", position_type="BidAsk",
+        ),
+        EmptyPositionEvent(
+            timestamp="[2026-08-30T12:00]", date="2026-08-30", position_id="SameId",
+            token_pair="Second-SOL", token_name="Second", target="target", position_type="BidAsk",
+        ),
+    ]
+
+    writer = CsvWriter()
+    writer.generate_empty_positions_csv(events, str(output_path))
+    first_output = output_path.read_bytes()
+    writer.generate_empty_positions_csv(events, str(output_path))
+
+    assert output_path.read_bytes() == first_output
 
 
 

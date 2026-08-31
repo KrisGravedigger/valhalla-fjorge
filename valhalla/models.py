@@ -232,6 +232,19 @@ class SkipEvent:
 
 
 @dataclass
+class EmptyPositionEvent:
+    """A DLMM position account opened and closed without ever receiving liquidity."""
+    timestamp: str
+    date: str
+    position_id: str
+    token_pair: str
+    token_name: str
+    target: str
+    position_type: str
+    tx_signatures: List[str] = field(default_factory=list)
+
+
+@dataclass
 class FailsafeEvent:
     timestamp: str
     position_id: str

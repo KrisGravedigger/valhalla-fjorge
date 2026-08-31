@@ -233,6 +233,7 @@ def _read_and_parse_input_files(input_files, args):
                 dedup_count += 1
         # Non-position events: no dedup needed
         event_parser.skip_events.extend(file_parser.skip_events)
+        event_parser.empty_position_events.extend(file_parser.empty_position_events)
         event_parser.swap_events.extend(file_parser.swap_events)
         event_parser.add_liquidity_events.extend(file_parser.add_liquidity_events)
         event_parser.insufficient_balance_events.extend(file_parser.insufficient_balance_events)
@@ -261,6 +262,54 @@ def _read_and_parse_input_files(input_files, args):
         processed_files.append((input_file, file_date, file_datetimes))
 
     return event_parser, processed_files
+
+
+def _load_empty_position_ids(empty_positions_csv: Optional[Path]) -> set[str]:
+    """Return position IDs previously recorded as empty account shells."""
+    if empty_positions_csv is None:
+        return set()
+
+    try:
+        with open(empty_positions_csv, 'r', newline='', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            if not reader.fieldnames or 'position_id' not in reader.fieldnames:
+                return set()
+
+            position_ids = set()
+            for row in reader:
+                position_id = (row.get('position_id') or '').strip()
+                if position_id:
+                    position_ids.add(position_id)
+            return position_ids
+    except (OSError, UnicodeError, csv.Error):
+        return set()
+
+
+def _suppress_empty_position_downstream_events(
+    event_parser: EventParser,
+    empty_positions_csv: Optional[Path] = None,
+) -> int:
+    """Remove close-like events for positions that were empty account shells."""
+    empty_position_ids = {
+        event.position_id for event in event_parser.empty_position_events
+        if event.position_id
+    }
+    empty_position_ids.update(_load_empty_position_ids(empty_positions_csv))
+    if not empty_position_ids:
+        return 0
+
+    suppressed = 0
+    for attribute in (
+        'close_events', 'failsafe_events', 'rug_events', 'already_closed_events',
+    ):
+        events = getattr(event_parser, attribute)
+        retained_events = [
+            event for event in events
+            if getattr(event, 'position_id', None) not in empty_position_ids
+        ]
+        suppressed += len(events) - len(retained_events)
+        setattr(event_parser, attribute, retained_events)
+    return suppressed
 
 
 def _resolve_addresses(event_parser, args, cache_file, already_complete_ids, positions_csv):
@@ -496,6 +545,9 @@ def main():
         cache_file = args.cache_file if args.cache_file else str(output_dir / 'address_cache.json')
 
         event_parser, processed_files = _read_and_parse_input_files(input_files, args)
+        suppressed_empty_position_events = _suppress_empty_position_downstream_events(
+            event_parser, output_dir / 'empty_positions.csv'
+        )
 
         # Step 2: Print aggregated event counts
         print(f"\nTotal parsed events across {len(input_files)} file(s):")
@@ -506,8 +558,10 @@ def main():
         print(f"  Add liquidity events: {len(event_parser.add_liquidity_events)}")
         print(f"  Rug events: {len(event_parser.rug_events)}")
         print(f"  Skip events: {len(event_parser.skip_events)}")
+        print(f"  Empty positions: {len(event_parser.empty_position_events)}")
         print(f"  Swap events: {len(event_parser.swap_events)}")
         print(f"  Insufficient balance events: {len(event_parser.insufficient_balance_events)}")
+        print(f"  Suppressed downstream empty-position events: {suppressed_empty_position_events}")
         if event_parser.unparsed_counts:
             print("\n" + "!" * 72)
             print("WARNING: Some recognized Valhalla event messages failed to parse.")
@@ -627,6 +681,11 @@ def main():
         skip_csv = output_dir / 'skip_events.csv'
         csv_writer.generate_skip_events_csv(event_parser.skip_events, str(skip_csv))
         print(f"  {skip_csv}")
+
+    if event_parser.empty_position_events:
+        empty_positions_csv = output_dir / 'empty_positions.csv'
+        csv_writer.generate_empty_positions_csv(event_parser.empty_position_events, str(empty_positions_csv))
+        print(f"  {empty_positions_csv}")
 
     print(f"  {positions_csv}")
     print(f"  {summary_csv}")

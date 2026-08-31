@@ -4,11 +4,11 @@ Event parser for Discord bot messages.
 
 import re
 from collections import Counter
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Union
 from datetime import datetime, timedelta
 
 from .models import (
-    OpenEvent, CloseEvent, RugEvent, SkipEvent, FailsafeEvent,
+    OpenEvent, CloseEvent, RugEvent, SkipEvent, EmptyPositionEvent, FailsafeEvent,
     AddLiquidityEvent, SwapEvent, InsufficientBalanceEvent, AlreadyClosedEvent, short_id
 )
 from .readers import ParsedMessage
@@ -72,6 +72,10 @@ class EventParser:
     SKIP_JUP_SCORE_PATTERN = r'Current:\s*(\d+)\s*is below\s*(\d+)'
     SKIP_MCAP_DETAIL_PATTERN = r'Jupiter MC is \$([\d,.]+).*minimum of \$([\d,]+)'
     SKIP_TOKEN_PATTERN = r'Token\s+([^:]+?):\s*(\S+)'
+    SKIP_TIGHT_BIN_METRIC_PATTERN = r'\((\d+) bins\)'
+    SKIP_TIGHT_BIN_THRESHOLD_PATTERN = r'minimum of (\d+) bins'
+    SKIP_NARROW_RANGE_METRIC_PATTERN = r'only ([\d.]+)%'
+    SKIP_NARROW_RANGE_THRESHOLD_PATTERN = r'Your minimum is ([\d.]+)%'
 
     # Swap pattern
     SWAP_PATTERN = r'Swapped\s+([\d,]+|all)\s+(.+?)\s+\((\S+)\)'
@@ -100,6 +104,7 @@ class EventParser:
         self.close_events: List[CloseEvent] = []
         self.rug_events: List[RugEvent] = []
         self.skip_events: List[SkipEvent] = []
+        self.empty_position_events: List[EmptyPositionEvent] = []
         self.swap_events: List[SwapEvent] = []
         self.failsafe_events: List[FailsafeEvent] = []
         self.add_liquidity_events: List[AddLiquidityEvent] = []
@@ -158,7 +163,10 @@ class EventParser:
         if "Opened New DLMM Position!" in message or "Opened \u00b7 DLMM" in message:
             event = self._parse_open_event(timestamp, message, tx_signatures,
                                            target_wallet_address, target_tx_signatures)
-            if event:
+            if isinstance(event, EmptyPositionEvent):
+                event.date = self.current_date or ""
+                self.empty_position_events.append(event)
+            elif event:
                 event.date = self.current_date or ""
                 self.open_events.append(event)
             else:
@@ -231,6 +239,8 @@ class EventParser:
         elif any(marker in message for marker in (
             "Skipping position due to", "Skipped - low market cap restriction",
             "Skipped - token age restriction", "Skipped - low Jupiter organic score restriction",
+            "Skipped \u00b7 DLMM position \u00b7 tight bin range",
+            "Skipped \u00b7 DLMM position \u00b7 narrow price range",
             "Skipping Add Liquidity", "Skipped \u00b7 add liquidity",
             "No liquidity was removed", "Skipped \u00b7 nothing to remove",
         )):
@@ -264,8 +274,8 @@ class EventParser:
 
 
     def _parse_open_event(self, timestamp: str, message: str, tx_signatures: List[str],
-                          target_wallet_address: Optional[str] = None,
-                          target_tx_signatures: Optional[List[str]] = None) -> Optional[OpenEvent]:
+                           target_wallet_address: Optional[str] = None,
+                           target_tx_signatures: Optional[List[str]] = None) -> Optional[Union[OpenEvent, EmptyPositionEvent]]:
         """Parse an open position event"""
         if "Opened \u00b7 DLMM" in message:
             return self._parse_gen3_open_event(
@@ -322,7 +332,7 @@ class EventParser:
     def _parse_gen3_open_event(self, timestamp: str, message: str,
                                tx_signatures: List[str],
                                target_wallet_address: Optional[str] = None,
-                               target_tx_signatures: Optional[List[str]] = None) -> Optional[OpenEvent]:
+                               target_tx_signatures: Optional[List[str]] = None) -> Optional[Union[OpenEvent, EmptyPositionEvent]]:
         """Parse the redesigned embed open format without rewriting its text."""
         try:
             author_match = re.search(
@@ -341,6 +351,32 @@ class EventParser:
             position_id_match = re.search(
                 r'Valhalla\s*\u00b7\s*(\w+\.\.\.\w+)', message
             )
+
+            empty_header_match = re.search(
+                r'^###\s*0\.00\s+SOL\s*$', message, re.MULTILINE,
+            )
+            empty_position_id_match = re.search(
+                r'^Valhalla\s*\u00b7\s*(\w+\.\.\.\w+)\s*$', message, re.MULTILINE,
+            )
+            if (
+                author_match
+                and not target_sol_match
+                and not total_deposit_target_match
+                and not total_deposit_user_match
+                and empty_header_match
+                and empty_position_id_match
+            ):
+                token_name, quote_token = title_match.groups() if title_match else ("unknown", "unknown")
+                return EmptyPositionEvent(
+                    timestamp=timestamp,
+                    date="",
+                    position_id=self._normalize_position_id(empty_position_id_match.group(1)),
+                    token_pair=f'{token_name.strip()}-{quote_token}',
+                    token_name=token_name.strip(),
+                    target=target_match.group(1) if target_match else "unknown",
+                    position_type=author_match.group(1),
+                    tx_signatures=tx_signatures,
+                )
 
             if not all([
                 author_match, title_match, target_match, position_id_match,
@@ -633,6 +669,10 @@ class EventParser:
                 reason = "low market cap"
             elif self.SKIP_REASON_SOL_ONLY_MARKER in message:
                 reason = "SOL-only deposit restriction"
+            elif "Skipped \u00b7 DLMM position \u00b7 tight bin range" in message:
+                reason = "tight bin range"
+            elif "Skipped \u00b7 DLMM position \u00b7 narrow price range" in message:
+                reason = "narrow price range"
             else:
                 reason = "unknown"
 
@@ -673,6 +713,22 @@ class EventParser:
                 if mc_match:
                     metric_value = float(mc_match.group(1).replace(',', ''))
                     threshold_value = float(mc_match.group(2).replace(',', ''))
+
+            elif reason == "tight bin range":
+                metric_match = re.search(self.SKIP_TIGHT_BIN_METRIC_PATTERN, message)
+                threshold_match = re.search(self.SKIP_TIGHT_BIN_THRESHOLD_PATTERN, message)
+                if metric_match:
+                    metric_value = float(metric_match.group(1))
+                if threshold_match:
+                    threshold_value = float(threshold_match.group(1))
+
+            elif reason == "narrow price range":
+                metric_match = re.search(self.SKIP_NARROW_RANGE_METRIC_PATTERN, message)
+                threshold_match = re.search(self.SKIP_NARROW_RANGE_THRESHOLD_PATTERN, message)
+                if metric_match:
+                    metric_value = float(metric_match.group(1))
+                if threshold_match:
+                    threshold_value = float(threshold_match.group(1))
 
             return SkipEvent(
                 timestamp=timestamp,
